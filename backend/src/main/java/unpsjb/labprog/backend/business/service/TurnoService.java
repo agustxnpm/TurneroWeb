@@ -560,7 +560,7 @@ public class TurnoService {
         }
     }
 
-    // Cancelación automática actualizada
+    /* // Cancelación automática actualizada
     @Scheduled(cron = "0 0 0 * * ?") // Diariamente a las 00:00
     @Transactional
     public void cancelarTurnosNoConfirmadosAutomaticamente() {
@@ -600,7 +600,7 @@ public class TurnoService {
         }
 
         System.out.println("Cancelación automática completada");
-    }
+    } */
 
     // === SISTEMA DE RECORDATORIOS ===
     @Scheduled(cron = "0 0 9 * * ?") // Por defecto a las 9:00 AM, pero configurable
@@ -611,15 +611,6 @@ public class TurnoService {
             return;
         }
 
-        // Obtener hora configurada para envío
-        LocalTime horaEnvio = configuracionService.getHoraEnvioRecordatorios();
-        LocalTime ahoraHora = LocalTime.now();
-
-        // Solo enviar si estamos dentro de la ventana de tiempo (±30 minutos)
-        if (Math.abs(ChronoUnit.MINUTES.between(ahoraHora, horaEnvio)) > 30) {
-            System.out.println("No es la hora configurada para recordatorios: " + horaEnvio);
-            return;
-        }
 
         LocalDate hoy = LocalDate.now();
         int diasRecordatorio = configuracionService.getDiasRecordatorioConfirmacion();

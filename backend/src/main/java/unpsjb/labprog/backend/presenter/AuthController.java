@@ -92,10 +92,7 @@ public class AuthController {
 
             User user = (User) authentication.getPrincipal();
             
-            // TEMPORAL: Validación de activación de cuenta deshabilitada
-            // TODO: Reactivar esta validación cuando el sistema de activación esté completamente configurado
-
-            /*
+           
             // Verificar si la cuenta está activada (email verificado)
             if (!user.isEmailVerified()) {
                 logger.warn("Intento de login con cuenta no verificada: {}", user.getEmail());
@@ -103,7 +100,7 @@ public class AuthController {
                     "Cuenta no verificada. Por favor, verifica tu email antes de iniciar sesión. ", 
                     null);
             }
-            */
+            
 
             // Generar tokens
             String accessToken = jwtTokenProvider.generateAccessToken(user);

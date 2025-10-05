@@ -7,6 +7,7 @@ import { Turno } from "../turnos/turno";
 import { DataPackage } from "../data.package";
 import { NotificacionService } from "../services/notificacion.service";
 import { AuthService } from "../inicio-sesion/auth.service";
+import { ModalService } from "../modal/modal.service";
 
 @Component({
   selector: "app-paciente-dashboard",
@@ -2872,7 +2873,8 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private turnoService: TurnoService,
     private notificacionService: NotificacionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private modalService: ModalService
   ) {
     // Obtener datos del usuario autenticado
     this.patientEmail = this.authService.getUserEmail() || "";
@@ -3273,44 +3275,58 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
   }
 
   confirmarTurno(turno: any) {
+    const confirmTitle = 'Confirmar Turno';
     const confirmMessage = `¿Deseas confirmar este turno?\n\nFecha: ${turno.day}/${turno.month}\nHora: ${turno.time}\nMédico: ${turno.doctor}`;
 
-    if (confirm(confirmMessage)) {
-      this.turnoService.confirmar(turno.id).subscribe({
-        next: (response) => {
+    this.modalService
+      .confirm(confirmTitle, 'Confirmar', confirmMessage)
+      .then(() => {
+        // Usuario confirmó
+        this.turnoService.confirmar(turno.id).subscribe({
+          next: (response) => {
 
-          // VERIFICAR SI LA RESPUESTA CONTIENE UN ERROR
-          if (response.status_code && response.status_code >= 400) {
-            // Es un error disfrazado de éxito
-            console.error("Error detectado en respuesta exitosa:", response);
+            // VERIFICAR SI LA RESPUESTA CONTIENE UN ERROR
+            if (response.status_code && response.status_code >= 400) {
+              // Es un error disfrazado de éxito
+              console.error("Error detectado en respuesta exitosa:", response);
 
-            this.errorMessage = response.status_text || 'Ocurrió un error al confirmar el turno';
+              this.errorMessage = response.status_text || 'Ocurrió un error al confirmar el turno';
+              this.showErrorModal = true;
+              return; // Detener ejecución
+            }
+
+            // Respuesta exitosa real
+            console.log("Turno confirmado exitosamente:", response);
+            turno.status = "confirmado";
+            
+            // Mostrar modal de éxito en lugar de alert
+            this.modalService.alert(
+              'Turno Confirmado',
+              'Turno confirmado exitosamente. Te esperamos en la fecha y hora programada.'
+            );
+            
+            this.cargarTurnosPaciente();
+          },
+          error: (error) => {
+            // Extraer mensaje específico del backend
+            if (error.error && error.error.status_text) {
+              this.errorMessage = error.error.status_text;
+            } else if (error.error && typeof error.error === 'string') {
+              this.errorMessage = error.error;
+            } else if (error.message) {
+              this.errorMessage = error.message;
+            } else {
+              this.errorMessage = 'Ocurrió un error inesperado al intentar confirmar el turno. Por favor, intenta nuevamente.';
+            }
+
             this.showErrorModal = true;
-            return; // Detener ejecución
-          }
-
-          // Respuesta exitosa real
-          console.log("Turno confirmado exitosamente:", response);
-          turno.status = "confirmado";
-          alert("Turno confirmado exitosamente. Te esperamos en la fecha y hora programada.");
-          this.cargarTurnosPaciente();
-        },
-        error: (error) => {
-          // Extraer mensaje específico del backend
-          if (error.error && error.error.status_text) {
-            this.errorMessage = error.error.status_text;
-          } else if (error.error && typeof error.error === 'string') {
-            this.errorMessage = error.error;
-          } else if (error.message) {
-            this.errorMessage = error.message;
-          } else {
-            this.errorMessage = 'Ocurrió un error inesperado al intentar confirmar el turno. Por favor, intenta nuevamente.';
-          }
-
-          this.showErrorModal = true;
-        },
+          },
+        });
+      })
+      .catch(() => {
+        // Usuario canceló - no hacer nada
+        console.log('Confirmación de turno cancelada por el usuario');
       });
-    }
   }
   closeErrorModal() {
     console.log('Cerrando modal de error');

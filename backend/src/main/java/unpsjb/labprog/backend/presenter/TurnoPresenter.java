@@ -630,4 +630,20 @@ public class TurnoPresenter {
                     .body(("Error al exportar PDF: " + e.getMessage()).getBytes());
         }
     }
+
+
+
+
+
+    // DEBUG - ejectuar curl -X POST http://localhost:8080/turno/ejecutar-recordatorios
+
+        @PostMapping("/ejecutar-recordatorios")
+    public ResponseEntity<Object> ejecutarRecordatoriosManual() {
+        try {
+            service.enviarRecordatoriosConfirmacion();
+            return Response.ok(null, "Recordatorios ejecutados manualmente");
+        } catch (Exception e) {
+            return Response.error(null, "Error al ejecutar recordatorios: " + e.getMessage());
+        }
+    }
 }
