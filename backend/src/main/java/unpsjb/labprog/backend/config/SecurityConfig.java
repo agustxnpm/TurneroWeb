@@ -144,6 +144,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.disable()) // Deshabilitar CORS temporalmente para debugging
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
                     if (devMode) {
@@ -158,7 +159,8 @@ public class SecurityConfig {
 
                         // ========== ENDPOINTS PÚBLICOS ==========
                         auth
-                                .requestMatchers("/").permitAll()
+                                // Endpoint raíz y health checks
+                                .requestMatchers("/", "/health", "/actuator/**").permitAll()
                                 // Autenticación y recuperación de contraseñas
                                 .requestMatchers("/api/auth/**").permitAll()
                                 // Auto-registro de pacientes (público)
