@@ -158,6 +158,7 @@ public class SecurityConfig {
 
                         // ========== ENDPOINTS PÚBLICOS ==========
                         auth
+                                .requestMatchers("/").permitAll()
                                 // Autenticación y recuperación de contraseñas
                                 .requestMatchers("/api/auth/**").permitAll()
                                 // Auto-registro de pacientes (público)
