@@ -31,5 +31,5 @@ EXPOSE 8080
 ENV PORT=8080
 
 # Comando para ejecutar la aplicación
-# Usar el puerto de la variable de entorno PORT
-ENTRYPOINT ["java", "-Dserver.port=${PORT}", "-jar", "app.jar"]
+# IMPORTANTE: Usar shell form para que ${PORT} se expanda correctamente
+ENTRYPOINT exec java -Dserver.port=${PORT} -jar app.jar
