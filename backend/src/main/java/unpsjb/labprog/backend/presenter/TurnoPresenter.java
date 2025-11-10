@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import unpsjb.labprog.backend.Response;
 import unpsjb.labprog.backend.business.service.ExportService;
+import unpsjb.labprog.backend.business.service.RecordatorioService;
 import unpsjb.labprog.backend.business.service.TurnoService;
 import unpsjb.labprog.backend.config.JwtTokenProvider;
 import unpsjb.labprog.backend.dto.CancelacionDataDTO;
@@ -41,6 +43,9 @@ public class TurnoPresenter {
 
     @Autowired
     private ExportService exportService;
+
+    @Autowired
+    private RecordatorioService recordatorioService;
 
     // Método auxiliar para auditoría
     @Autowired
@@ -92,7 +97,8 @@ public class TurnoPresenter {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Object> update(@PathVariable Integer id, @RequestBody TurnoDTO turnoDTO, HttpServletRequest request) {
+    public ResponseEntity<Object> update(@PathVariable Integer id, @RequestBody TurnoDTO turnoDTO,
+            HttpServletRequest request) {
         turnoDTO.setId(id);
         String currentUserEmail = getCurrentUser(request);
         TurnoDTO updated = service.save(turnoDTO, currentUserEmail);
@@ -101,7 +107,8 @@ public class TurnoPresenter {
 
     /**
      * Endpoint de paginación avanzada con filtros y ordenamiento
-     * GET /turno/page?page=0&size=10&paciente=Juan&medico=Garcia&estado=PROGRAMADO&sortBy=fecha&sortDir=desc
+     * GET
+     * /turno/page?page=0&size=10&paciente=Juan&medico=Garcia&estado=PROGRAMADO&sortBy=fecha&sortDir=desc
      */
     @GetMapping("/page")
     public ResponseEntity<Object> getByPage(
@@ -117,8 +124,8 @@ public class TurnoPresenter {
             @RequestParam(defaultValue = "asc") String sortDir) {
         try {
             Page<TurnoDTO> pageResult = service.findByPage(
-                page, size, paciente, medico, consultorio, 
-                estado, fechaDesde, fechaHasta, sortBy, sortDir);
+                    page, size, paciente, medico, consultorio,
+                    estado, fechaDesde, fechaHasta, sortBy, sortDir);
 
             var response = Map.of(
                     "content", pageResult.getContent(),
@@ -143,14 +150,13 @@ public class TurnoPresenter {
         return Response.ok(null, "Turno eliminado correctamente");
     }
 
-
     @PostMapping("/asignar")
     public ResponseEntity<Object> asignarTurno(@RequestBody TurnoDTO turnoDTO, HttpServletRequest request) {
         try {
-            
+
             // Forzar que sea una creación: ignorar cualquier ID que venga en el DTO
             turnoDTO.setId(null);
-            
+
             String currentUserEmail = getCurrentUser(request);
             TurnoDTO savedTurno = service.save(turnoDTO, currentUserEmail);
             return Response.ok(savedTurno, "Turno asignado correctamente.");
@@ -162,21 +168,24 @@ public class TurnoPresenter {
     }
 
     // ========== ENDPOINTS PARA CAMBIOS DE ESTADO ==========
-     
+
     /**
-     * @deprecated Utilice PUT /turno/{id}/estado con el cuerpo {"estado": "CANCELADO", "motivo": "..."}.
-     * Este endpoint se mantiene por compatibilidad con versiones anteriores, pero el endpoint /estado
-     * ofrece la misma funcionalidad con una mejor consistencia de la API.
+     * @deprecated Utilice PUT /turno/{id}/estado con el cuerpo {"estado":
+     *             "CANCELADO", "motivo": "..."}.
+     *             Este endpoint se mantiene por compatibilidad con versiones
+     *             anteriores, pero el endpoint /estado
+     *             ofrece la misma funcionalidad con una mejor consistencia de la
+     *             API.
      */
     @PutMapping("/{id}/cancelar")
-    public ResponseEntity<Object> cancelarTurno(@PathVariable Integer id, 
-                                               @RequestBody Map<String, String> body,
-                                               HttpServletRequest request) {
+    public ResponseEntity<Object> cancelarTurno(@PathVariable Integer id,
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
         try {
             String motivo = body.get("motivo");
-            
+
             String user = getCurrentUser(request);
-            
+
             TurnoDTO turno = service.cancelarTurno(id, motivo, user);
             return Response.ok(turno, "Turno cancelado correctamente");
         } catch (IllegalArgumentException e) {
@@ -194,8 +203,8 @@ public class TurnoPresenter {
      */
     @GetMapping("/{id}/datos-cancelacion")
     public ResponseEntity<Object> obtenerDatosCancelacion(@PathVariable Integer id,
-                                                         @RequestParam(value = "motivo", defaultValue = "Previsualización") String motivo,
-                                                         HttpServletRequest request) {
+            @RequestParam(value = "motivo", defaultValue = "Previsualización") String motivo,
+            HttpServletRequest request) {
         try {
             String user = getCurrentUser(request);
             CancelacionDataDTO cancelacionData = service.obtenerDatosCancelacion(id, motivo, user);
@@ -215,14 +224,14 @@ public class TurnoPresenter {
     public ResponseEntity<Object> validarMediosContacto(@PathVariable Integer id) {
         try {
             ValidacionContactoDTO validacion = service.validarMediosContacto(id);
-            
+
             if (validacion.isTieneMediosValidos()) {
                 return Response.ok(validacion, "El paciente tiene medios de contacto válidos");
             } else {
                 // Retornar código 200 pero con advertencia en el mensaje
                 return Response.ok(validacion, "Advertencia: Problemas con medios de contacto del paciente");
             }
-            
+
         } catch (IllegalArgumentException e) {
             return Response.error(null, e.getMessage());
         } catch (Exception e) {
@@ -232,21 +241,21 @@ public class TurnoPresenter {
 
     @PutMapping("/{id}/confirmar")
     public ResponseEntity<Object> confirmarTurno(@PathVariable Integer id,
-                                                @RequestBody(required = false) Map<String, String> body,
-                                                HttpServletRequest request) {
+            @RequestBody(required = false) Map<String, String> body,
+            HttpServletRequest request) {
         try {
             String user = null;
-            
+
             // Intentar obtener usuario del body primero
             if (body != null) {
                 user = body.get("usuario");
             }
-            
+
             // Si no viene usuario en el body, usar el método anterior como fallback
             if (user == null || user.trim().isEmpty()) {
                 user = getCurrentUser(request);
             }
-            
+
             TurnoDTO turno = service.confirmarTurno(id, user);
             return Response.ok(turno, "Turno confirmado correctamente");
         } catch (IllegalArgumentException e) {
@@ -260,7 +269,7 @@ public class TurnoPresenter {
 
     @PutMapping("/{id}/completar")
     public ResponseEntity<Object> completarTurno(@PathVariable Integer id,
-                                                HttpServletRequest request) {
+            HttpServletRequest request) {
         try {
             String user = getCurrentUser(request);
             TurnoDTO turno = service.completarTurno(id, user);
@@ -274,10 +283,42 @@ public class TurnoPresenter {
         }
     }
 
+    @PutMapping("/{id}/asistencia")
+    public ResponseEntity<Object> marcarAsistencia(
+            @PathVariable Integer id,
+            @RequestBody Map<String, Boolean> body,
+            HttpServletRequest request) {
+        try {
+            // Validar que el body contenga el campo asistio
+            if (!body.containsKey("asistio") || body.get("asistio") == null) {
+                return Response.error(null, "El campo 'asistio' es obligatorio y no puede ser nulo");
+            }
+
+            Boolean asistio = body.get("asistio");
+            String user = getCurrentUser(request);
+
+            TurnoDTO updated = service.marcarAsistencia(id, asistio, user);
+
+            String mensaje = asistio ? "Paciente marcado como PRESENTE correctamente"
+                    : "Paciente marcado como AUSENTE correctamente";
+
+            return Response.ok(updated, mensaje);
+
+        } catch (EntityNotFoundException e) {
+            return Response.error(null, e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (IllegalStateException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al registrar asistencia: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/{id}/reagendar")
     public ResponseEntity<Object> reagendarTurno(@PathVariable Integer id,
-                                                @RequestBody Map<String, Object> body,
-                                                HttpServletRequest request) {
+            @RequestBody Map<String, Object> body,
+            HttpServletRequest request) {
         try {
             TurnoDTO nuevosDatos = new TurnoDTO();
             // Parsear los nuevos datos del turno desde el body
@@ -290,7 +331,7 @@ public class TurnoPresenter {
             if (body.containsKey("horaFin")) {
                 nuevosDatos.setHoraFin(java.time.LocalTime.parse((String) body.get("horaFin")));
             }
-            
+
             String motivo = (String) body.get("motivo");
             String user = getCurrentUser(request);
             TurnoDTO turno = service.reagendarTurno(id, nuevosDatos, motivo, user);
@@ -305,18 +346,18 @@ public class TurnoPresenter {
     }
 
     /*
-     * Endpoint genérico para cambiar el estado del turno (confirmado, completado, cancelado, etc.)
+     * Endpoint genérico para cambiar el estado del turno (confirmado, completado,
+     * cancelado, etc.)
      */
     @PutMapping("/{id}/estado")
     public ResponseEntity<Object> cambiarEstado(@PathVariable Integer id,
-                                               @RequestBody Map<String, String> body,
-                                               HttpServletRequest request) {
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request) {
         try {
             String estadoStr = body.get("estado");
             String motivo = body.get("motivo");
             String user = getCurrentUser(request);
 
-            
             EstadoTurno newState = EstadoTurno.valueOf(estadoStr.toUpperCase());
             TurnoDTO turno = service.changeEstado(id, newState, motivo, user);
             return Response.ok(turno, "Estado del turno cambiado correctamente");
@@ -342,7 +383,7 @@ public class TurnoPresenter {
     }
 
     // === ENDPOINTS DE AUDITORÍA ===
-    
+
     @GetMapping("/{id}/audit")
     public ResponseEntity<Object> getTurnoAuditHistory(@PathVariable Integer id) {
         try {
@@ -355,11 +396,11 @@ public class TurnoPresenter {
 
     @GetMapping("/{id}/audit/page")
     public ResponseEntity<Object> getTurnoAuditHistoryPaged(@PathVariable Integer id,
-                                                           @RequestParam(defaultValue = "0") int page,
-                                                           @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         try {
             Page<AuditLog> auditHistory = service.getTurnoAuditHistoryPaged(id, page, size);
-            
+
             var response = Map.of(
                     "content", auditHistory.getContent(),
                     "totalPages", auditHistory.getTotalPages(),
@@ -380,9 +421,9 @@ public class TurnoPresenter {
     public ResponseEntity<Object> verifyTurnoAuditIntegrity(@PathVariable Integer id) {
         try {
             boolean isValid = service.verifyTurnoAuditIntegrity(id);
-            return Response.ok(Map.of("isValid", isValid), 
-                             isValid ? "La integridad del historial es válida" : 
-                                     "Se detectaron inconsistencias en el historial");
+            return Response.ok(Map.of("isValid", isValid),
+                    isValid ? "La integridad del historial es válida"
+                            : "Se detectaron inconsistencias en el historial");
         } catch (Exception e) {
             return Response.error(null, "Error al verificar la integridad del historial: " + e.getMessage());
         }
@@ -421,15 +462,15 @@ public class TurnoPresenter {
                 // Es una consulta paginada normal
                 Page<TurnoDTO> turnos = service.findByAdvancedFilters(filter);
                 Map<String, Object> response = Map.of(
-                    "content", turnos.getContent(),
-                    "totalElements", turnos.getTotalElements(),
-                    "totalPages", turnos.getTotalPages(),
-                    "size", turnos.getSize(),
-                    "number", turnos.getNumber(),
-                    "first", turnos.isFirst(),
-                    "last", turnos.isLast(),
-                    "numberOfElements", turnos.getNumberOfElements());
-                
+                        "content", turnos.getContent(),
+                        "totalElements", turnos.getTotalElements(),
+                        "totalPages", turnos.getTotalPages(),
+                        "size", turnos.getSize(),
+                        "number", turnos.getNumber(),
+                        "first", turnos.isFirst(),
+                        "last", turnos.isLast(),
+                        "numberOfElements", turnos.getNumberOfElements());
+
                 return Response.ok(response, "Turnos filtrados recuperados correctamente");
             }
         } catch (Exception e) {
@@ -446,27 +487,25 @@ public class TurnoPresenter {
             @RequestParam(value = "sortDirection", defaultValue = "ASC") String sortDirection) {
         try {
             org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(
-                "DESC".equalsIgnoreCase(sortDirection) ? 
-                    org.springframework.data.domain.Sort.Direction.DESC : 
-                    org.springframework.data.domain.Sort.Direction.ASC, 
-                sortBy
-            );
-            
-            org.springframework.data.domain.Pageable pageable = 
-                org.springframework.data.domain.PageRequest.of(page, size, sort);
-                
+                    "DESC".equalsIgnoreCase(sortDirection) ? org.springframework.data.domain.Sort.Direction.DESC
+                            : org.springframework.data.domain.Sort.Direction.ASC,
+                    sortBy);
+
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page,
+                    size, sort);
+
             Page<TurnoDTO> turnos = service.findByTextSearch(searchText, pageable);
-            
+
             Map<String, Object> response = Map.of(
-                "content", turnos.getContent(),
-                "totalElements", turnos.getTotalElements(),
-                "totalPages", turnos.getTotalPages(),
-                "size", turnos.getSize(),
-                "number", turnos.getNumber(),
-                "first", turnos.isFirst(),
-                "last", turnos.isLast(),
-                "numberOfElements", turnos.getNumberOfElements());
-            
+                    "content", turnos.getContent(),
+                    "totalElements", turnos.getTotalElements(),
+                    "totalPages", turnos.getTotalPages(),
+                    "size", turnos.getSize(),
+                    "number", turnos.getNumber(),
+                    "first", turnos.isFirst(),
+                    "last", turnos.isLast(),
+                    "numberOfElements", turnos.getNumberOfElements());
+
             return Response.ok(response, "Búsqueda por texto completada correctamente");
         } catch (Exception e) {
             return Response.error(null, "Error en la búsqueda por texto: " + e.getMessage());
@@ -496,32 +535,38 @@ public class TurnoPresenter {
             @RequestParam(value = "size", defaultValue = "20") int size) {
         try {
             TurnoFilterDTO filterDTO = new TurnoFilterDTO();
-            if (estado != null) filterDTO.setEstado(estado);
-            if (fechaDesde != null) filterDTO.setFechaDesde(java.time.LocalDate.parse(fechaDesde));
-            if (fechaHasta != null) filterDTO.setFechaHasta(java.time.LocalDate.parse(fechaHasta));
-            if (especialidad != null) filterDTO.setEspecialidad(especialidad);
-            if (centroId != null) filterDTO.setCentroId(centroId);
-            if (medicoId != null) filterDTO.setMedicoId(medicoId);
-            if (pacienteId != null) filterDTO.setPacienteId(pacienteId);
-            
+            if (estado != null)
+                filterDTO.setEstado(estado);
+            if (fechaDesde != null)
+                filterDTO.setFechaDesde(java.time.LocalDate.parse(fechaDesde));
+            if (fechaHasta != null)
+                filterDTO.setFechaHasta(java.time.LocalDate.parse(fechaHasta));
+            if (especialidad != null)
+                filterDTO.setEspecialidad(especialidad);
+            if (centroId != null)
+                filterDTO.setCentroId(centroId);
+            if (medicoId != null)
+                filterDTO.setMedicoId(medicoId);
+            if (pacienteId != null)
+                filterDTO.setPacienteId(pacienteId);
+
             Page<TurnoDTO> result = service.findByFilters(filterDTO, page, size);
-            
+
             Map<String, Object> response = Map.of(
-                "turnos", result.getContent(),
-                "page", result.getNumber(),
-                "size", result.getSize(),
-                "totalElements", result.getTotalElements(),
-                "totalPages", result.getTotalPages(),
-                "first", result.isFirst(),
-                "last", result.isLast()
-            );
-            
+                    "turnos", result.getContent(),
+                    "page", result.getNumber(),
+                    "size", result.getSize(),
+                    "totalElements", result.getTotalElements(),
+                    "totalPages", result.getTotalPages(),
+                    "first", result.isFirst(),
+                    "last", result.isLast());
+
             return Response.ok(response, "Turnos filtrados recuperados correctamente");
         } catch (Exception e) {
             return Response.error(null, "Error al filtrar turnos: " + e.getMessage());
         }
     }
-    
+
     /**
      * Exportar turnos a CSV
      */
@@ -533,7 +578,7 @@ public class TurnoPresenter {
             @RequestParam(required = false) Integer pacienteId,
             @RequestParam(required = false) Integer staffMedicoId,
             @RequestParam(required = false) Integer centroId) {
-        
+
         try {
             TurnoFilterDTO filter = new TurnoFilterDTO();
             filter.setEstado(estado);
@@ -542,23 +587,23 @@ public class TurnoPresenter {
             filter.setPacienteId(pacienteId);
             filter.setStaffMedicoId(staffMedicoId);
             filter.setCentroId(centroId);
-            
+
             String csvContent = exportService.exportToCSV(filter);
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.TEXT_PLAIN);
             headers.setContentDispositionFormData("attachment", "turnos.csv");
-            
+
             return ResponseEntity.ok()
                     .headers(headers)
                     .body(csvContent);
-                    
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error al exportar CSV: " + e.getMessage());
         }
     }
-    
+
     /**
      * Exportar turnos a PDF
      */
@@ -570,7 +615,7 @@ public class TurnoPresenter {
             @RequestParam(required = false) Integer pacienteId,
             @RequestParam(required = false) Integer staffMedicoId,
             @RequestParam(required = false) Integer centroId) {
-        
+
         try {
             TurnoFilterDTO filter = new TurnoFilterDTO();
             filter.setEstado(estado);
@@ -579,50 +624,50 @@ public class TurnoPresenter {
             filter.setPacienteId(pacienteId);
             filter.setStaffMedicoId(staffMedicoId);
             filter.setCentroId(centroId);
-            
+
             byte[] pdfContent = exportService.exportToPDF(filter);
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDispositionFormData("attachment", "turnos.pdf");
-            
+
             return ResponseEntity.ok()
                     .headers(headers)
                     .body(pdfContent);
-                    
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(("Error al exportar PDF: " + e.getMessage()).getBytes());
         }
     }
-    
+
     /**
      * Exportar turnos a PDF usando POST con filtros en el cuerpo
      */
     @PostMapping("/export/pdf")
     public ResponseEntity<byte[]> exportToPDFPost(@RequestBody TurnoFilterDTO filter) {
-        
+
         try {
             System.out.println("PDF Export POST - Filtros recibidos: " + filter);
-            
+
             byte[] pdfContent = exportService.exportToPDF(filter);
-            
+
             if (pdfContent == null || pdfContent.length == 0) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Error: PDF generado está vacío".getBytes());
             }
-            
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDispositionFormData("attachment", "turnos.pdf");
             headers.setContentLength(pdfContent.length);
-            
+
             System.out.println("PDF Export POST - Generado correctamente, tamaño: " + pdfContent.length + " bytes");
-            
+
             return ResponseEntity.ok()
                     .headers(headers)
                     .body(pdfContent);
-                    
+
         } catch (Exception e) {
             System.err.println("PDF Export POST - Error: " + e.getMessage());
             e.printStackTrace();
@@ -631,19 +676,320 @@ public class TurnoPresenter {
         }
     }
 
-
-
-
-
-    // DEBUG - ejectuar curl -X POST http://localhost:8080/turno/ejecutar-recordatorios
-
-        @PostMapping("/ejecutar-recordatorios")
+    @PostMapping("/ejecutar-recordatorios")
     public ResponseEntity<Object> ejecutarRecordatoriosManual() {
         try {
-            service.enviarRecordatoriosConfirmacion();
-            return Response.ok(null, "Recordatorios ejecutados manualmente");
+            recordatorioService.enviarRecordatoriosPendientes();
+            return Response.ok(null, "Recordatorios ejecutados manualmente por RecordatorioService");
         } catch (Exception e) {
             return Response.error(null, "Error al ejecutar recordatorios: " + e.getMessage());
         }
     }
+
+    @Autowired
+    private unpsjb.labprog.backend.business.service.TurnoAutomationService turnoAutomationService;
+
+    // DEBUG - ejecutar curl -X POST
+    // http://localhost:8080/turno/ejecutar-cancelacion-automatica
+    @PostMapping("/ejecutar-cancelacion-automatica")
+    public ResponseEntity<Object> ejecutarCancelacionAutomaticaManual() {
+        try {
+            turnoAutomationService.ejecutarCancelacionManual();
+            return Response.ok(null, "Cancelación automática de turnos ejecutada manualmente");
+        } catch (Exception e) {
+            return Response.error(null, "Error al ejecutar cancelación automática: " + e.getMessage());
+        }
+    }
+
+    // ===============================
+    // ENDPOINTS DE HISTORIAL DE PACIENTE
+    // ===============================
+
+    /**
+     * Obtiene el historial completo de turnos de un paciente sin filtros
+     * GET /turno/historial/{pacienteId}?page=0&size=20
+     */
+    @GetMapping("/historial/{pacienteId}")
+    public ResponseEntity<Object> getHistorialPaciente(
+            @PathVariable Integer pacienteId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            Page<unpsjb.labprog.backend.dto.HistorialTurnoDTO> historial = service.getHistorialPaciente(pacienteId,
+                    page, size);
+
+            Map<String, Object> response = Map.of(
+                    "content", historial.getContent(),
+                    "totalElements", historial.getTotalElements(),
+                    "totalPages", historial.getTotalPages(),
+                    "currentPage", historial.getNumber(),
+                    "size", historial.getSize(),
+                    "first", historial.isFirst(),
+                    "last", historial.isLast(),
+                    "numberOfElements", historial.getNumberOfElements());
+
+            return Response.ok(response, "Historial del paciente recuperado correctamente");
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener historial: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene el historial de turnos de un paciente con filtros avanzados
+     * GET
+     * /turno/historial/{pacienteId}/filtrado?estado=COMPLETO&fechaDesde=2024-01-01&page=0&size=20
+     */
+    @GetMapping("/historial/{pacienteId}/filtrado")
+    public ResponseEntity<Object> getHistorialPacienteFiltrado(
+            @PathVariable Integer pacienteId,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "fecha") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+        try {
+            // Parsear fechas
+            LocalDate fechaDesdeDate = fechaDesde != null && !fechaDesde.trim().isEmpty()
+                    ? LocalDate.parse(fechaDesde)
+                    : null;
+            LocalDate fechaHastaDate = fechaHasta != null && !fechaHasta.trim().isEmpty()
+                    ? LocalDate.parse(fechaHasta)
+                    : null;
+
+            Page<unpsjb.labprog.backend.dto.HistorialTurnoDTO> historial = service.getHistorialPacienteFiltrado(
+                    pacienteId,
+                    estado,
+                    fechaDesdeDate,
+                    fechaHastaDate,
+                    page,
+                    size,
+                    sortBy,
+                    sortDir);
+
+            Map<String, Object> response = Map.of(
+                    "content", historial.getContent(),
+                    "totalElements", historial.getTotalElements(),
+                    "totalPages", historial.getTotalPages(),
+                    "currentPage", historial.getNumber(),
+                    "size", historial.getSize(),
+                    "first", historial.isFirst(),
+                    "last", historial.isLast(),
+                    "numberOfElements", historial.getNumberOfElements());
+
+            return Response.ok(response, "Historial filtrado recuperado correctamente");
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener historial filtrado: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene el historial con filtros usando POST (para filtros complejos)
+     * POST /turno/historial/{pacienteId}/buscar
+     * Body: HistorialFilterDTO
+     */
+    @PostMapping("/historial/{pacienteId}/buscar")
+    public ResponseEntity<Object> buscarHistorialPaciente(
+            @PathVariable Integer pacienteId,
+            @RequestBody unpsjb.labprog.backend.dto.HistorialFilterDTO filter) {
+        try {
+            Page<unpsjb.labprog.backend.dto.HistorialTurnoDTO> historial = service.getHistorialPacienteFiltrado(
+                    pacienteId,
+                    filter.getEstado(),
+                    filter.getFechaDesde(),
+                    filter.getFechaHasta(),
+                    filter.getPage() != null ? filter.getPage() : 0,
+                    filter.getSize() != null ? filter.getSize() : 20,
+                    filter.getSortBy() != null ? filter.getSortBy() : "fecha",
+                    filter.getSortDirection() != null ? filter.getSortDirection() : "DESC");
+
+            Map<String, Object> response = Map.of(
+                    "content", historial.getContent(),
+                    "totalElements", historial.getTotalElements(),
+                    "totalPages", historial.getTotalPages(),
+                    "currentPage", historial.getNumber(),
+                    "size", historial.getSize(),
+                    "first", historial.isFirst(),
+                    "last", historial.isLast(),
+                    "numberOfElements", historial.getNumberOfElements(),
+                    "filtros", filter);
+
+            return Response.ok(response, "Búsqueda de historial completada correctamente");
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error en búsqueda de historial: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene estadísticas del historial de un paciente
+     * GET /turno/historial/{pacienteId}/estadisticas
+     */
+    @GetMapping("/historial/{pacienteId}/estadisticas")
+    public ResponseEntity<Object> getEstadisticasHistorial(@PathVariable Integer pacienteId) {
+        try {
+            Map<String, Object> estadisticas = service.getEstadisticasHistorialPaciente(pacienteId);
+            return Response.ok(estadisticas, "Estadísticas del historial recuperadas correctamente");
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener estadísticas: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene los turnos próximos de un paciente
+     * GET /turno/historial/{pacienteId}/proximos?dias=30
+     */
+    @GetMapping("/historial/{pacienteId}/proximos")
+    public ResponseEntity<Object> getTurnosProximos(
+            @PathVariable Integer pacienteId,
+            @RequestParam(defaultValue = "30") Integer dias) {
+        try {
+            List<unpsjb.labprog.backend.dto.HistorialTurnoDTO> turnosProximos = service
+                    .getTurnosProximosPaciente(pacienteId, dias);
+
+            Map<String, Object> response = Map.of(
+                    "turnos", turnosProximos,
+                    "cantidad", turnosProximos.size(),
+                    "diasConsiderados", dias);
+
+            return Response.ok(response, "Turnos próximos recuperados correctamente");
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener turnos próximos: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene los turnos cancelados de un paciente
+     * GET /turno/historial/{pacienteId}/cancelados?page=0&size=10
+     */
+    @GetMapping("/historial/{pacienteId}/cancelados")
+    public ResponseEntity<Object> getTurnosCancelados(
+            @PathVariable Integer pacienteId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<unpsjb.labprog.backend.dto.HistorialTurnoDTO> turnosCancelados = service
+                    .getTurnosCanceladosPaciente(pacienteId, page, size);
+
+            Map<String, Object> response = Map.of(
+                    "content", turnosCancelados.getContent(),
+                    "totalElements", turnosCancelados.getTotalElements(),
+                    "totalPages", turnosCancelados.getTotalPages(),
+                    "currentPage", turnosCancelados.getNumber(),
+                    "size", turnosCancelados.getSize());
+
+            return Response.ok(response, "Turnos cancelados recuperados correctamente");
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener turnos cancelados: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Verifica si un paciente tiene turnos pendientes
+     * GET /turno/historial/{pacienteId}/tiene-pendientes
+     */
+    @GetMapping("/historial/{pacienteId}/tiene-pendientes")
+    public ResponseEntity<Object> tieneTurnosPendientes(@PathVariable Integer pacienteId) {
+        try {
+            boolean tienePendientes = service.tieneTurnosPendientes(pacienteId);
+
+            Map<String, Object> response = Map.of(
+                    "tieneTurnosPendientes", tienePendientes,
+                    "pacienteId", pacienteId);
+
+            return Response.ok(response,
+                    tienePendientes ? "El paciente tiene turnos pendientes" : "El paciente no tiene turnos pendientes");
+        } catch (Exception e) {
+            return Response.error(null, "Error al verificar turnos pendientes: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Exporta el historial de un paciente a CSV
+     * GET
+     * /turno/historial/{pacienteId}/export/csv?estado=COMPLETO&fechaDesde=2024-01-01
+     */
+    @GetMapping("/historial/{pacienteId}/export/csv")
+    public ResponseEntity<String> exportarHistorialCSV(
+            @PathVariable Integer pacienteId,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta) {
+        try {
+            // Parsear fechas
+            LocalDate fechaDesdeDate = fechaDesde != null && !fechaDesde.trim().isEmpty()
+                    ? LocalDate.parse(fechaDesde)
+                    : null;
+            LocalDate fechaHastaDate = fechaHasta != null && !fechaHasta.trim().isEmpty()
+                    ? LocalDate.parse(fechaHasta)
+                    : null;
+
+            // Obtener historial completo para exportación
+            List<unpsjb.labprog.backend.dto.HistorialTurnoDTO> historial = service.exportarHistorialPaciente(pacienteId,
+                    estado, fechaDesdeDate, fechaHastaDate);
+
+            // Generar CSV
+            StringBuilder csv = new StringBuilder();
+            csv.append(
+                    "ID,Fecha,Hora Inicio,Hora Fin,Estado,Médico,Especialidad,Centro,Consultorio,Observaciones,Total Modificaciones\n");
+
+            for (unpsjb.labprog.backend.dto.HistorialTurnoDTO turno : historial) {
+                csv.append(String.format("%d,%s,%s,%s,%s,\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%d\n",
+                        turno.getId(),
+                        turno.getFecha(),
+                        turno.getHoraInicio(),
+                        turno.getHoraFin(),
+                        turno.getEstado(),
+                        turno.getNombreCompletoMedico(),
+                        turno.getEspecialidadStaffMedico() != null ? turno.getEspecialidadStaffMedico() : "",
+                        turno.getNombreCentro() != null ? turno.getNombreCentro() : "",
+                        turno.getConsultorioNombre() != null ? turno.getConsultorioNombre() : "",
+                        turno.getObservaciones() != null ? turno.getObservaciones().replace("\"", "\"\"") : "",
+                        turno.getTotalModificaciones() != null ? turno.getTotalModificaciones() : 0));
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+            headers.setContentDispositionFormData("attachment", "historial_paciente_" + pacienteId + ".csv");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(csv.toString());
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al exportar historial: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Obtiene el detalle completo de un turno del historial
+     * GET /turno/historial/detalle/{turnoId}
+     */
+    @GetMapping("/historial/detalle/{turnoId}")
+    public ResponseEntity<Object> getDetalleHistorial(@PathVariable Integer turnoId) {
+        try {
+            unpsjb.labprog.backend.dto.HistorialTurnoDTO detalle = service.getHistorialTurnoById(turnoId);
+            return Response.ok(detalle, "Detalle del historial recuperado correctamente");
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener detalle: " + e.getMessage());
+        }
+    }
+
 }

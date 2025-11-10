@@ -2,6 +2,8 @@ package unpsjb.labprog.backend.business.service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,11 +22,14 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityNotFoundException;
 import unpsjb.labprog.backend.business.repository.ConsultorioRepository;
 import unpsjb.labprog.backend.business.repository.PacienteRepository;
 import unpsjb.labprog.backend.business.repository.StaffMedicoRepository;
 import unpsjb.labprog.backend.business.repository.TurnoRepository;
+
 import unpsjb.labprog.backend.dto.CancelacionDataDTO;
+import unpsjb.labprog.backend.dto.HistorialTurnoDTO;
 import unpsjb.labprog.backend.dto.TurnoDTO;
 import unpsjb.labprog.backend.dto.TurnoFilterDTO;
 import unpsjb.labprog.backend.dto.ValidacionContactoDTO;
@@ -52,6 +57,9 @@ public class TurnoService {
 
     @Autowired
     private StaffMedicoRepository staffMedicoRepository;
+
+    @Autowired
+    private ListaEsperaService listaEsperaService;
 
     @Autowired
     private ConsultorioRepository consultorioRepository;
@@ -241,16 +249,17 @@ public class TurnoService {
 
     /**
      * Búsqueda paginada avanzada con filtros y ordenamiento
-     * @param page Número de página (0-based)
-     * @param size Tamaño de página
-     * @param paciente Filtro por nombre o apellido del paciente (opcional)
-     * @param medico Filtro por nombre o apellido del médico (opcional)
+     * 
+     * @param page        Número de página (0-based)
+     * @param size        Tamaño de página
+     * @param paciente    Filtro por nombre o apellido del paciente (opcional)
+     * @param medico      Filtro por nombre o apellido del médico (opcional)
      * @param consultorio Filtro por nombre del consultorio (opcional)
-     * @param estado Filtro por estado del turno (opcional)
-     * @param fechaDesde Filtro por fecha desde (formato: yyyy-MM-dd, opcional)
-     * @param fechaHasta Filtro por fecha hasta (formato: yyyy-MM-dd, opcional)
-     * @param sortBy Campo para ordenar (opcional)
-     * @param sortDir Dirección del ordenamiento (asc/desc, opcional)
+     * @param estado      Filtro por estado del turno (opcional)
+     * @param fechaDesde  Filtro por fecha desde (formato: yyyy-MM-dd, opcional)
+     * @param fechaHasta  Filtro por fecha hasta (formato: yyyy-MM-dd, opcional)
+     * @param sortBy      Campo para ordenar (opcional)
+     * @param sortDir     Dirección del ordenamiento (asc/desc, opcional)
      * @return Page<TurnoDTO> con los resultados paginados
      */
     public Page<TurnoDTO> findByPage(
@@ -306,8 +315,8 @@ public class TurnoService {
 
         // Ejecutar consulta con filtros
         Page<Turno> result = repository.findByFiltros(
-            paciente, medico, consultorio, estadoEnum, 
-            fechaDesdeParsed, fechaHastaParsed, pageable);
+                paciente, medico, consultorio, estadoEnum,
+                fechaDesdeParsed, fechaHastaParsed, pageable);
 
         // Mapear a DTO
         return result.map(this::toDTO);
@@ -407,6 +416,10 @@ public class TurnoService {
 
         // Enviar notificación por email si el paciente tiene email verificado
         enviarNotificacionCancelacionEmail(savedTurno, cancelacionData, validacionContacto, performedBy);
+
+        // Buscar pacientes en lista de espera que coincidan con el turno cancelado
+        boolean buscarPacienteParaReasignar = listaEsperaService.buscarPacienteParaReasignar(savedTurno);
+        System.out.println("Estado buscarPacienteParaReasignar: " + buscarPacienteParaReasignar);
 
         return toDTO(savedTurno);
     }
@@ -510,57 +523,86 @@ public class TurnoService {
         return toDTO(savedTurno);
     }
 
-    // Método actualizado para validar ventana de confirmación
+    // Método mejorado para validar ventana de confirmación
     private void validarVentanaConfirmacion(Turno turno, String rol) {
-        // Los administradores y operadores pueden confirmar en cualquier momento
+        // Administradores y operadores pueden confirmar sin restricciones
         if ("ADMINISTRADOR".equals(rol) || "OPERADOR".equals(rol)) {
             return;
         }
 
-        // Validar que las configuraciones sean consistentes
+        // Validar consistencia de configuraciones
         configuracionService.validarConfiguracionesTurnos();
         configuracionService.validarConfiguracionesRecordatorios();
 
+        ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
         LocalDate hoy = LocalDate.now();
+        LocalTime horaActual = LocalTime.now(zoneId);
         long diasRestantes = ChronoUnit.DAYS.between(hoy, turno.getFecha());
 
         int diasMin = configuracionService.getDiasMinConfirmacion();
         int diasMax = configuracionService.getDiasMaxNoConfirm();
+        LocalTime horaCorte = configuracionService.getHoraCorteConfirmacion();
+        LocalTime ahoraHora = LocalTime.now(zoneId);
 
-        // No se puede confirmar el mismo día o en el pasado
+        // Calcular ventana de confirmación
+        LocalDate fechaInicioConfirmacion = turno.getFecha().minusDays(diasMax);
+        LocalDate fechaFinConfirmacion = turno.getFecha().minusDays(diasMin);
+
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        // 🧩 LOGS DE DEPURACIÓN
+        System.out.println("🕒 --- VALIDACIÓN DE CONFIRMACIÓN DE TURNO ---");
+        System.out.println("📅 Fecha actual: " + hoy);
+        System.out.println("🕓 Hora actual: " + horaActual);
+        System.out.println("📅 Fecha del turno: " + turno.getFecha());
+        System.out.println("🕑 Hora del turno: " + turno.getHoraInicio());
+        System.out.println("📉 Días restantes: " + diasRestantes);
+        System.out.println(
+                "⚙️  Configuración -> Mínimo: " + diasMin + ", Máximo: " + diasMax + ", Hora corte: " + horaCorte);
+        System.out.println("👤 Rol del usuario: " + rol);
+        System.out.println("🕓 Hora actual: " + ahoraHora);
+        System.out.println("--------------------------------------------------");
+
+        // Validaciones
         if (diasRestantes <= 0) {
-            throw new IllegalStateException("No se pueden confirmar turnos el mismo día o fechas pasadas");
+            throw new IllegalStateException(
+                    "Este turno ya ocurrió o es para hoy. Solo se pueden confirmar turnos con anticipación. " +
+                            "Por favor, comunicate con el centro de atención si necesitás reprogramarlo.");
         }
 
-        // No se puede confirmar con menos días de anticipación del mínimo
         if (diasRestantes < diasMin) {
-            throw new IllegalStateException(
-                    String.format("Los turnos deben confirmarse al menos %d días antes de la fecha programada",
-                            diasMin));
+            throw new IllegalStateException(String.format(
+                    "No podés confirmar este turno porque faltan menos de %d días. " +
+                            "Los turnos deben confirmarse con al menos %d días de anticipación (hasta el %s antes de las %s).",
+                    diasMin, diasMin,
+                    fechaFinConfirmacion.format(dateFormatter),
+                    horaCorte.format(timeFormatter)));
         }
 
-        // No se puede confirmar con demasiada anticipación
         if (diasRestantes > diasMax) {
-            throw new IllegalStateException(
-                    String.format("Los turnos solo pueden confirmarse entre %d y %d días antes de la fecha", diasMin,
-                            diasMax));
+            throw new IllegalStateException(String.format(
+                    "Aún no podés confirmar este turno. " +
+                            "Las confirmaciones se habilitan entre %d y %d días antes de la fecha del turno, " +
+                            "es decir, entre el %s y el %s (hora límite %s).",
+                    diasMax, diasMin,
+                    fechaInicioConfirmacion.format(dateFormatter),
+                    fechaFinConfirmacion.format(dateFormatter),
+                    horaCorte.format(timeFormatter)));
         }
 
-        // Validar hora de corte si es el último día permitido
-        if (diasRestantes == diasMin) {
-            LocalTime ahoraHora = LocalTime.now();
-            LocalTime horaCorte = configuracionService.getHoraCorteConfirmacion();
-
-            if (ahoraHora.isAfter(horaCorte)) {
-                throw new IllegalStateException(
-                        String.format(
-                                "Ya pasó la hora límite para confirmar (%s). Los turnos deben confirmarse antes de las %s del día %d previo.",
-                                horaCorte.toString(), horaCorte.toString(), diasMin));
-            }
+        if (diasRestantes == diasMin && horaActual.isAfter(horaCorte)) {
+            throw new IllegalStateException(String.format(
+                    "Ya pasó la hora límite de confirmación (%s). " +
+                            "Podías confirmar este turno hasta las %s del día %s.",
+                    horaCorte.format(timeFormatter),
+                    horaCorte.format(timeFormatter),
+                    fechaFinConfirmacion.format(dateFormatter)));
         }
     }
 
-    /* // Cancelación automática actualizada
+    // Cancelación automática actualizada
+
     @Scheduled(cron = "0 0 0 * * ?") // Diariamente a las 00:00
     @Transactional
     public void cancelarTurnosNoConfirmadosAutomaticamente() {
@@ -580,7 +622,8 @@ public class TurnoService {
                 Arrays.asList(EstadoTurno.PROGRAMADO, EstadoTurno.REAGENDADO),
                 fechaLimite);
 
-        System.out.println("Turnos a evaluar para cancelación: " + turnosACancelar.size());
+        System.out.println("Turnos a evaluar para cancelación: " +
+                turnosACancelar.size());
 
         for (Turno turno : turnosACancelar) {
             try {
@@ -591,7 +634,8 @@ public class TurnoService {
 
                 cancelarTurno(turno.getId(), motivo, "SYSTEM_AUTO");
 
-                System.out.println("Turno ID " + turno.getId() + " cancelado automáticamente");
+                System.out.println("Turno ID " + turno.getId() +
+                        " cancelado automáticamente");
 
             } catch (Exception e) {
                 System.err.println("Error al cancelar automáticamente turno ID " +
@@ -600,186 +644,17 @@ public class TurnoService {
         }
 
         System.out.println("Cancelación automática completada");
-    } */
-
-    // === SISTEMA DE RECORDATORIOS ===
-    @Scheduled(cron = "0 0 9 * * ?") // Por defecto a las 9:00 AM, pero configurable
-    @Transactional
-    public void enviarRecordatoriosConfirmacion() {
-        if (!configuracionService.isHabilitadosRecordatorios()) {
-            System.out.println("Recordatorios de confirmación deshabilitados por configuración");
-            return;
-        }
-
-
-        LocalDate hoy = LocalDate.now();
-        int diasRecordatorio = configuracionService.getDiasRecordatorioConfirmacion();
-        LocalDate fechaObjetivo = hoy.plusDays(diasRecordatorio);
-
-        System.out.println(String.format("Enviando recordatorios para turnos del: %s (%d días de anticipación)",
-                fechaObjetivo, diasRecordatorio));
-
-        List<Turno> turnosParaRecordar = repository.findByEstadoInAndFecha(
-                Arrays.asList(EstadoTurno.PROGRAMADO, EstadoTurno.REAGENDADO),
-                fechaObjetivo);
-
-        System.out.println("Turnos encontrados para recordatorio: " + turnosParaRecordar.size());
-
-        for (Turno turno : turnosParaRecordar) {
-            try {
-                enviarRecordatorioConfirmacion(turno);
-                System.out.println("Recordatorio enviado para turno ID: " + turno.getId());
-            } catch (Exception e) {
-                System.err.println("Error al enviar recordatorio para turno ID " +
-                        turno.getId() + ": " + e.getMessage());
-            }
-        }
-
-        System.out.println("Proceso de recordatorios completado");
     }
 
-    private void enviarRecordatorioConfirmacion(Turno turno) {
-        try {
-            String fechaTurno = formatearFechaTurno(turno);
-            String especialidad = obtenerEspecialidadTurno(turno);
-            String medico = obtenerNombreMedico(turno);
-
-            int diasMin = configuracionService.getDiasMinConfirmacion();
-            LocalTime horaCorte = configuracionService.getHoraCorteConfirmacion();
-            LocalDate fechaLimite = LocalDate.now().plusDays(diasMin);
-
-            String mensaje = String.format(
-                    "RECORDATORIO: Debe confirmar su turno del %s con Dr/a %s (%s). " +
-                            "Tiene hasta el %s a las %s para confirmar. " +
-                            "De lo contrario, el turno será cancelado automáticamente.",
-                    fechaTurno, medico, especialidad, fechaLimite, horaCorte);
-
-            // Crear notificación en el sistema
-            notificacionService.crearNotificacion(
-                    turno.getPaciente().getId(),
-                    "Recordatorio de Confirmación",
-                    mensaje,
-                    TipoNotificacion.RECORDATORIO,
-                    turno.getId(),
-                    "SYSTEM_REMINDER");
-
-            // Enviar email si está habilitado
-            if (configuracionService.isHabilitadoEmailNotificaciones()) {
-                enviarEmailRecordatorio(turno, mensaje);
-            }
-
-            // TODO: Enviar SMS si está habilitado
-            if (configuracionService.isHabilitadoSmsNotificaciones()) {
-                // enviarSmsRecordatorio(turno, mensaje);
-                System.out.println("TODO: Implementar envío de SMS para turno ID: " + turno.getId());
-            }
-
-        } catch (Exception e) {
-            System.err.println("Error al crear recordatorio: " + e.getMessage());
-            throw e; // Re-lanzar para que se registre el error
-        }
-    }
-
-    private void enviarEmailRecordatorio(Turno turno, String mensaje) {
-        try {
-            if (turno.getPaciente().getEmail() != null && !turno.getPaciente().getEmail().trim().isEmpty()) {
-                String patientEmail = turno.getPaciente().getEmail();
-                String patientName = turno.getPaciente().getNombre() + " " + turno.getPaciente().getApellido();
-
-                // Construir detalles más ricos para el email
-                String detallesEmail = construirDetallesRecordatorioEmail(turno);
-
-                emailService.sendAppointmentReminderEmail(patientEmail, patientName, detallesEmail);
-                System.out.println("Email de recordatorio enviado a: " + patientEmail +
-                        " para turno ID: " + turno.getId());
-            }
-        } catch (Exception e) {
-            System.err.println("Error al enviar email de recordatorio: " + e.getMessage());
-        }
-    }
-
-    private String construirDetallesRecordatorioEmail(Turno turno) {
-        StringBuilder detalles = new StringBuilder();
-
-        detalles.append("<h3>Recordatorio de Confirmación de Turno</h3>");
-        detalles.append("<p><strong>Fecha y Hora:</strong> ").append(formatearFechaTurno(turno)).append("</p>");
-        detalles.append("<p><strong>Especialidad:</strong> ").append(obtenerEspecialidadTurno(turno)).append("</p>");
-        detalles.append("<p><strong>Médico:</strong> Dr/a. ").append(obtenerNombreMedico(turno)).append("</p>");
-
-        if (turno.getConsultorio() != null) {
-            detalles.append("<p><strong>Consultorio:</strong> ").append(turno.getConsultorio().getNombre());
-            if (turno.getConsultorio().getCentroAtencion() != null) {
-                detalles.append(" - ").append(turno.getConsultorio().getCentroAtencion().getNombre());
-            }
-            detalles.append("</p>");
-        }
-
-        detalles.append("<p><strong>Número de Turno:</strong> #").append(turno.getId()).append("</p>");
-
-        // Información sobre límites de confirmación
-        int diasMin = configuracionService.getDiasMinConfirmacion();
-        LocalTime horaCorte = configuracionService.getHoraCorteConfirmacion();
-        LocalDate fechaLimite = LocalDate.now().plusDays(diasMin);
-
-        detalles.append("<hr>");
-        detalles.append(
-                "<p><strong style='color: #d32f2f;'>IMPORTANTE:</strong> Debe confirmar este turno antes del <strong>");
-        detalles.append(fechaLimite).append(" a las ").append(horaCorte).append("</strong></p>");
-        detalles.append("<p>Si no confirma a tiempo, el turno será cancelado automáticamente.</p>");
-
-        // Instrucciones de confirmación
-        detalles.append("<hr>");
-        detalles.append("<p><strong>¿Cómo confirmar?</strong></p>");
-        detalles.append("<ul>");
-        detalles.append("<li>Ingrese a su cuenta en el portal del paciente</li>");
-        detalles.append("<li>Llame al teléfono de la clínica</li>");
-        detalles.append("<li>Acérquese personalmente a recepción</li>");
-        detalles.append("</ul>");
-
-        return detalles.toString();
-    }
-    // === MÉTODOS AUXILIARES PARA RECORDATORIOS ===
+    // Nota: Los recordatorios automáticos ahora son manejados por
+    // RecordatorioService
+    // Los métodos de notificación individuales (confirmar, cancelar, etc.)
+    // permanecen aquí
 
     /**
-     * Obtiene estadísticas de recordatorios enviados
+     * Método para obtener configuración actual del sistema
+     * (las estadísticas de recordatorios ahora están en RecordatorioService)
      */
-    public Map<String, Object> getEstadisticasRecordatorios() {
-        Map<String, Object> stats = new HashMap<>();
-
-        try {
-            stats.put("recordatorios_habilitados", configuracionService.isHabilitadosRecordatorios());
-            stats.put("hora_envio", configuracionService.getHoraEnvioRecordatorios().toString());
-            stats.put("sistema_funcionando", true);
-        } catch (Exception e) {
-            stats.put("error", "Error al obtener estadísticas: " + e.getMessage());
-            stats.put("sistema_funcionando", false);
-        }
-
-        return stats;
-    }
-
-    /**
-     * Método para obtener turnos que necesitan recordatorio (para debugging)
-     */
-    public List<TurnoDTO> getTurnosParaRecordatorio() {
-        if (!configuracionService.isHabilitadosRecordatorios()) {
-            return Collections.emptyList();
-        }
-
-        LocalDate hoy = LocalDate.now();
-        int diasRecordatorio = configuracionService.getDiasRecordatorioConfirmacion();
-        LocalDate fechaObjetivo = hoy.plusDays(diasRecordatorio);
-
-        List<Turno> turnos = repository.findByEstadoInAndFecha(
-                Arrays.asList(EstadoTurno.PROGRAMADO, EstadoTurno.REAGENDADO),
-                fechaObjetivo);
-
-        return turnos.stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    // Método para obtener configuración actual del sistema (actualizado)
     public Map<String, Object> getConfiguracionSistema() {
         Map<String, Object> config = new HashMap<>();
 
@@ -788,9 +663,6 @@ public class TurnoService {
 
         // Configuraciones de notificaciones
         config.putAll(configuracionService.getResumenConfiguracionNotificaciones());
-
-        // Estado del sistema de recordatorios
-        config.putAll(getEstadisticasRecordatorios());
 
         return config;
     }
@@ -863,6 +735,90 @@ public class TurnoService {
         }
 
         return getValidNextStates(turnoOpt.get().getEstado());
+    }
+
+    @Transactional
+    public TurnoDTO marcarAsistencia(Integer turnoId, Boolean asistio, String performedBy) {
+        // Validar que asistio no sea null
+        if (asistio == null) {
+            throw new IllegalArgumentException("El parámetro 'asistio' no puede ser nulo");
+        }
+
+        // Buscar el turno
+        Turno turno = repository.findById(turnoId)
+                .orElseThrow(() -> new EntityNotFoundException("Turno no encontrado con ID: " + turnoId));
+
+        // Guardar estado anterior ANTES de modificar
+        EstadoTurno previousStatus = turno.getEstado();
+        Boolean previousAsistio = turno.getAsistio();
+
+        // Validar que el turno pueda ser modificado
+        validarMarcadoAsistencia(turno);
+
+        // ============ OPCIÓN 2: LÓGICA SEPARADA ============
+        // Actualizar solo el campo de asistencia
+        turno.setAsistio(asistio);
+
+        // El estado NO cambia automáticamente
+        // Solo sincronizamos el estado AUSENTE para mantener compatibilidad
+        if (!asistio && (turno.getEstado() == EstadoTurno.CONFIRMADO ||
+                turno.getEstado() == EstadoTurno.PROGRAMADO)) {
+            // Si marca como no asistido, cambiar a AUSENTE (backward compatibility)
+            turno.setEstado(EstadoTurno.AUSENTE);
+        }
+        // Si asistió, el médico debe marcarlo como COMPLETO manualmente después
+        // NO lo marcamos automáticamente como COMPLETO aquí
+
+        // Guardar cambios
+        Turno savedTurno = repository.save(turno);
+
+        // Registrar auditoría con contexto correcto
+        try {
+            String mensaje = asistio ? "Paciente marcado como PRESENTE - Pendiente atención"
+                    : "Paciente marcado como AUSENTE";
+
+            auditLogService.logAsistenciaRegistrada(
+                    savedTurno,
+                    previousStatus,
+                    previousAsistio,
+                    performedBy,
+                    mensaje);
+        } catch (Exception e) {
+            System.err.println("Error al registrar auditoría de asistencia: " + e.getMessage());
+        }
+
+        return toDTO(savedTurno);
+    }
+
+    private void validarMarcadoAsistencia(Turno turno) {
+        // No se puede modificar turnos cancelados
+        if (turno.getEstado() == EstadoTurno.CANCELADO) {
+            throw new IllegalStateException("No se puede marcar asistencia en un turno cancelado");
+        }
+
+        // No se puede modificar turnos reagendados
+        if (turno.getEstado() == EstadoTurno.REAGENDADO) {
+            throw new IllegalStateException("No se puede marcar asistencia en un turno reagendado");
+        }
+
+        // Validar que sea un turno del día actual o pasado
+        LocalDate today = LocalDate.now();
+        if (turno.getFecha().isAfter(today)) {
+            throw new IllegalStateException(
+                    "No se puede marcar asistencia para un turno futuro. Fecha del turno: " +
+                            turno.getFecha());
+        }
+
+        // OPCIÓN 2: Permitir marcar asistencia en estados relevantes
+        // Incluimos AUSENTE y COMPLETO porque pueden necesitar corrección
+        if (turno.getEstado() != EstadoTurno.CONFIRMADO &&
+                turno.getEstado() != EstadoTurno.PROGRAMADO &&
+                turno.getEstado() != EstadoTurno.COMPLETO &&
+                turno.getEstado() != EstadoTurno.AUSENTE) {
+            throw new IllegalStateException(
+                    "Solo se puede marcar asistencia en turnos PROGRAMADOS, CONFIRMADOS, COMPLETOS o AUSENTES. Estado actual: "
+                            + turno.getEstado());
+        }
     }
 
     /**
@@ -1004,10 +960,27 @@ public class TurnoService {
         dto.setPacienteId(turno.getPaciente().getId());
         dto.setNombrePaciente(turno.getPaciente().getNombre());
         dto.setApellidoPaciente(turno.getPaciente().getApellido());
-        dto.setStaffMedicoId(turno.getStaffMedico().getId());
-        dto.setStaffMedicoNombre(turno.getStaffMedico().getMedico().getNombre());
-        dto.setStaffMedicoApellido(turno.getStaffMedico().getMedico().getApellido());
-        dto.setEspecialidadStaffMedico(turno.getStaffMedico().getEspecialidad().getNombre());
+
+        // Datos del médico: usar staffMedico si existe, sino usar campos de auditoría
+        if (turno.getStaffMedico() != null) {
+            dto.setStaffMedicoId(turno.getStaffMedico().getId());
+            dto.setStaffMedicoNombre(turno.getStaffMedico().getMedico().getNombre());
+            dto.setStaffMedicoApellido(turno.getStaffMedico().getMedico().getApellido());
+            dto.setEspecialidadStaffMedico(turno.getStaffMedico().getEspecialidad().getNombre());
+        } else {
+            // StaffMedico fue desvinculado, usar campos de auditoría
+            dto.setStaffMedicoId(null);
+            if (turno.getMedico() != null) {
+                dto.setStaffMedicoNombre(turno.getMedico().getNombre());
+                dto.setStaffMedicoApellido(turno.getMedico().getApellido());
+            }
+            if (turno.getEspecialidad() != null) {
+                dto.setEspecialidadStaffMedico(turno.getEspecialidad().getNombre());
+            }
+        }
+
+        // Nuevo campo de observaciones
+        dto.setObservaciones(turno.getObservaciones());
 
         // Validar si consultorio no es null antes de acceder a sus propiedades
         if (turno.getConsultorio() != null) {
@@ -1018,8 +991,14 @@ public class TurnoService {
         } else {
             dto.setConsultorioId(null);
             dto.setConsultorioNombre(null);
-            dto.setCentroId(null);
-            dto.setNombreCentro(null);
+            // Usar centro de auditoría como fallback si existe
+            if (turno.getCentroAtencion() != null) {
+                dto.setCentroId(turno.getCentroAtencion().getId());
+                dto.setNombreCentro(turno.getCentroAtencion().getNombre());
+            } else {
+                dto.setCentroId(null);
+                dto.setNombreCentro(null);
+            }
         }
 
         return dto;
@@ -1033,6 +1012,9 @@ public class TurnoService {
         turno.setFecha(dto.getFecha());
         turno.setHoraInicio(dto.getHoraInicio());
         turno.setHoraFin(dto.getHoraFin());
+
+        // Nuevo campo de observaciones
+        turno.setObservaciones(dto.getObservaciones());
 
         // Si no se especifica estado, usar PROGRAMADO por defecto
         if (dto.getEstado() != null && !dto.getEstado().isEmpty()) {
@@ -1053,6 +1035,11 @@ public class TurnoService {
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Médico no encontrado con ID: " + dto.getStaffMedicoId()));
             turno.setStaffMedico(staffMedico);
+
+            // Campos de auditoría: preservar información histórica
+            turno.setMedico(staffMedico.getMedico());
+            turno.setEspecialidad(staffMedico.getEspecialidad());
+            turno.setCentroAtencion(staffMedico.getCentroAtencion());
         }
 
         if (dto.getConsultorioId() != null) {
@@ -1346,7 +1333,7 @@ public class TurnoService {
             List<AuditLog> auditHistory = auditLogService.getTurnoAuditHistory(turno.getId());
             if (!auditHistory.isEmpty()) {
                 // Obtener la última modificación
-                AuditLog lastAudit = auditHistory.get(0); // Ya están ordenados por fecha desc
+                AuditLog lastAudit = auditHistory.get(0); // Ya están ordenados por fecha
                 dto.setUltimoUsuarioModificacion(lastAudit.getPerformedBy());
                 dto.setFechaUltimaModificacion(lastAudit.getPerformedAt());
                 dto.setMotivoUltimaModificacion(lastAudit.getReason());
@@ -1357,7 +1344,8 @@ public class TurnoService {
             }
         } catch (Exception e) {
             // Si hay error al obtener auditoría, no fallar la consulta principal
-            System.err.println("Error al obtener auditoría para turno " + turno.getId() + ": " + e.getMessage());
+            System.err.println("Error al obtener auditoría para turno " + turno.getId() +
+                    ": " + e.getMessage());
             dto.setTotalModificaciones(0);
         }
 
@@ -1567,7 +1555,9 @@ public class TurnoService {
 
             // Registrar auditoría de notificación in-app exitosa
             registrarAuditoriaNotificacion(turno, "IN_APP", "SUCCESS",
-                    "Notificación in-app enviada exitosamente al paciente " + turno.getPaciente().getNombre() + " " + turno.getPaciente().getApellido(), performedBy);
+                    "Notificación in-app enviada exitosamente al paciente " + turno.getPaciente().getNombre() + " "
+                            + turno.getPaciente().getApellido(),
+                    performedBy);
 
         } catch (Exception e) {
             // Registrar auditoría de notificación fallida
@@ -2162,12 +2152,11 @@ public class TurnoService {
             // Enviar email de forma asíncrona con deep link
             // El EmailService generará automáticamente el deep link token
             emailService.sendAppointmentCancellationEmail(
-                patientEmail, 
-                patientName, 
-                cancellationDetails,
-                pacienteId, 
-                turnoId
-            );
+                    patientEmail,
+                    patientName,
+                    cancellationDetails,
+                    pacienteId,
+                    turnoId);
 
             System.out
                     .println("📧 Email de cancelación enviado a: " + patientEmail + " para turno ID: " + turno.getId());
@@ -2211,7 +2200,8 @@ public class TurnoService {
     /**
      * Registra auditoría para el envío de notificaciones de cancelación de turno
      */
-    private void registrarAuditoriaNotificacion(Turno turno, String notificationChannel, String status, String message, String performedBy) {
+    private void registrarAuditoriaNotificacion(Turno turno, String notificationChannel, String status, String message,
+            String performedBy) {
         try {
             System.out.println("🔍 DEBUG: performedBy = " + performedBy);
 
@@ -2221,30 +2211,37 @@ public class TurnoService {
             Map<String, Object> notificationDetails = new HashMap<>();
             notificationDetails.put("turnoId", turno.getId());
             notificationDetails.put("pacienteId", pacienteId);
-            notificationDetails.put("pacienteNombre", turno.getPaciente() != null ? turno.getPaciente().getNombre() + " " + turno.getPaciente().getApellido() : "N/A");
+            notificationDetails.put("pacienteNombre",
+                    turno.getPaciente() != null
+                            ? turno.getPaciente().getNombre() + " " + turno.getPaciente().getApellido()
+                            : "N/A");
             notificationDetails.put("notificationChannel", notificationChannel);
             notificationDetails.put("status", status);
             notificationDetails.put("message", message);
 
-            System.out.println("🔍 DEBUG: Intentando registrar auditoría - Turno: " + turno.getId() + ", Canal: " + notificationChannel + ", Status: " + status);
+            System.out.println("🔍 DEBUG: Intentando registrar auditoría - Turno: " + turno.getId() + ", Canal: "
+                    + notificationChannel + ", Status: " + status);
 
-            // TODO: BUG - El Map notificationDetails no se serializa correctamente en la DB.
+            // TODO: BUG - El Map notificationDetails no se serializa correctamente en la
+            // DB.
             // Actualmente se guarda el hashCode (ej. 29534) en lugar del JSON esperado.
-            // Necesario: Cambiar columna newValues en AuditLog a TEXT/JSON y serializar Map a JSON en AuditLogService.logGenericAction
+            // Necesario: Cambiar columna newValues en AuditLog a TEXT/JSON y serializar Map
+            // a JSON en AuditLogService.logGenericAction
             // Registrar auditoría genérica
             AuditLog auditLog = auditLogService.logGenericAction(
-                AuditLog.EntityTypes.TURNO,
-                turno.getId().longValue(),
-                AuditLog.Actions.CANCELACION_TURNO_NOTIFICACION,
-                performedBy,
-                null, // estadoAnterior
-                null, // estadoNuevo
-                null, // oldValues
-                notificationDetails, // newValues
-                message // reason
+                    AuditLog.EntityTypes.TURNO,
+                    turno.getId().longValue(),
+                    AuditLog.Actions.CANCELACION_TURNO_NOTIFICACION,
+                    performedBy,
+                    null, // estadoAnterior
+                    null, // estadoNuevo
+                    null, // oldValues
+                    notificationDetails, // newValues
+                    message // reason
             );
 
-            System.out.println("✅ Auditoría registrada exitosamente - ID: " + (auditLog != null ? auditLog.getId() : "NULL"));
+            System.out.println(
+                    "✅ Auditoría registrada exitosamente - ID: " + (auditLog != null ? auditLog.getId() : "NULL"));
 
         } catch (Exception e) {
             System.err.println("❌ ERROR al registrar auditoría de notificación: " + e.getMessage());
@@ -2252,4 +2249,513 @@ public class TurnoService {
             // No re-lanzar para no afectar la operación principal
         }
     }
+
+    /**
+     * Convierte Turno a HistorialTurnoDTO con información completa de auditoría
+     */
+    private HistorialTurnoDTO toHistorialDTO(Turno turno) {
+        HistorialTurnoDTO dto = new HistorialTurnoDTO();
+
+        // Información básica del turno
+        dto.setId(turno.getId());
+        dto.setFecha(turno.getFecha());
+        dto.setHoraInicio(turno.getHoraInicio());
+        dto.setHoraFin(turno.getHoraFin());
+        dto.setEstado(turno.getEstado().name());
+        dto.setObservaciones(turno.getObservaciones());
+        dto.setAsistio(turno.getAsistio());
+        // dto.setFechaRegistroAsistencia(turno.getFechaRegistroAsistencia());
+
+        // Información del paciente
+        if (turno.getPaciente() != null) {
+            dto.setPacienteId(turno.getPaciente().getId());
+            dto.setNombrePaciente(turno.getPaciente().getNombre());
+            dto.setApellidoPaciente(turno.getPaciente().getApellido());
+            dto.setDniPaciente(turno.getPaciente().getDni());
+            dto.setEmailPaciente(turno.getPaciente().getEmail());
+            dto.setTelefonoPaciente(turno.getPaciente().getTelefono());
+        }
+
+        // Información del médico
+        if (turno.getStaffMedico() != null) {
+            dto.setStaffMedicoId(turno.getStaffMedico().getId());
+            if (turno.getStaffMedico().getMedico() != null) {
+                dto.setStaffMedicoNombre(turno.getStaffMedico().getMedico().getNombre());
+                dto.setStaffMedicoApellido(turno.getStaffMedico().getMedico().getApellido());
+            }
+            if (turno.getStaffMedico().getEspecialidad() != null) {
+                dto.setEspecialidadStaffMedico(turno.getStaffMedico().getEspecialidad().getNombre());
+            }
+        }
+
+        // Información del consultorio y centro
+        if (turno.getConsultorio() != null) {
+            dto.setConsultorioId(turno.getConsultorio().getId());
+            dto.setConsultorioNombre(turno.getConsultorio().getNombre());
+
+            if (turno.getConsultorio().getCentroAtencion() != null) {
+                dto.setCentroId(turno.getConsultorio().getCentroAtencion().getId());
+                dto.setNombreCentro(turno.getConsultorio().getCentroAtencion().getNombre());
+                dto.setDireccionCentro(turno.getConsultorio().getCentroAtencion().getDireccion());
+            }
+        }
+
+        // Agregar información de auditoría
+        try {
+            List<AuditLog> auditHistory = auditLogService.getTurnoAuditHistory(turno.getId());
+            if (!auditHistory.isEmpty()) {
+                // Obtener la última modificación
+                AuditLog lastAudit = auditHistory.get(0);
+                dto.setUltimoUsuarioModificacion(lastAudit.getPerformedBy());
+                dto.setFechaUltimaModificacion(lastAudit.getPerformedAt());
+                dto.setMotivoUltimaModificacion(lastAudit.getReason());
+                dto.setTotalModificaciones(auditHistory.size());
+
+                // Información de creación (último elemento de la lista)
+                AuditLog firstAudit = auditHistory.get(auditHistory.size() - 1);
+                dto.setCreadoPor(firstAudit.getPerformedBy());
+                dto.setFechaCreacion(firstAudit.getPerformedAt());
+
+                // Buscar información específica de cancelación
+                auditHistory.stream()
+                        .filter(log -> log.getAction().contains("CANCELACION") ||
+                                log.getEstadoNuevo() != null && log.getEstadoNuevo().equals("CANCELADO"))
+                        .findFirst()
+                        .ifPresent(cancelLog -> {
+                            dto.setMotivoCancelacion(cancelLog.getReason());
+                            dto.setFechaCancelacion(cancelLog.getPerformedAt());
+                            dto.setUsuarioCancelacion(cancelLog.getPerformedBy());
+                            dto.setEstadoAnterior(cancelLog.getEstadoAnterior());
+                            dto.setFechaCambioEstado(cancelLog.getPerformedAt());
+                            dto.setUsuarioCambioEstado(cancelLog.getPerformedBy());
+                        });
+                // Buscar información específica de reagendamiento
+                auditHistory.stream()
+                        .filter(log -> log.getAction().contains("REAGENDAMIENTO") ||
+                                log.getEstadoNuevo() != null && log.getEstadoNuevo().equals("REAGENDADO"))
+                        .findFirst()
+                        .ifPresent(reagendaLog -> {
+                            dto.setMotivoReagendamiento(reagendaLog.getReason());
+                            // Intentar extraer fecha original del oldValues si está disponible
+                            if (reagendaLog.getOldValues() != null) {
+                                try {
+                                    // Aquí podrías parsear oldValues si contiene la fecha original
+                                    // Por ahora lo dejamos como null
+                                } catch (Exception e) {
+                                    System.err.println(
+                                            "Error al parsear fecha original de reagendamiento: " + e.getMessage());
+                                }
+                            }
+                        });
+            } else {
+                dto.setTotalModificaciones(0);
+            }
+        } catch (Exception e) {
+            System.err.println(
+                    "Error al obtener auditoría para historial de turno " + turno.getId() + ": " + e.getMessage());
+            dto.setTotalModificaciones(0);
+        }
+
+        return dto;
+    }
+
+    /**
+     * Obtiene el historial completo de turnos de un paciente
+     */
+    public List<HistorialTurnoDTO> getHistorialTurnosByPaciente(Integer pacienteId) {
+        List<Turno> turnos = repository.findByPaciente_Id(pacienteId);
+        return turnos.stream()
+                .map(this::toHistorialDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene el historial completo de turnos de un paciente con paginación
+     */
+    public Page<HistorialTurnoDTO> getHistorialTurnosByPacientePaged(Integer pacienteId, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "fecha"));
+        Page<Turno> turnosPage = repository.findByPaciente_Id(pacienteId, pageRequest);
+        return turnosPage.map(this::toHistorialDTO);
+    }
+
+    /**
+     * Obtiene el historial de un turno específico con toda su información de
+     * auditoría
+     */
+    public HistorialTurnoDTO getHistorialTurnoById(Integer turnoId) {
+        Optional<Turno> turnoOpt = repository.findById(turnoId);
+        if (turnoOpt.isEmpty()) {
+            throw new IllegalArgumentException("Turno no encontrado con ID: " + turnoId);
+        }
+        return toHistorialDTO(turnoOpt.get());
+    }
+
+    /**
+     * Actualiza las observaciones de un turno
+     */
+    @Transactional
+    public TurnoDTO actualizarObservaciones(Integer turnoId, String observaciones, String performedBy) {
+        Optional<Turno> turnoOpt = repository.findById(turnoId);
+        if (turnoOpt.isEmpty()) {
+            throw new IllegalArgumentException("Turno no encontrado con ID: " + turnoId);
+        }
+
+        Turno turno = turnoOpt.get();
+        String observacionesAnteriores = turno.getObservaciones();
+
+        // Validar que el turno puede ser modificado
+        if (!canTurnoBeModified(turno)) {
+            throw new IllegalStateException("No se pueden modificar observaciones de un turno cancelado o completado");
+        }
+
+        turno.setObservaciones(observaciones);
+        Turno savedTurno = repository.save(turno);
+
+        // Registrar auditoría del cambio de observaciones
+        try {
+            Map<String, Object> oldValues = new HashMap<>();
+            oldValues.put("observaciones", observacionesAnteriores);
+
+            Map<String, Object> newValues = new HashMap<>();
+            newValues.put("observaciones", observaciones);
+
+            auditLogService.logGenericAction(
+                    AuditLog.EntityTypes.TURNO,
+                    turno.getId().longValue(),
+                    AuditLog.Actions.UPDATE,
+                    performedBy,
+                    null,
+                    null,
+                    oldValues,
+                    newValues,
+                    "Actualización de observaciones");
+        } catch (Exception e) {
+            System.err.println("Error al registrar auditoría de observaciones: " + e.getMessage());
+        }
+
+        return toDTO(savedTurno);
+    }
+
+    // ===============================
+    // MÉTODOS PARA HISTORIAL FILTRADO POR PACIENTE
+    // ===============================
+
+    /**
+     * Obtiene el historial de turnos de un paciente con filtros avanzados
+     * 
+     * @param pacienteId ID del paciente
+     * @param estado     Estado del turno (opcional)
+     * @param fechaDesde Fecha desde (opcional)
+     * @param fechaHasta Fecha hasta (opcional)
+     * @param page       Número de página
+     * @param size       Tamaño de página
+     * @param sortBy     Campo por el que ordenar (por defecto: "fecha")
+     * @param sortDir    Dirección del ordenamiento (ASC/DESC, por defecto: DESC)
+     * @return Página de HistorialTurnoDTO con los resultados filtrados
+     */
+    public Page<HistorialTurnoDTO> getHistorialPacienteFiltrado(
+            Integer pacienteId,
+            String estado,
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            int page,
+            int size,
+            String sortBy,
+            String sortDir) {
+
+        System.out.println("🔍 DEBUG: Obteniendo historial filtrado para paciente ID: " + pacienteId);
+        System.out.println("   - Estado recibido: [" + estado + "]");
+        System.out.println("   - Fecha desde: " + fechaDesde);
+        System.out.println("   - Fecha hasta: " + fechaHasta);
+
+        // Validar paciente
+        if (!pacienteRepository.existsById(pacienteId)) {
+            throw new IllegalArgumentException("Paciente no encontrado con ID: " + pacienteId);
+        }
+
+        // Configurar ordenamiento
+        Sort.Direction direction = "ASC".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String sortField = sortBy != null && !sortBy.trim().isEmpty() ? sortBy : "fecha";
+        Sort sort = Sort.by(direction, sortField);
+        PageRequest pageable = PageRequest.of(page, size, sort);
+
+        // 🔥 CORRECCIÓN: Parsear estado correctamente
+        EstadoTurno estadoEnum = null;
+        if (estado != null && !estado.trim().isEmpty() && !"TODO".equalsIgnoreCase(estado.trim())) {
+            try {
+                estadoEnum = EstadoTurno.valueOf(estado.trim().toUpperCase());
+                System.out.println("   - ✅ Estado parseado correctamente: " + estadoEnum);
+            } catch (IllegalArgumentException e) {
+                System.err.println("   - ⚠️ WARN: Estado inválido: [" + estado + "], se ignorará el filtro");
+                estadoEnum = null;
+            }
+        } else {
+            System.out.println("   - ℹ️ Sin filtro de estado (mostrando todos)");
+        }
+
+        // Construir especificación base: SIEMPRE filtrar por paciente
+        Specification<Turno> spec = Specification.where(TurnoRepository.hasPacienteId(pacienteId));
+
+        // 🔥 CORRECCIÓN: Aplicar filtro de estado SOLO si estadoEnum no es null
+        if (estadoEnum != null) {
+            System.out.println("   - 🎯 Aplicando filtro de estado: " + estadoEnum);
+            spec = spec.and(TurnoRepository.hasEstado(estadoEnum));
+        }
+
+        // Aplicar filtros de fecha
+        if (fechaDesde != null) {
+            spec = spec.and(TurnoRepository.hasFechaDesde(fechaDesde));
+            System.out.println("   - 📅 Filtro fecha desde aplicado: " + fechaDesde);
+        }
+
+        if (fechaHasta != null) {
+            spec = spec.and(TurnoRepository.hasFechaHasta(fechaHasta));
+            System.out.println("   - 📅 Filtro fecha hasta aplicado: " + fechaHasta);
+        }
+
+        // Ejecutar consulta
+        Page<Turno> turnosPage = repository.findAll(spec, pageable);
+
+        System.out.println("✅ DEBUG: Query ejecutada - " + turnosPage.getTotalElements() +
+                " turnos encontrados (página " + (page + 1) + " de " + turnosPage.getTotalPages() + ")");
+
+        return turnosPage.map(this::toHistorialDTO);
+    }
+
+    /**
+     * Obtiene el historial completo de un paciente sin filtros (versión
+     * simplificada)
+     * 
+     * @param pacienteId ID del paciente
+     * @param page       Número de página
+     * @param size       Tamaño de página
+     * @return Página de HistorialTurnoDTO
+     */
+    public Page<HistorialTurnoDTO> getHistorialPaciente(Integer pacienteId, int page, int size) {
+        return getHistorialPacienteFiltrado(pacienteId, null, null, null, page, size, "fecha", "DESC");
+    }
+
+    /**
+     * Obtiene estadísticas del historial de un paciente
+     * 
+     * @param pacienteId ID del paciente
+     * @return Map con estadísticas del historial
+     */
+    public Map<String, Object> getEstadisticasHistorialPaciente(Integer pacienteId) {
+        System.out.println("📊 DEBUG: Obteniendo estadísticas de historial para paciente ID: " + pacienteId);
+
+        // Validar paciente
+        if (!pacienteRepository.existsById(pacienteId)) {
+            throw new IllegalArgumentException("Paciente no encontrado con ID: " + pacienteId);
+        }
+
+        Map<String, Object> estadisticas = new HashMap<>();
+
+        try {
+            // Obtener todos los turnos del paciente
+            List<Turno> todosTurnos = repository.findByPaciente_Id(pacienteId);
+
+            // Contar por estado
+            Map<String, Long> turnosPorEstado = todosTurnos.stream()
+                    .collect(Collectors.groupingBy(
+                            t -> t.getEstado().name(),
+                            Collectors.counting()));
+
+            estadisticas.put("totalTurnos", todosTurnos.size());
+            estadisticas.put("turnosPorEstado", turnosPorEstado);
+            estadisticas.put("turnosProgramados", turnosPorEstado.getOrDefault("PROGRAMADO", 0L));
+            estadisticas.put("turnosConfirmados", turnosPorEstado.getOrDefault("CONFIRMADO", 0L));
+            estadisticas.put("turnosCompletados", turnosPorEstado.getOrDefault("COMPLETO", 0L));
+            estadisticas.put("turnosCancelados", turnosPorEstado.getOrDefault("CANCELADO", 0L));
+            estadisticas.put("turnosReagendados", turnosPorEstado.getOrDefault("REAGENDADO", 0L));
+
+            // Obtener fecha del primer y último turno
+            if (!todosTurnos.isEmpty()) {
+                LocalDate primerTurno = todosTurnos.stream()
+                        .map(Turno::getFecha)
+                        .min(LocalDate::compareTo)
+                        .orElse(null);
+
+                LocalDate ultimoTurno = todosTurnos.stream()
+                        .map(Turno::getFecha)
+                        .max(LocalDate::compareTo)
+                        .orElse(null);
+
+                estadisticas.put("primerTurno", primerTurno);
+                estadisticas.put("ultimoTurno", ultimoTurno);
+            }
+
+            // Contar turnos futuros y pasados
+            LocalDate hoy = LocalDate.now();
+            long turnosFuturos = todosTurnos.stream()
+                    .filter(t -> t.getFecha().isAfter(hoy))
+                    .count();
+            long turnosPasados = todosTurnos.stream()
+                    .filter(t -> t.getFecha().isBefore(hoy) || t.getFecha().equals(hoy))
+                    .count();
+
+            estadisticas.put("turnosFuturos", turnosFuturos);
+            estadisticas.put("turnosPasados", turnosPasados);
+
+            // Especialidades más frecuentes
+            Map<String, Long> especialidadesFrecuentes = todosTurnos.stream()
+                    .filter(t -> t.getStaffMedico() != null &&
+                            t.getStaffMedico().getEspecialidad() != null)
+                    .collect(Collectors.groupingBy(
+                            t -> t.getStaffMedico().getEspecialidad().getNombre(),
+                            Collectors.counting()));
+
+            estadisticas.put("especialidadesFrecuentes", especialidadesFrecuentes);
+
+            System.out.println("✅ DEBUG: Estadísticas calculadas: " + estadisticas);
+
+        } catch (Exception e) {
+            System.err.println("❌ ERROR: Error al calcular estadísticas: " + e.getMessage());
+            estadisticas.put("error", "Error al calcular estadísticas: " + e.getMessage());
+        }
+
+        return estadisticas;
+    }
+
+    /**
+     * Obtiene el resumen de turnos próximos de un paciente
+     * 
+     * @param pacienteId   ID del paciente
+     * @param diasAdelante Cantidad de días hacia adelante (por defecto 30)
+     * @return Lista de turnos próximos como HistorialTurnoDTO
+     */
+    public List<HistorialTurnoDTO> getTurnosProximosPaciente(Integer pacienteId, Integer diasAdelante) {
+        System.out.println("📅 DEBUG: Obteniendo turnos próximos para paciente ID: " + pacienteId);
+
+        // Validar paciente
+        if (!pacienteRepository.existsById(pacienteId)) {
+            throw new IllegalArgumentException("Paciente no encontrado con ID: " + pacienteId);
+        }
+
+        LocalDate hoy = LocalDate.now();
+        LocalDate fechaLimite = hoy.plusDays(diasAdelante != null ? diasAdelante : 30);
+
+        // Crear especificación para turnos futuros del paciente
+        Specification<Turno> spec = Specification.where(TurnoRepository.hasPacienteId(pacienteId))
+                .and(TurnoRepository.hasFechaDesde(hoy))
+                .and(TurnoRepository.hasFechaHasta(fechaLimite))
+                .and(TurnoRepository.hasEstado(EstadoTurno.PROGRAMADO)
+                        .or(TurnoRepository.hasEstado(EstadoTurno.CONFIRMADO))
+                        .or(TurnoRepository.hasEstado(EstadoTurno.REAGENDADO)));
+
+        // Ordenar por fecha ascendente
+        Sort sort = Sort.by(Sort.Direction.ASC, "fecha", "horaInicio");
+
+        List<Turno> turnosProximos = repository.findAll(spec, sort);
+
+        System.out.println("✅ DEBUG: " + turnosProximos.size() + " turnos próximos encontrados");
+
+        return turnosProximos.stream()
+                .map(this::toHistorialDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene turnos cancelados de un paciente con detalles de cancelación
+     * 
+     * @param pacienteId ID del paciente
+     * @param page       Número de página
+     * @param size       Tamaño de página
+     * @return Página de HistorialTurnoDTO con turnos cancelados
+     */
+    public Page<HistorialTurnoDTO> getTurnosCanceladosPaciente(Integer pacienteId, int page, int size) {
+        System.out.println("🚫 DEBUG: Obteniendo turnos cancelados para paciente ID: " + pacienteId);
+
+        return getHistorialPacienteFiltrado(
+                pacienteId,
+                "CANCELADO",
+                null,
+                null,
+                page,
+                size,
+                "fecha",
+                "DESC");
+    }
+
+    /**
+     * Verifica si un paciente tiene turnos pendientes (PROGRAMADO o CONFIRMADO)
+     * 
+     * @param pacienteId ID del paciente
+     * @return true si tiene turnos pendientes, false en caso contrario
+     */
+    public boolean tieneTurnosPendientes(Integer pacienteId) {
+        LocalDate hoy = LocalDate.now();
+
+        Specification<Turno> spec = Specification.where(TurnoRepository.hasPacienteId(pacienteId))
+                .and(TurnoRepository.hasFechaDesde(hoy))
+                .and(TurnoRepository.hasEstado(EstadoTurno.PROGRAMADO)
+                        .or(TurnoRepository.hasEstado(EstadoTurno.CONFIRMADO))
+                        .or(TurnoRepository.hasEstado(EstadoTurno.REAGENDADO)));
+
+        long count = repository.count(spec);
+
+        System.out.println("🔍 DEBUG: Paciente " + pacienteId + " tiene " + count + " turnos pendientes");
+
+        return count > 0;
+    }
+
+    /**
+     * Exporta el historial de un paciente a un formato específico
+     * 
+     * @param pacienteId ID del paciente
+     * @param estado     Estado del turno (opcional)
+     * @param fechaDesde Fecha desde (opcional)
+     * @param fechaHasta Fecha hasta (opcional)
+     * @return Lista completa de HistorialTurnoDTO para exportación
+     */
+    public List<HistorialTurnoDTO> exportarHistorialPaciente(
+            Integer pacienteId,
+            String estado,
+            LocalDate fechaDesde,
+            LocalDate fechaHasta) {
+
+        System.out.println("📤 DEBUG: Exportando historial para paciente ID: " + pacienteId);
+
+        // Validar paciente
+        if (!pacienteRepository.existsById(pacienteId)) {
+            throw new IllegalArgumentException("Paciente no encontrado con ID: " + pacienteId);
+        }
+
+        // Parsear estado si viene como string
+        EstadoTurno estadoEnum = null;
+        if (estado != null && !estado.trim().isEmpty()) {
+            try {
+                estadoEnum = EstadoTurno.valueOf(estado.trim().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                System.err.println("⚠️ WARN: Estado inválido para exportación: " + estado);
+            }
+        }
+
+        // Construir especificación con filtros
+        Specification<Turno> spec = Specification.where(TurnoRepository.hasPacienteId(pacienteId));
+
+        if (estadoEnum != null) {
+            spec = spec.and(TurnoRepository.hasEstado(estadoEnum));
+        }
+
+        if (fechaDesde != null) {
+            spec = spec.and(TurnoRepository.hasFechaDesde(fechaDesde));
+        }
+
+        if (fechaHasta != null) {
+            spec = spec.and(TurnoRepository.hasFechaHasta(fechaHasta));
+        }
+
+        // Ordenar por fecha descendente para exportación
+        Sort sort = Sort.by(Sort.Direction.DESC, "fecha", "horaInicio");
+
+        List<Turno> turnos = repository.findAll(spec, sort);
+
+        System.out.println("✅ DEBUG: Exportando " + turnos.size() + " turnos");
+
+        return turnos.stream()
+                .map(this::toHistorialDTO)
+                .collect(Collectors.toList());
+    }
+
 }

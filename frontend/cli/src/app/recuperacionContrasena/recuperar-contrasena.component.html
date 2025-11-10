@@ -1,584 +1,182 @@
-<div class="recovery-container">
-  <!-- Floating Particles Background -->
-  <div class="particles-bg">
-    <div class="particle" *ngFor="let p of particles; let i = index" 
-         [style.left.px]="p.x" 
-         [style.top.px]="p.y"
-         [style.animation-delay.s]="i * 0.2"></div>
+<div class="recovery-page-wrapper">
+  
+  <!-- Header con marca -->
+  <div class="recovery-page-header">
+    <div class="brand-logo">
+      <span class="material-symbols-outlined brand-icon">lock_reset</span>
+      <h1>CheTurno</h1>
+    </div>
   </div>
 
-  <div class="recovery-card">
-    <div class="card-header">
-      <div class="header-icon">
-        <i class="fas fa-key"></i>
-      </div>
-      <div class="header-content">
-        <h1 *ngIf="!token">Recuperar Contraseña</h1>
-        <h1 *ngIf="token">Cambiar Contraseña</h1>
-        <p *ngIf="!token">Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña</p>
-        <p *ngIf="token && !tokenChecked">Validando tu enlace de recuperación...</p>
-        <p *ngIf="token && tokenChecked && tokenValid">Ingresa tu nueva contraseña</p>
-        <p *ngIf="token && tokenChecked && !tokenValid">El enlace de recuperación no es válido</p>
-      </div>
-    </div>
-
-    <div class="card-body">
+  <!-- Card de Recuperación centrado -->
+  <div class="recovery-page-content">
+    <div class="card recovery-card">
       
-      <!-- Formulario para solicitar recuperación (cuando no hay token) -->
+      <!-- Vista: Solicitar enlace de recuperación (cuando no hay token) -->
       <div *ngIf="!token">
+        <h3>
+          <span class="material-symbols-outlined">mail</span>
+          Recuperar Contraseña
+        </h3>
+        <p class="recovery-description">Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña</p>
+
         <form [formGroup]="correoForm" (ngSubmit)="enviarSolicitud()">
           <div class="form-group">
-            <label for="email">Correo Electrónico</label>
-            <div class="input-container">
-              <i class="fas fa-envelope"></i>
-              <input 
-                id="email" 
-                type="email"
-                formControlName="email" 
-                placeholder="ejemplo@correo.com"
-                [class.error]="emailControl?.invalid && emailControl?.touched" />
-            </div>
-            <div *ngIf="emailControl?.invalid && emailControl?.touched" class="error-message">
-              <i class="fas fa-exclamation-circle"></i>
+            <label for="email" class="form-label">
+              <span class="material-symbols-outlined">email</span>
+              Correo Electrónico
+            </label>
+            <input 
+              id="email" 
+              type="email"
+              formControlName="email"
+              class="form-control"
+              [class.is-invalid]="emailControl?.invalid && emailControl?.touched"
+              placeholder="tu@email.com"
+              autocomplete="email"
+            />
+            <small class="invalid-feedback" *ngIf="emailControl?.invalid && emailControl?.touched">
               <span *ngIf="emailControl?.errors?.['required']">El correo es obligatorio</span>
               <span *ngIf="emailControl?.errors?.['email']">Ingrese un correo válido</span>
-            </div>
+            </small>
           </div>
 
-          <div class="form-actions">
-            <button type="submit" class="btn-primary" [disabled]="enviando || correoForm.invalid">
-              <i *ngIf="!enviando" class="fas fa-paper-plane"></i>
-              <i *ngIf="enviando" class="fas fa-spinner fa-spin"></i>
-              <span *ngIf="!enviando">Enviar Instrucciones</span>
-              <span *ngIf="enviando">Enviando...</span>
-            </button>
-            
-            <a href="/ingresar" class="btn-secondary">
-              <i class="fas fa-arrow-left"></i>
-              Volver al Login
-            </a>
-          </div>
+          <button type="submit" class="btn btn-primary btn-full-width" [disabled]="enviando || correoForm.invalid">
+            <span class="material-symbols-outlined" *ngIf="!enviando">send</span>
+            <span class="material-symbols-outlined spinner" *ngIf="enviando">sync</span>
+            {{ enviando ? 'Enviando...' : 'Enviar Instrucciones' }}
+          </button>
+
+          <a href="/ingresar" class="btn btn-link btn-full-width">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Volver al Login
+          </a>
         </form>
 
         <!-- Mensaje de resultado -->
-        <div *ngIf="enviadoOk !== null" class="result-message" [class.success]="enviadoOk" [class.info]="!enviadoOk">
-          <div class="message-icon">
-            <i *ngIf="enviadoOk" class="fas fa-check-circle"></i>
-            <i *ngIf="!enviadoOk" class="fas fa-info-circle"></i>
-          </div>
-          <div class="message-content">
-            <h4 *ngIf="enviadoOk">¡Correo Enviado!</h4>
-            <h4 *ngIf="!enviadoOk">Información</h4>
+        <div *ngIf="enviadoOk !== null" class="alert-message" [class.alert-success]="enviadoOk" [class.alert-info]="!enviadoOk">
+          <span class="material-symbols-outlined" *ngIf="enviadoOk">check_circle</span>
+          <span class="material-symbols-outlined" *ngIf="!enviadoOk">info</span>
+          <div class="alert-content">
+            <strong *ngIf="enviadoOk">¡Correo Enviado!</strong>
+            <strong *ngIf="!enviadoOk">Información</strong>
             <p>{{ mensaje }}</p>
           </div>
         </div>
       </div>
 
-      <!-- Validación de token (cuando hay token pero aún no se validó) -->
+      <!-- Vista: Validando token -->
       <div *ngIf="token && !tokenChecked" class="loading-section">
-        <div class="spinner">
-          <i class="fas fa-spinner fa-spin"></i>
-        </div>
-        <p>Validando enlace de recuperación...</p>
+        <span class="material-symbols-outlined spinner-large">sync</span>
+        <h3>Validando enlace...</h3>
+        <p>Verificando tu enlace de recuperación</p>
       </div>
 
-      <!-- Formulario para nueva contraseña (cuando el token es válido) -->
+      <!-- Vista: Cambiar contraseña (cuando el token es válido) -->
       <div *ngIf="token && tokenChecked && tokenValid && !resetSuccess">
+        <h3>
+          <span class="material-symbols-outlined">lock</span>
+          Cambiar Contraseña
+        </h3>
+        <p class="recovery-description">Ingresa tu nueva contraseña</p>
+
         <form [formGroup]="passwordForm" (ngSubmit)="enviarNuevaContrasena()">
           <div class="form-group">
-            <label for="password">Nueva Contraseña</label>
-            <div class="input-container">
-              <i class="fas fa-lock"></i>
-              <input 
-                id="password" 
-                type="password"
-                formControlName="password" 
-                placeholder="Mínimo 8 caracteres"
-                [class.error]="passwordControl?.invalid && passwordControl?.touched" />
-            </div>
-            <div *ngIf="passwordControl?.invalid && passwordControl?.touched" class="error-message">
-              <i class="fas fa-exclamation-circle"></i>
+            <label for="password" class="form-label">
+              <span class="material-symbols-outlined">lock</span>
+              Nueva Contraseña
+            </label>
+            <input 
+              id="password" 
+              type="password"
+              formControlName="password"
+              class="form-control"
+              [class.is-invalid]="passwordControl?.invalid && passwordControl?.touched"
+              placeholder="Mínimo 8 caracteres"
+              autocomplete="new-password"
+            />
+            <small class="invalid-feedback" *ngIf="passwordControl?.invalid && passwordControl?.touched">
               <span *ngIf="passwordControl?.errors?.['required']">La contraseña es obligatoria</span>
-              <span *ngIf="passwordControl?.errors?.['minlength']">La contraseña debe tener al menos 8 caracteres</span>
-            </div>
+              <span *ngIf="passwordControl?.errors?.['minlength']">Mínimo 8 caracteres</span>
+            </small>
           </div>
 
           <div class="form-group">
-            <label for="confirmPassword">Confirmar Contraseña</label>
-            <div class="input-container">
-              <i class="fas fa-lock"></i>
-              <input 
-                id="confirmPassword" 
-                type="password"
-                formControlName="confirmPassword" 
-                placeholder="Repite la contraseña"
-                [class.error]="confirmPasswordControl?.invalid && confirmPasswordControl?.touched" />
-            </div>
-            <div *ngIf="confirmPasswordControl?.invalid && confirmPasswordControl?.touched" class="error-message">
-              <i class="fas fa-exclamation-circle"></i>
+            <label for="confirmPassword" class="form-label">
+              <span class="material-symbols-outlined">lock</span>
+              Confirmar Contraseña
+            </label>
+            <input 
+              id="confirmPassword" 
+              type="password"
+              formControlName="confirmPassword"
+              class="form-control"
+              [class.is-invalid]="(confirmPasswordControl?.invalid && confirmPasswordControl?.touched) || (passwordForm.errors?.['passwordsMismatch'] && passwordForm.touched)"
+              placeholder="Repite la contraseña"
+              autocomplete="new-password"
+            />
+            <small class="invalid-feedback" *ngIf="confirmPasswordControl?.invalid && confirmPasswordControl?.touched">
               <span *ngIf="confirmPasswordControl?.errors?.['required']">Confirma tu contraseña</span>
-            </div>
-            <div *ngIf="passwordForm.errors?.['passwordsMismatch'] && passwordForm.touched" class="error-message">
-              <i class="fas fa-exclamation-circle"></i>
-              <span>Las contraseñas no coinciden</span>
-            </div>
+            </small>
+            <small class="invalid-feedback" *ngIf="passwordForm.errors?.['passwordsMismatch'] && passwordForm.touched">
+              Las contraseñas no coinciden
+            </small>
           </div>
 
-          <div class="form-actions">
-            <button type="submit" class="btn-primary" [disabled]="enviando || passwordForm.invalid">
-              <i *ngIf="!enviando" class="fas fa-save"></i>
-              <i *ngIf="enviando" class="fas fa-spinner fa-spin"></i>
-              <span *ngIf="!enviando">Cambiar Contraseña</span>
-              <span *ngIf="enviando">Guardando...</span>
-            </button>
-          </div>
+          <button type="submit" class="btn btn-success btn-full-width" [disabled]="enviando || passwordForm.invalid">
+            <span class="material-symbols-outlined" *ngIf="!enviando">save</span>
+            <span class="material-symbols-outlined spinner" *ngIf="enviando">sync</span>
+            {{ enviando ? 'Guardando...' : 'Cambiar Contraseña' }}
+          </button>
         </form>
 
         <!-- Mensaje de error al cambiar contraseña -->
-        <div *ngIf="resetError" class="result-message error">
-          <div class="message-icon">
-            <i class="fas fa-exclamation-circle"></i>
-          </div>
-          <div class="message-content">
-            <h4>Error</h4>
+        <div *ngIf="resetError" class="alert-message alert-error">
+          <span class="material-symbols-outlined">error</span>
+          <div class="alert-content">
+            <strong>Error</strong>
             <p>{{ resetError }}</p>
           </div>
         </div>
       </div>
 
-      <!-- Token inválido o expirado -->
-      <div *ngIf="token && tokenChecked && !tokenValid" class="result-message error">
-        <div class="message-icon">
-          <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <div class="message-content">
-          <h4>Enlace Inválido</h4>
+      <!-- Vista: Token inválido o expirado -->
+      <div *ngIf="token && tokenChecked && !tokenValid" class="alert-message alert-error">
+        <span class="material-symbols-outlined">warning</span>
+        <div class="alert-content">
+          <strong>Enlace Inválido</strong>
           <p>{{ resetError }}</p>
-          <div class="form-actions" style="margin-top: 1rem;">
-            <a href="/recuperar-contrasena" class="btn-secondary">
-              <i class="fas fa-arrow-left"></i>
-              Solicitar Nuevo Enlace
-            </a>
-          </div>
+          <a href="/recuperar-contrasena" class="btn btn-secondary" style="margin-top: var(--space-md);">
+            <span class="material-symbols-outlined">refresh</span>
+            Solicitar Nuevo Enlace
+          </a>
         </div>
       </div>
 
-      <!-- Contraseña cambiada exitosamente -->
-      <div *ngIf="resetSuccess" class="result-message success">
-        <div class="message-icon">
-          <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="message-content">
-          <h4>¡Contraseña Cambiada!</h4>
+      <!-- Vista: Contraseña cambiada exitosamente -->
+      <div *ngIf="resetSuccess" class="alert-message alert-success">
+        <span class="material-symbols-outlined">check_circle</span>
+        <div class="alert-content">
+          <strong>¡Contraseña Cambiada!</strong>
           <p>Tu contraseña ha sido actualizada correctamente. Ya puedes iniciar sesión con tu nueva contraseña.</p>
-          <div class="form-actions" style="margin-top: 1rem;">
-            <a href="/ingresar" class="btn-primary">
-              <i class="fas fa-sign-in-alt"></i>
-              Iniciar Sesión
-            </a>
-          </div>
+          <a href="/ingresar" class="btn btn-primary" style="margin-top: var(--space-md);">
+            <span class="material-symbols-outlined">login</span>
+            Iniciar Sesión
+          </a>
         </div>
       </div>
 
-    </div>
-
-    <!-- Footer info -->
-    <div class="card-footer">
-      <div class="info-section">
+      <!-- Footer informativo -->
+      <div class="recovery-footer">
         <div class="info-item">
-          <i class="fas fa-shield-alt"></i>
-          <span>Proceso seguro y encriptado</span>
+          <span class="material-symbols-outlined">shield</span>
+          <span>Proceso seguro</span>
         </div>
         <div class="info-item">
-          <i class="fas fa-clock"></i>
-          <span>El enlace expira en 24 horas</span>
+          <span class="material-symbols-outlined">schedule</span>
+          <span>Expira en 24 horas</span>
         </div>
       </div>
     </div>
   </div>
 </div>
-
-<style>
-  .recovery-container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem 1rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Particles Background */
-  .particles-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  .particle {
-    position: absolute;
-    width: 3px;
-    height: 3px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
-    animation: float 8s ease-in-out infinite;
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.1; }
-    50% { transform: translateY(-30px) rotate(180deg); opacity: 0.3; }
-  }
-
-  .recovery-card {
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 24px;
-    box-shadow: 0 25px 80px rgba(0,0,0,0.15);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    max-width: 480px;
-    width: 100%;
-    overflow: hidden;
-    position: relative;
-    z-index: 10;
-  }
-
-  .card-header {
-    background: rgba(102, 126, 234, 0.02);
-    padding: 2.5rem 2rem;
-    text-align: center;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-  }
-
-  .header-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 2rem;
-    margin: 0 auto 1.5rem auto;
-    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .header-icon::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    transition: left 0.5s ease;
-  }
-
-  .header-icon:hover::before {
-    left: 100%;
-  }
-
-  .header-content h1 {
-    color: #2c3e50;
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0 0 0.5rem 0;
-    background: linear-gradient(135deg, #2c3e50 0%, #667eea 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .header-content p {
-    color: #6c757d;
-    margin: 0;
-    line-height: 1.6;
-    font-size: 1rem;
-  }
-
-  .card-body {
-    padding: 2rem;
-  }
-
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-
-  .form-group label {
-    display: block;
-    color: #2c3e50;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    font-size: 1rem;
-  }
-
-  .input-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-
-  .input-container i {
-    position: absolute;
-    left: 1rem;
-    color: #667eea;
-    z-index: 2;
-    font-size: 1.1rem;
-  }
-
-  .input-container input {
-    width: 100%;
-    padding: 1rem 1rem 1rem 3rem;
-    border: 2px solid rgba(102, 126, 234, 0.2);
-    border-radius: 12px;
-    font-size: 1rem;
-    background: rgba(255, 255, 255, 0.9);
-    transition: all 0.3s ease;
-    color: #2c3e50;
-  }
-
-  .input-container input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    background: rgba(255, 255, 255, 1);
-  }
-
-  .input-container input.error {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
-  }
-
-  .input-container input::placeholder {
-    color: #adb5bd;
-  }
-
-  .error-message {
-    color: #dc3545;
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    font-weight: 500;
-  }
-
-  .form-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .btn-primary, .btn-secondary {
-    padding: 1rem 1.5rem;
-    border: none;
-    border-radius: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    font-size: 1rem;
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-  }
-
-  .btn-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
-  }
-
-  .btn-primary:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  .btn-secondary {
-    background: rgba(108, 117, 125, 0.1);
-    color: #6c757d;
-    border: 2px solid rgba(108, 117, 125, 0.2);
-  }
-
-  .btn-secondary:hover {
-    background: #6c757d;
-    color: white;
-    transform: translateY(-2px);
-  }
-
-  .result-message {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    border-radius: 12px;
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    animation: slideIn 0.5s ease;
-  }
-
-  .result-message.success {
-    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
-    border: 1px solid rgba(40, 167, 69, 0.3);
-  }
-
-  .result-message.info {
-    background: linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(111, 66, 193, 0.1) 100%);
-    border: 1px solid rgba(23, 162, 184, 0.3);
-  }
-
-  .message-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.2rem;
-    flex-shrink: 0;
-  }
-
-  .result-message.success .message-icon {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  }
-
-  .result-message.info .message-icon {
-    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
-  }
-
-  .message-content h4 {
-    color: #2c3e50;
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 0.3rem 0;
-  }
-
-  .message-content p {
-    color: #6c757d;
-    margin: 0;
-    line-height: 1.5;
-    font-size: 0.95rem;
-  }
-
-  .card-footer {
-    background: rgba(248, 249, 250, 0.8);
-    padding: 1.5rem 2rem;
-    border-top: 1px solid rgba(0,0,0,0.05);
-  }
-
-  .info-section {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .info-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #6c757d;
-    font-size: 0.85rem;
-    flex: 1;
-  }
-
-  .info-item i {
-    color: #667eea;
-    font-size: 1rem;
-  }
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Responsive */
-  @media (max-width: 768px) {
-    .recovery-container {
-      padding: 1rem 0.5rem;
-    }
-
-    .recovery-card {
-      margin: 0;
-    }
-
-    .card-header {
-      padding: 2rem 1.5rem;
-    }
-
-    .card-body {
-      padding: 1.5rem;
-    }
-
-    .card-footer {
-      padding: 1rem 1.5rem;
-    }
-
-    .info-section {
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .header-content h1 {
-      font-size: 1.8rem;
-    }
-
-    .form-actions {
-      gap: 0.75rem;
-    }
-  }
-
-  /* Estilos para validación de token y nueva contraseña */
-  .loading-section {
-    text-align: center;
-    padding: 2rem;
-  }
-
-  .loading-section .spinner {
-    margin-bottom: 1rem;
-  }
-
-  .loading-section .spinner i {
-    font-size: 2rem;
-    color: #667eea;
-  }
-
-  .loading-section p {
-    color: #666;
-    font-size: 1.1rem;
-  }
-
-  .result-message.error {
-    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(233, 30, 99, 0.1) 100%);
-    border: 1px solid rgba(220, 53, 69, 0.3);
-  }
-
-  .result-message.error .message-icon i {
-    color: #dc3545;
-  }
-
-  .result-message.error h4 {
-    color: #dc3545;
-  }
-</style>

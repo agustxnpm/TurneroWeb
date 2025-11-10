@@ -28,8 +28,9 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
-    
+
     @Autowired
+
     private DeepLinkService deepLinkService;
 
     @Value("${spring.mail.username}")
@@ -215,11 +216,11 @@ public class EmailService {
     @Async
     public CompletableFuture<Void> sendAppointmentCancellationEmail(String to, String patientName,
             String cancellationDetails, Integer pacienteId, Integer turnoId) {
-        
+
         // Generar deep link token para reagendar
         String deepLinkToken = deepLinkService.generarDeepLinkToken(pacienteId, turnoId, "CANCELACION");
         String rescheduleUrl = appUrl + "/link-verificacion?token=" + deepLinkToken;
-        
+
         String subject = appName + " - Turno cancelado";
         String htmlBody = buildAppointmentCancellationEmailBody(patientName, cancellationDetails, rescheduleUrl);
 
@@ -229,17 +230,80 @@ public class EmailService {
     /**
      * Envía un correo de cancelación automática de turno por falta de confirmación.
      * 
-     * @param to Dirección de correo del paciente
-     * @param patientName Nombre del paciente
+     * @param to                 Dirección de correo del paciente
+     * @param patientName        Nombre del paciente
      * @param appointmentDetails Detalles del turno cancelado
-     * @param rescheduleUrl URL para reagendar
+     * @param rescheduleUrl      URL para reagendar
      * @return CompletableFuture que se completa cuando el email es enviado
      */
-    public CompletableFuture<Void> sendAutomaticCancellationEmail(String to, String patientName, String appointmentDetails, String rescheduleUrl) {
+    public CompletableFuture<Void> sendAutomaticCancellationEmail(String to, String patientName,
+            String appointmentDetails, String rescheduleUrl) {
         String subject = appName + " - Turno cancelado automáticamente";
         String htmlBody = buildAutomaticCancellationEmailBody(patientName, appointmentDetails, rescheduleUrl);
-        
+
         return sendHtmlEmailAsync(to, subject, htmlBody);
+    }
+
+    /**
+     * Envía un correo de bienvenida a un nuevo administrador.
+     *
+     * @param adminUser         Usuario administrador creado
+     * @param temporaryPassword Contraseña temporal asignada
+     */
+    @Async
+    public CompletableFuture<Void> sendAdminWelcomeEmail(unpsjb.labprog.backend.model.User adminUser,
+            String temporaryPassword) {
+        String subject = appName + " - Cuenta de Administrador Creada";
+        String htmlBody = buildAdminWelcomeEmailBody(adminUser.getNombre(), temporaryPassword);
+
+        return sendHtmlEmailAsync(adminUser.getEmail(), subject, htmlBody);
+    }
+
+    private String buildAdminWelcomeEmailBody(String adminName, String temporaryPassword) {
+        return String.format(
+                """
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>Bienvenida Administrador</title>
+                        </head>
+                        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                                <h2 style="color: #2c5aa0;">Bienvenido a %s - Cuenta de Administrador</h2>
+                                <p>Hola %s,</p>
+                                <p>Tu cuenta de administrador ha sido creada exitosamente. Aquí tienes tus credenciales iniciales:</p>
+
+                                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <p><strong>Usuario:</strong> Tu dirección de correo electrónico</p>
+                                    <p><strong>Contraseña temporal:</strong> <code>%s</code></p>
+                                </div>
+
+                                <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <p style="margin: 0; color: #856404;">
+                                        <strong>⚠️ IMPORTANTE:</strong>
+                                        <ul>
+                                            <li>Por seguridad, debes cambiar esta contraseña en tu primer inicio de sesión.</li>
+                                            <li>Esta contraseña temporal expirará en 24 horas.</li>
+                                            <li>Mantén tus credenciales en un lugar seguro.</li>
+                                        </ul>
+                                    </p>
+                                </div>
+
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="%s" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Acceder al sistema</a>
+                                </div>
+
+                                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                                <p style="font-size: 12px; color: #666;">
+                                    Este es un correo automático. Por favor no respondas a este mensaje.<br>
+                                    Si no esperabas este correo, contacta inmediatamente al administrador del sistema.
+                                </p>
+                            </div>
+                        </body>
+                        </html>
+                        """,
+                appName, adminName, temporaryPassword, appUrl);
     }
 
     // Métodos privados para construir los cuerpos de los correos
@@ -398,18 +462,27 @@ public class EmailService {
     }
 
     /**
-     * Envía un correo de recordatorio de turno.
+     * Envía un email de recordatorio de turno al paciente con deep-link de
+     * confirmación.
      * 
-     * @param to              Dirección de correo del paciente
+     * @param to              Correo electrónico del destinatario
      * @param patientName     Nombre del paciente
      * @param reminderDetails Detalles del recordatorio (e.g., fecha, hora, médico,
      *                        etc.)
+     * @param pacienteId      ID del paciente para generar el deep-link
+     * @param turnoId         ID del turno para generar el deep-link
      * @return CompletableFuture<Void> para manejo asíncrono
      */
     @Async
-    public CompletableFuture<Void> sendAppointmentReminderEmail(String to, String patientName, String reminderDetails) {
+    public CompletableFuture<Void> sendAppointmentReminderEmail(String to, String patientName, String reminderDetails,
+            Integer pacienteId, Integer turnoId) {
         String subject = appName + " - Recordatorio de turno";
-        String htmlBody = buildAppointmentReminderEmailBody(patientName, reminderDetails);
+
+        // Generar deep-link para confirmación directa
+        String deepLinkToken = deepLinkService.generarDeepLinkToken(pacienteId, turnoId, "CONFIRMACION");
+        String confirmUrl = appUrl + "/link-verificacion?token=" + deepLinkToken;
+
+        String htmlBody = buildAppointmentReminderEmailBody(patientName, reminderDetails, confirmUrl);
 
         return sendHtmlEmailAsync(to, subject, htmlBody);
     }
@@ -419,9 +492,10 @@ public class EmailService {
      * 
      * @param patientName     Nombre del paciente
      * @param reminderDetails Detalles formateados del turno
+     * @param confirmUrl      URL con deep-link para confirmación directa
      * @return String con el HTML del cuerpo del email
      */
-    private String buildAppointmentReminderEmailBody(String patientName, String reminderDetails) {
+    private String buildAppointmentReminderEmailBody(String patientName, String reminderDetails, String confirmUrl) {
         return String.format(
                 """
                         <!DOCTYPE html>
@@ -440,11 +514,10 @@ public class EmailService {
                                 </div>
                                 <p><strong>Importante:</strong> Si no confirmas en el plazo establecido, el turno podría cancelarse automáticamente.</p>
                                 <div style="text-align: center; margin: 30px 0;">
-                                    <a href="%s" style="background-color: #ffc107; color: #333; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Confirmar turno</a>
+                                    <a href="%s" style="background-color: #ffc107; color: #333; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Confirmar turno</a>
                                 </div>
                                 <p style="font-size: 14px; color: #666;">
-                                    <!-- TODO: Aplicar filtros automáticos para confirmación directa del turno (e.g., agregar ID de turno al URL) -->
-                                    El enlace te llevará a tu agenda de turnos.
+                                    El enlace te llevará a tu agenda de turnos donde podrás confirmar automáticamente tu asistencia.
                                 </p>
                                 <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
                                 <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
@@ -453,44 +526,45 @@ public class EmailService {
                         </body>
                         </html>
                         """,
-                appName, patientName, reminderDetails, appUrl + "/paciente-agenda"); // URL provisional; ajusta si
-                                                                                     // necesitas uno específico para
-                                                                                     // confirmación
+                appName, patientName, reminderDetails, confirmUrl);
     }
 
-    private String buildAutomaticCancellationEmailBody(String patientName, String appointmentDetails, String rescheduleUrl) {
-        return String.format("""
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Turno cancelado automáticamente</title>
-            </head>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #dc3545;">Turno cancelado automáticamente - %s</h2>
-                    <p>Hola %s,</p>
-                    <p>Lamentamos informarte que tu turno ha sido <strong>cancelado automáticamente</strong> por no haber sido confirmado dentro del tiempo establecido.</p>
-                    <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                        <h4 style="margin-top: 0; color: #856404;">Detalles del turno cancelado:</h4>
-                        %s
-                    </div>
-                    <p><strong>¿Por qué fue cancelado?</strong></p>
-                    <p>Los turnos deben ser confirmados por el paciente dentro de las 48 horas previas a la cita. Si no se confirma, el sistema lo cancela automáticamente para permitir que otros pacientes puedan acceder al horario.</p>
-                    <p><strong>¿Necesitas reagendar?</strong> Puedes reservar un nuevo turno fácilmente:</p>
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="%s" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Agendar nuevo turno</a>
-                    </div>
-                    <p style="font-size: 14px; color: #666;">
-                        Recuerda confirmar tu próximo turno dentro del tiempo establecido para evitar cancelaciones automáticas.
-                    </p>
-                    <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
-                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-                    <p style="font-size: 12px; color: #666;">Este es un correo automático, por favor no respondas.</p>
-                </div>
-            </body>
-            </html>
-            """, appName, patientName, appointmentDetails, rescheduleUrl);
+    private String buildAutomaticCancellationEmailBody(String patientName, String appointmentDetails,
+            String rescheduleUrl) {
+        return String.format(
+                """
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>Turno cancelado automáticamente</title>
+                        </head>
+                        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                                <h2 style="color: #dc3545;">Turno cancelado automáticamente - %s</h2>
+                                <p>Hola %s,</p>
+                                <p>Lamentamos informarte que tu turno ha sido <strong>cancelado automáticamente</strong> por no haber sido confirmado dentro del tiempo establecido.</p>
+                                <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <h4 style="margin-top: 0; color: #856404;">Detalles del turno cancelado:</h4>
+                                    %s
+                                </div>
+                                <p><strong>¿Por qué fue cancelado?</strong></p>
+                                <p>Los turnos deben ser confirmados por el paciente dentro de las 48 horas previas a la cita. Si no se confirma, el sistema lo cancela automáticamente para permitir que otros pacientes puedan acceder al horario.</p>
+                                <p><strong>¿Necesitas reagendar?</strong> Puedes reservar un nuevo turno fácilmente:</p>
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="%s" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Agendar nuevo turno</a>
+                                </div>
+                                <p style="font-size: 14px; color: #666;">
+                                    Recuerda confirmar tu próximo turno dentro del tiempo establecido para evitar cancelaciones automáticas.
+                                </p>
+                                <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+                                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                                <p style="font-size: 12px; color: #666;">Este es un correo automático, por favor no respondas.</p>
+                            </div>
+                        </body>
+                        </html>
+                        """,
+                appName, patientName, appointmentDetails, rescheduleUrl);
     }
 
     /**

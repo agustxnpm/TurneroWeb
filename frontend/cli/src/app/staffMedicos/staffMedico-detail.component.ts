@@ -18,282 +18,7 @@ import { ModalService } from '../modal/modal.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './staffMedico-detail.component.html',
-  styles: [`
-    /* Estilos modernos para el detail component */
-    .card {
-      border-radius: 1.15rem;
-      overflow: hidden;
-      border: none;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-      background: white;
-    }
-    
-    .card-header {
-      background: var(--staff-medico-gradient);
-      border: none;
-      padding: 1.5rem 2rem;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .card-header::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 100px;
-      height: 100px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 50%;
-      transform: translate(30px, -30px);
-    }
-    
-    .card-body {
-      padding: 2rem;
-      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    }
-    
-    .info-item {
-      background: white;
-      border-radius: 15px;
-      padding: 1.5rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-      border-left: 4px solid var(--staff-medico-primary);
-      transition: all 0.3s ease;
-    }
-    
-    .info-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-      border-left-color: #007bff;
-    }
-    
-    .info-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 1rem;
-      font-size: 1.1rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    }
-    
-    .info-label {
-      font-weight: 600;
-      color: #495057;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.5rem;
-    }
-    
-    .info-value {
-      font-size: 1.1rem;
-      color: #212529;
-      font-weight: 500;
-    }
-    
-    .id-display {
-      background: var(--staff-medico-gradient);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 25px;
-      font-weight: bold;
-      font-size: 1.3rem;
-      box-shadow: 0 4px 16px var(--staff-medico-shadow);
-      display: inline-block;
-    }
-    
-    .centro-display {
-      background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-weight: 600;
-      box-shadow: 0 4px 16px rgba(23,162,184,0.3);
-      display: inline-block;
-    }
-    
-    .medico-display {
-      background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-weight: 600;
-      box-shadow: 0 4px 16px rgba(111,66,193,0.3);
-      display: inline-block;
-    }
-    
-    .especialidad-display {
-      background: linear-gradient(135deg, #fd7e14 0%, #e8630a 100%);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-weight: 600;
-      box-shadow: 0 4px 16px rgba(253,126,20,0.3);
-      display: inline-block;
-    }
-    
-    .card-footer {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      border: none;
-      padding: 1.5rem 2rem;
-    }
-    
-    .btn-modern {
-      padding: 0.75rem 1.5rem;
-      border-radius: 25px;
-      font-weight: 600;
-      border: none;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    }
-    
-    .btn-modern:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    }
-    
-    .btn-modern:active {
-      transform: translateY(0);
-    }
-    
-    .btn-back {
-      background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-      color: white;
-    }
-    
-    .btn-edit {
-      background: var(--staff-medico-gradient);
-      color: white;
-    }
-    
-    .btn-save {
-      background: var(--staff-medico-gradient);
-      color: white;
-    }
-    
-    .btn-cancel {
-      background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-      color: white;
-    }
-    
-    .btn-delete {
-      background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-      color: white;
-    }
-    
-    /* Estilos del formulario */
-    .form-control-modern {
-      border: 2px solid #e9ecef;
-      border-radius: 15px;
-      padding: 1rem 1.25rem;
-      font-size: 1rem;
-      transition: all 0.3s ease;
-      background: white;
-    }
-    
-    .form-control-modern:focus {
-      border-color: var(--staff-medico-primary);
-      box-shadow: 0 0 0 0.2rem var(--staff-medico-shadow);
-      background: #f0fff4;
-    }
-    
-    .form-label-modern {
-      font-weight: 600;
-      color: #495057;
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
-    }
-    
-    .form-icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 0.75rem;
-      font-size: 0.8rem;
-      color: white;
-    }
-    
-    .form-group-modern {
-      margin-bottom: 2rem;
-      position: relative;
-    }
-    
-    .form-help {
-      background: #e8f5e8;
-      border: 1px solid #c3e6cb;
-      border-radius: 10px;
-      padding: 0.75rem 1rem;
-      margin-top: 0.5rem;
-      font-size: 0.875rem;
-      color: #155724;
-    }
-    
-    .alert-modern {
-      border: none;
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
-      margin-top: 0.75rem;
-      background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-      border-left: 4px solid #dc3545;
-      color: #721c24;
-    }
-    
-    /* Animaciones */
-    @keyframes slideInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .info-item {
-      animation: slideInUp 0.4s ease-out;
-    }
-    
-    .form-group-modern {
-      animation: slideInUp 0.3s ease-out;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .card-body {
-        padding: 1.5rem;
-      }
-      
-      .card-header {
-        padding: 1.25rem 1.5rem;
-      }
-      
-      .card-footer {
-        padding: 1.25rem 1.5rem;
-      }
-      
-      .info-item {
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-      }
-      
-      .btn-modern {
-        padding: 0.625rem 1.25rem;
-        font-size: 0.9rem;
-      }
-    }
-  `]
+  styleUrl: './staffMedico-detail.component.css' 
 })
 export class StaffMedicoDetailComponent {
   staffMedico: StaffMedico = { id: 0, centroAtencionId: 0, medicoId: 0, especialidadId: 0 };
@@ -429,8 +154,8 @@ export class StaffMedicoDetailComponent {
     this.router.navigate(['/staffMedico']);
   }
 
-  remove(staffMedico: StaffMedico): void {
-    if (staffMedico.id === undefined) {
+  confirmDelete(): void {
+    if (this.staffMedico.id === undefined) {
       this.modalService.alert('Error', 'No se puede eliminar: el staff médico no tiene ID.');
       return;
     }
@@ -441,16 +166,21 @@ export class StaffMedicoDetailComponent {
         "Si elimina el staff médico no lo podrá utilizar luego"
       )
       .then(() => {
-        this.staffMedicoService.remove(staffMedico.id!).subscribe({
-          next: () => {
-            this.goBack();
-          },
-          error: (err) => {
-            console.error('Error al eliminar el staff médico:', err);
-            this.modalService.alert('Error', 'No se pudo eliminar el staff médico. Intente nuevamente.');
-          }
-        });
+        this.remove();
       });
+  }
+
+  remove(): void {
+    this.staffMedicoService.remove(this.staffMedico.id!).subscribe({
+      next: () => {
+        this.modalService.alert('Éxito', 'El staff médico fue eliminado correctamente.');
+        this.goBack();
+      },
+      error: (err) => {
+        console.error('Error al eliminar el staff médico:', err);
+        this.modalService.alert('Error', 'No se pudo eliminar el staff médico. Intente nuevamente.');
+      }
+    });
   }
 
   loadCentros(): void {

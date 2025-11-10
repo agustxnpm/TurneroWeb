@@ -1,0 +1,262 @@
+<div class="container mt-4" *ngIf="disponibilidad">
+  <div class="card modern-card">
+    <!-- HEADER MODERNO -->
+    <div class="card-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="header-text">
+          <h1>
+            {{
+              esNuevo
+                ? "Nueva Disponibilidad Médica"
+                : "Disponibilidad #" + disponibilidad.id
+            }}
+          </h1>
+          <p>
+            {{
+              esNuevo
+                ? "Configure una nueva disponibilidad médica"
+                : "Gestione la disponibilidad médica"
+            }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- BODY DEL CARD -->
+    <div class="card-body">
+      <!-- MODO VISTA -->
+      <div *ngIf="!modoEdicion">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">
+              <span
+                class="info-icon"
+                style="
+                  background: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%);
+                "
+                >👨‍⚕️</span
+              >
+              Staff Médico
+            </div>
+            <div class="info-value">
+              {{ getStaffMedicoNombre(disponibilidad.staffMedicoId) }}
+            </div>
+          </div>
+
+          <div class="info-item full-width">
+            <div class="info-label">
+              <span
+                class="info-icon"
+                style="
+                  background: linear-gradient(135deg, #4a90e2 0%, #7b68ee 100%);
+                "
+                >🕐</span
+              >
+              Horarios de Disponibilidad
+            </div>
+            <div class="horarios-table">
+              <div class="table-header">
+                <span>Día</span>
+                <span>Hora Inicio</span>
+                <span>Hora Fin</span>
+              </div>
+              <div
+                *ngFor="let horario of disponibilidad.horarios"
+                class="table-row"
+              >
+                <span class="dia-badge">{{ horario.dia }}</span>
+                <span class="hora-badge">{{ horario.horaInicio }}</span>
+                <span class="hora-badge">{{ horario.horaFin }}</span>
+              </div>
+              <div
+                *ngIf="
+                  !disponibilidad.horarios ||
+                  disponibilidad.horarios.length === 0
+                "
+                class="no-horarios"
+              >
+                Sin horarios configurados
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODO EDICIÓN -->
+      <form *ngIf="modoEdicion" (ngSubmit)="save()" #form="ngForm">
+        <div class="row">
+          <!-- Staff Médico -->
+          <div class="col-12">
+            <div class="form-group-modern">
+              <label class="form-label-modern">
+                <span
+                  class="form-icon"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #00c9ff 0%,
+                      #92fe9d 100%
+                    );
+                  "
+                  >👨‍⚕️</span
+                >
+                Staff Médico
+              </label>
+              <select
+                [(ngModel)]="disponibilidad.staffMedicoId"
+                name="staffMedicoId"
+                class="form-control form-control-modern"
+                required
+              >
+                <option [ngValue]="null">Seleccione un staff médico...</option>
+                <option *ngFor="let staff of staffMedicos" [value]="staff.id">
+                  {{ staff.medico?.nombre }} {{ staff.medico?.apellido }} ({{
+                    staff.especialidad?.nombre
+                  }})
+                </option>
+              </select>
+              <div class="form-help">
+                Seleccione el staff médico para asignar disponibilidad.
+              </div>
+            </div>
+          </div>
+
+          <!-- Horarios -->
+          <div class="col-12">
+            <div class="form-group-modern">
+              <label class="form-label-modern">
+                <span
+                  class="form-icon"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      #4a90e2 0%,
+                      #7b68ee 100%
+                    );
+                  "
+                  >🕐</span
+                >
+                Horarios por Día
+              </label>
+
+              <div
+                *ngFor="let horario of disponibilidad.horarios; let i = index"
+                class="horario-form-row"
+              >
+                <div class="row g-2">
+                  <div class="col-4">
+                    <select
+                      [(ngModel)]="horario.dia"
+                      [name]="'dia-' + i"
+                      class="form-control form-control-sm"
+                      required
+                    >
+                      <option value="">Seleccionar día...</option>
+                      <option *ngFor="let dia of diasSemana" [value]="dia">
+                        {{ dia }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-3">
+                    <input
+                      type="time"
+                      class="form-control form-control-sm"
+                      [(ngModel)]="horario.horaInicio"
+                      [name]="'horaInicio-' + i"
+                      required
+                    />
+                  </div>
+                  <div class="col-3">
+                    <input
+                      type="time"
+                      class="form-control form-control-sm"
+                      [(ngModel)]="horario.horaFin"
+                      [name]="'horaFin-' + i"
+                      required
+                    />
+                  </div>
+                  <div class="col-2">
+                    <button
+                      type="button"
+                      class="btn btn-delete-small"
+                      (click)="removeHorario(i)"
+                      title="Eliminar horario"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-add-horario"
+                (click)="addHorario()"
+              >
+                <i class="fas fa-plus me-2"></i>
+                Agregar Horario
+              </button>
+
+              <div class="form-help">
+                Configure los días y horarios de disponibilidad del médico.
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- FOOTER DEL CARD -->
+    <div class="card-footer">
+      <div class="d-flex gap-2 flex-wrap">
+        <!-- Botones en modo vista -->
+        <ng-container *ngIf="!modoEdicion">
+          <button
+            type="button"
+            class="btn btn-modern btn-back"
+            (click)="goBack()"
+          >
+            ← Volver
+          </button>
+          <button
+            type="button"
+            class="btn btn-modern btn-edit"
+            (click)="activarEdicion()"
+          >
+            ✏️ Editar
+          </button>
+          <button
+            type="button"
+            class="btn btn-modern btn-delete ms-auto"
+            (click)="remove(disponibilidad)"
+            *ngIf="disponibilidad.id"
+          >
+            🗑️ Eliminar
+          </button>
+        </ng-container>
+
+        <!-- Botones en modo edición -->
+        <ng-container *ngIf="modoEdicion">
+          <button
+            type="submit"
+            class="btn btn-modern btn-save"
+            [disabled]="allFieldsEmpty()"
+            (click)="save()"
+          >
+            💾 Guardar
+          </button>
+          <button
+            type="button"
+            class="btn btn-modern btn-cancel"
+            (click)="cancelar()"
+          >
+            ❌ Cancelar
+          </button>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>

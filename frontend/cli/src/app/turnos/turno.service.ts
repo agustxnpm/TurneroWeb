@@ -10,7 +10,7 @@ import { DataPackage } from '../data.package';
 export class TurnoService {
   private url = 'rest/turno';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // === MÉTODOS UTILITARIOS ===
 
@@ -18,12 +18,12 @@ export class TurnoService {
   private getCurrentUser(): string {
     try {
       // Obtener el token JWT del localStorage (buscar en ambos storages)
-      const token = localStorage.getItem('access_token') || 
-                   sessionStorage.getItem('access_token') ||
-                   localStorage.getItem('token') || 
-                   localStorage.getItem('authToken') || 
-                   localStorage.getItem('jwt');
-      
+      const token = localStorage.getItem('access_token') ||
+        sessionStorage.getItem('access_token') ||
+        localStorage.getItem('token') ||
+        localStorage.getItem('authToken') ||
+        localStorage.getItem('jwt');
+
       if (!token) {
         console.warn('⚠️ No hay token JWT disponible');
         return 'UNKNOWN';
@@ -31,7 +31,7 @@ export class TurnoService {
 
       // Decodificar el payload del JWT (sin validar la firma - solo para extraer datos)
       const payload = this.decodeJWTPayload(token);
-      
+
       if (!payload) {
         console.warn('⚠️ No se pudo decodificar el token JWT');
         return 'UNKNOWN';
@@ -50,7 +50,7 @@ export class TurnoService {
       // Retornar el username (email) como identificador principal
       // El backend ya tiene la lógica para obtener este mismo valor del JWT
       return username || 'UNKNOWN';
-      
+
     } catch (error) {
       console.error('❌ Error al obtener usuario del JWT:', error);
       // Fallback al método anterior solo en caso de error
@@ -63,7 +63,7 @@ export class TurnoService {
     try {
       // Remover 'Bearer ' si está presente
       const cleanToken = token.replace('Bearer ', '');
-      
+
       // Un JWT tiene 3 partes separadas por puntos: header.payload.signature
       const parts = cleanToken.split('.');
       if (parts.length !== 3) {
@@ -73,7 +73,7 @@ export class TurnoService {
       // Decodificar el payload (segunda parte)
       const payload = parts[1];
       const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
-      
+
       return JSON.parse(decoded);
     } catch (error) {
       console.error('Error al decodificar JWT payload:', error);
@@ -85,13 +85,13 @@ export class TurnoService {
   private getCurrentUserFromLocalStorage(): string {
     const userRole = localStorage.getItem('userRole');
     const userName = localStorage.getItem('userName');
-    
+
     console.log('🔄 FALLBACK: Usando localStorage para obtener usuario');
     console.log('   - userRole:', userRole);
     console.log('   - userName:', userName);
-    
+
     let currentUser = 'UNKNOWN';
-    
+
     if (userRole === 'patient') {
       const patientDNI = localStorage.getItem('patientDNI');
       currentUser = `PACIENTE_${patientDNI || 'UNKNOWN'}`;
@@ -102,7 +102,7 @@ export class TurnoService {
     } else {
       currentUser = 'AUDITOR_DASHBOARD';
     }
-    
+
     console.log('   - currentUser final (fallback):', currentUser);
     return currentUser;
   }
@@ -112,14 +112,39 @@ export class TurnoService {
     return this.http.get<DataPackage<Turno[]>>(this.url);
   }
 
-  /** Obtiene un turno por ID */
+  /** Obtiene turnos por ID */
   get(id: number): Observable<DataPackage<Turno>> {
     return this.http.get<DataPackage<Turno>>(`${this.url}/${id}`);
+  }
+
+  /** Obtiene turnos por fecha */
+  getTurnosFecha(fecha: string): Observable<DataPackage<any[]>> {
+    return this.http.get<DataPackage<any[]>>(`${this.url}/filtrar?fechaExacta=${fecha}`);
+  }
+
+  /** Registra la asistencia o inasistencia de un turno */
+  registrarAsistencia(id: number, asistio: boolean): Observable<DataPackage<any>> {
+    // ⭐ CORREGIDO: El backend solo espera { asistio: boolean }
+    const body = { asistio };
+
+    console.log('📤 Registrando asistencia:', { turnoId: id, asistio, body });
+
+    return this.http.put<DataPackage<any>>(`${this.url}/${id}/asistencia`, body);
+  }
+
+  /** @deprecated Usar registrarAsistencia(id, false, motivo) en su lugar */
+  marcarAusente(id: number): Observable<DataPackage<any>> {
+    return this.registrarAsistencia(id, false);
   }
 
   /** Crea un nuevo turno */
   create(turno: Turno): Observable<DataPackage<Turno>> {
     return this.http.post<DataPackage<Turno>>(this.url, turno);
+  }
+
+  /** Asigna un turno a un paciente (usado en reserva automática tras login) */
+  asignarTurno(turnoDTO: any): Observable<DataPackage<Turno>> {
+    return this.http.post<DataPackage<Turno>>(`${this.url}/asignar`, turnoDTO);
   }
 
   /** Actualiza un turno existente */
@@ -214,12 +239,12 @@ export class TurnoService {
   }
 
   // Nuevos métodos para gestionar días excepcionales usando Agenda
-  
+
   /** Crea un día excepcional genérico */
   crearDiaExcepcional(params: any): Observable<DataPackage<any>> {
     return this.http.post<DataPackage<any>>(`rest/agenda/dia-excepcional`, params);
   }
-  
+
   /** Marca un día como feriado para todo el sistema */
   marcarFeriado(fecha: string, esquemaTurnoId: number, descripcion: string): Observable<DataPackage<any>> {
     const params = {
@@ -232,8 +257,8 @@ export class TurnoService {
   }
 
   /** Configura mantenimiento para un consultorio */
-  configurarMantenimiento(fecha: string, esquemaTurnoId: number, descripcion: string, 
-                         horaInicio?: string, horaFin?: string): Observable<DataPackage<any>> {
+  configurarMantenimiento(fecha: string, esquemaTurnoId: number, descripcion: string,
+    horaInicio?: string, horaFin?: string): Observable<DataPackage<any>> {
     const params = {
       fecha,
       esquemaTurnoId,
@@ -247,7 +272,7 @@ export class TurnoService {
 
   /** Configura atención especial para una fecha específica */
   configurarAtencionEspecial(fecha: string, esquemaTurnoId: number, descripcion: string,
-                           horaInicio: string, horaFin: string): Observable<DataPackage<any>> {
+    horaInicio: string, horaFin: string): Observable<DataPackage<any>> {
     const params = {
       fecha,
       esquemaTurnoId,
@@ -266,7 +291,7 @@ export class TurnoService {
     let params = new HttpParams()
       .set('fechaInicio', fechaInicio)
       .set('fechaFin', fechaFin);
-    
+
     if (centroId) {
       params = params.set('centroId', centroId.toString());
     }
@@ -275,15 +300,15 @@ export class TurnoService {
   }
 
   /** Valida disponibilidad considerando días excepcionales y sanitización */
-  validarDisponibilidad(fecha: string, horaInicio: string, consultorioId: number, 
-                       staffMedicoId: number): Observable<DataPackage<{disponible: boolean, motivo?: string}>> {
+  validarDisponibilidad(fecha: string, horaInicio: string, consultorioId: number,
+    staffMedicoId: number): Observable<DataPackage<{ disponible: boolean, motivo?: string }>> {
     const params = new HttpParams()
       .set('fecha', fecha)
       .set('horaInicio', horaInicio)
       .set('consultorioId', consultorioId.toString())
       .set('staffMedicoId', staffMedicoId.toString());
 
-    return this.http.get<DataPackage<{disponible: boolean, motivo?: string}>>(`rest/agenda/validar-disponibilidad`, { params });
+    return this.http.get<DataPackage<{ disponible: boolean, motivo?: string }>>(`rest/agenda/validar-disponibilidad`, { params });
   }
 
   /** Elimina un día excepcional */
@@ -312,8 +337,8 @@ export class TurnoService {
   }
 
   /** Verifica la integridad del historial de auditoría */
-  verifyAuditIntegrity(turnoId: number): Observable<DataPackage<{isValid: boolean}>> {
-    return this.http.get<DataPackage<{isValid: boolean}>>(`${this.url}/${turnoId}/audit/verify`);
+  verifyAuditIntegrity(turnoId: number): Observable<DataPackage<{ isValid: boolean }>> {
+    return this.http.get<DataPackage<{ isValid: boolean }>>(`${this.url}/${turnoId}/audit/verify`);
   }
 
   /** Obtiene estadísticas generales de auditoría */
@@ -369,47 +394,47 @@ export class TurnoService {
   /** Búsqueda avanzada con filtros múltiples */
   searchWithFilters(filter: TurnoFilter): Observable<DataPackage<any>> {
     console.log('🔍 DEBUG Frontend - Filtro original:', filter);
-    
+
     // Convertir fechas al formato esperado por el backend (dd-MM-yyyy)
     const convertedFilter = this.convertDateFormat(filter);
-    
+
     console.log('🔍 DEBUG Frontend - Filtro convertido:', convertedFilter);
     console.log('🌐 DEBUG Frontend - URL del request:', `${this.url}/search`);
-    
+
     return this.http.post<DataPackage<any>>(`${this.url}/search`, convertedFilter);
   }
 
   /** Convierte fechas del formato ISO (yyyy-MM-dd) al formato del backend (dd-MM-yyyy) */
   private convertDateFormat(filter: TurnoFilter): TurnoFilter {
     const convertedFilter = { ...filter };
-    
+
     if (convertedFilter.fechaDesde) {
       const original = convertedFilter.fechaDesde;
       convertedFilter.fechaDesde = this.formatDateForBackend(convertedFilter.fechaDesde as any);
       console.log(`📅 DEBUG fechaDesde: ${original} → ${convertedFilter.fechaDesde}`);
     }
-    
+
     if (convertedFilter.fechaHasta) {
       const original = convertedFilter.fechaHasta;
       convertedFilter.fechaHasta = this.formatDateForBackend(convertedFilter.fechaHasta as any);
       console.log(`📅 DEBUG fechaHasta: ${original} → ${convertedFilter.fechaHasta}`);
     }
-    
+
     if (convertedFilter.fechaExacta) {
       const original = convertedFilter.fechaExacta;
       convertedFilter.fechaExacta = this.formatDateForBackend(convertedFilter.fechaExacta as any);
       console.log(`📅 DEBUG fechaExacta: ${original} → ${convertedFilter.fechaExacta}`);
     }
-    
+
     return convertedFilter;
   }
 
   /** Convierte una fecha de formato yyyy-MM-dd a dd-MM-yyyy */
   private formatDateForBackend(dateString: string | any): string {
     if (!dateString) return dateString;
-    
+
     console.log(`🔧 formatDateForBackend input: "${dateString}" (type: ${typeof dateString})`);
-    
+
     // Convertir a string si es un Date object
     let dateStr = dateString;
     if (dateString instanceof Date) {
@@ -421,13 +446,13 @@ export class TurnoService {
     } else {
       dateStr = String(dateString);
     }
-    
+
     // Si ya está en el formato correcto (dd-MM-yyyy), no hacer nada
     if (dateStr.match(/^\d{2}-\d{2}-\d{4}$/)) {
       console.log(`✅ Ya está en formato dd-MM-yyyy: ${dateStr}`);
       return dateStr;
     }
-    
+
     // Si está en formato ISO (yyyy-MM-dd), convertir
     if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
       const parts = dateStr.split('-');
@@ -435,7 +460,7 @@ export class TurnoService {
       console.log(`🔄 Convertido de yyyy-MM-dd a dd-MM-yyyy: ${dateStr} → ${converted}`);
       return converted;
     }
-    
+
     // Si es una fecha completa ISO, extraer solo la fecha
     if (dateStr.includes('T')) {
       const datePart = dateStr.split('T')[0];
@@ -444,7 +469,7 @@ export class TurnoService {
       console.log(`🔄 Convertido de ISO completo a dd-MM-yyyy: ${dateStr} → ${converted}`);
       return converted;
     }
-    
+
     console.log(`⚠️ No se pudo convertir la fecha: ${dateStr}`);
     return dateStr; // Retornar sin cambios si no se puede procesar
   }
@@ -455,15 +480,15 @@ export class TurnoService {
   }
 
   /** Búsqueda por texto simple */
-  searchByText(searchText: string, page: number = 0, size: number = 20, 
-               sortBy: string = 'fecha', sortDirection: string = 'ASC'): Observable<DataPackage<any>> {
+  searchByText(searchText: string, page: number = 0, size: number = 20,
+    sortBy: string = 'fecha', sortDirection: string = 'ASC'): Observable<DataPackage<any>> {
     const params = new HttpParams()
       .set('q', searchText || '')
       .set('page', page.toString())
       .set('size', size.toString())
       .set('sortBy', sortBy)
       .set('sortDirection', sortDirection);
-    
+
     return this.http.get<DataPackage<any>>(`${this.url}/search`, { params });
   }
 
@@ -519,9 +544,9 @@ export class TurnoService {
    */
   cancelarConMotivo(id: number, motivo: string): Observable<DataPackage<Turno>> {
     const currentUser = this.getCurrentUser();
-    return this.http.put<DataPackage<Turno>>(`${this.url}/${id}/cancelar`, { 
+    return this.http.put<DataPackage<Turno>>(`${this.url}/${id}/cancelar`, {
       motivo: motivo,
-      usuario: currentUser 
+      usuario: currentUser
     });
   }
 
@@ -542,17 +567,17 @@ export class TurnoService {
   updateEstado(turnoId: number, nuevoEstado: string, motivo?: string, usuario?: string): Observable<DataPackage<Turno>> {
     // Si se proporciona usuario específico, usarlo; si no, detectar automáticamente
     let currentUser = usuario;
-    
+
     if (!currentUser) {
       currentUser = this.getCurrentUser();
     }
-    
+
     const body = {
       estado: nuevoEstado,
       motivo: motivo || '',
       usuario: currentUser
     };
-    
+
     return this.http.put<DataPackage<Turno>>(`${this.url}/${turnoId}/estado`, body);
   }
 

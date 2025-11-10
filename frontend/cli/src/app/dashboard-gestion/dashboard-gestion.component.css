@@ -1,0 +1,371 @@
+/* ================================================
+   DASHBOARD GESTION - ESTILOS NORMALIZADOS
+   ================================================
+   Sistema 100% basado en variables globales (styles.css)
+   Material Symbols para todos los iconos
+   ================================================ */
+
+/* ================================================
+   SECCIÓN 1: CONTENEDOR PRINCIPAL
+   ================================================ */
+
+.dashboard-gestion-container .card {
+  max-width: 1800px;
+}
+
+/* ================================================
+   SECCIÓN 2: HEADER DASHBOARD
+   ================================================ */
+
+.dashboard-header {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-gradient-purple) 100%);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  color: var(--text-on-accent);
+}
+
+.dashboard-header .header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.dashboard-header .header-icon {
+  font-size: 64px;
+  opacity: 0.95;
+  color: var(--color-white);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.dashboard-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-white);
+  margin: 0;
+}
+
+.dashboard-header .text-muted {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: var(--font-size-sm);
+}
+
+/* ================================================
+   SECCIÓN 3: LOADING STATE
+   ================================================ */
+
+.loading-state {
+  text-align: center;
+  padding: var(--space-xxl);
+  background: var(--color-background);
+  border-radius: var(--border-radius-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.loading-content .material-symbols-outlined {
+  font-size: 48px;
+  color: var(--color-accent);
+}
+
+.loading-content h6 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ================================================
+   SECCIÓN 4: KPI GRID
+   ================================================ */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+/* ================================================
+   SECCIÓN 5: CHARTS GRID
+   ================================================ */
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.chart-container,
+.ocupacion-container {
+  min-height: 300px;
+}
+
+/* ================================================
+   SECCIÓN 6: DASHBOARD SECTIONS
+   ================================================ */
+
+.dashboard-section {
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  height: 100%;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding-bottom: var(--space-md);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.section-header .material-symbols-outlined {
+  font-size: 24px;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.section-header h6 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ================================================
+   SECCIÓN 7: OCUPACIÓN POR CONSULTORIO
+   ================================================ */
+
+.ocupacion-scroll-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: var(--space-md);
+  border-radius: var(--border-radius-md);
+}
+
+/* Estilo del scrollbar */
+.ocupacion-scroll-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ocupacion-scroll-wrapper::-webkit-scrollbar-track {
+  background: var(--color-background);
+  border-radius: var(--border-radius-md);
+}
+
+.ocupacion-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border-radius: var(--border-radius-md);
+  opacity: 0.5;
+}
+
+.ocupacion-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gradient-purple);
+}
+
+.ocupacion-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.ocupacion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  background: var(--color-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  transition: all 0.3s ease;
+}
+
+.ocupacion-item:hover {
+  background: var(--color-surface);
+  border-color: var(--color-accent);
+  transform: translateX(4px);
+}
+
+.consultorio-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.consultorio-info .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+.consultorio-detalles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.consultorio-nombre {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.consultorio-numero {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+.ocupacion-value {
+  display: flex;
+  align-items: center;
+}
+
+.badge-ocupacion {
+  background: linear-gradient(135deg, rgba(13, 110, 253, 0.15) 0%, rgba(13, 110, 253, 0.05) 100%);
+  border: 1px solid rgba(13, 110, 253, 0.3);
+  color: var(--color-accent);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  font-family: 'Courier New', monospace;
+}
+
+.ocupacion-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-background);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.ocupacion-footer .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--color-accent);
+  opacity: 0.7;
+}
+
+/* ================================================
+   SECCIÓN 8: EMPTY STATE PEQUEÑO
+   ================================================ */
+
+.empty-state-small {
+  text-align: center;
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.empty-state-small .material-symbols-outlined {
+  font-size: 48px;
+  color: var(--color-text-secondary);
+  opacity: 0.4;
+}
+
+.empty-state-small p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ================================================
+   SECCIÓN 9: RESPONSIVE
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 992px) {
+  .dashboard-header .header-icon {
+    font-size: 48px;
+  }
+
+  .dashboard-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .charts-grid {
+    gap: var(--space-md);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: var(--space-md);
+  }
+
+  .dashboard-header h2 {
+    font-size: var(--font-size-lg);
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .dashboard-section {
+    padding: var(--space-md);
+  }
+
+  .ocupacion-item {
+    padding: var(--space-sm);
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-header .header-icon {
+    font-size: 40px;
+  }
+
+  .consultorio-info .material-symbols-outlined {
+    display: none;
+  }
+
+  .badge-ocupacion {
+    font-size: var(--font-size-xs);
+  }
+}

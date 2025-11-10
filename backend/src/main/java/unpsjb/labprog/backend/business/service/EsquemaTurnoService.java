@@ -247,7 +247,7 @@ public class EsquemaTurnoService {
 
         EsquemaTurno esquemaTurno = toEntity(dto);
         
-        // Validación: Conflictos entre esquemas de turnos existentes
+        // NUEVO: Si ya existe un esquema con la misma disponibilidad, actualizar en lugar de crear uno nuevo
         List<EsquemaTurno> existentes = esquemaTurnoRepository.findByStaffMedicoId(esquemaTurno.getStaffMedico().getId());
         for (EsquemaTurno existente : existentes) {
             Integer nuevoId = esquemaTurno.getId();
@@ -257,7 +257,9 @@ public class EsquemaTurnoService {
             boolean mismoId = (nuevoId != null && nuevoId.equals(existenteId));
             if (!mismoId && esquemaTurno.getDisponibilidadMedico().getId()
                     .equals(existente.getDisponibilidadMedico().getId())) {
-                throw new IllegalStateException("Conflicto: Esquema ya existe.");
+                // En lugar de lanzar error, combinar horarios con el esquema existente
+                System.out.println("🔄 Esquema ya existe para esta disponibilidad, combinando horarios...");
+                return combinarHorariosConEsquemaExistente(existente, dto);
             }
         }
 
@@ -773,5 +775,70 @@ public class EsquemaTurnoService {
             System.err.println("Error al resolver conflicto automáticamente: " + e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Combina horarios nuevos con un esquema existente, evitando duplicados
+     */
+    private EsquemaTurnoDTO combinarHorariosConEsquemaExistente(EsquemaTurno esquemaExistente, EsquemaTurnoDTO nuevoDto) {
+        List<EsquemaTurno.Horario> horariosExistentes = esquemaExistente.getHorarios();
+        List<EsquemaTurnoDTO.DiaHorarioDTO> horariosNuevos = nuevoDto.getHorarios();
+
+        int horariosAgregados = 0;
+
+        // Agregar solo horarios que no existan ya
+        for (EsquemaTurnoDTO.DiaHorarioDTO nuevoHorario : horariosNuevos) {
+            boolean yaExiste = horariosExistentes.stream().anyMatch(existente ->
+                normalizarDia(existente.getDia()).equals(normalizarDia(nuevoHorario.getDia())) &&
+                existente.getHoraInicio().equals(nuevoHorario.getHoraInicio()) &&
+                existente.getHoraFin().equals(nuevoHorario.getHoraFin())
+            );
+
+            if (!yaExiste) {
+                EsquemaTurno.Horario horario = new EsquemaTurno.Horario();
+                horario.setDia(nuevoHorario.getDia());
+                horario.setHoraInicio(nuevoHorario.getHoraInicio());
+                horario.setHoraFin(nuevoHorario.getHoraFin());
+                horariosExistentes.add(horario);
+                horariosAgregados++;
+            }
+        }
+
+        if (horariosAgregados == 0) {
+            throw new IllegalStateException("Todos los horarios propuestos ya existen en el esquema.");
+        }
+
+        // Actualizar el intervalo si es válido y diferente
+        if (nuevoDto.getIntervalo() > 0) {
+            esquemaExistente.setIntervalo(nuevoDto.getIntervalo());
+        }
+
+        // Actualizar el consultorio si se especificó uno diferente
+        Integer consultorioExistenteId = esquemaExistente.getConsultorio() != null ?
+            esquemaExistente.getConsultorio().getId() : null;
+
+        if (nuevoDto.getConsultorioId() != null &&
+            !nuevoDto.getConsultorioId().equals(consultorioExistenteId)) {
+            esquemaExistente.setConsultorio(consultorioRepository.findById(nuevoDto.getConsultorioId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                    "Consultorio no encontrado con ID: " + nuevoDto.getConsultorioId())));
+        }
+
+        // Guardar el esquema actualizado
+        EsquemaTurno actualizado = esquemaTurnoRepository.save(esquemaExistente);
+
+        System.out.println("✅ Esquema actualizado exitosamente. Se agregaron " + horariosAgregados + " horario(s) nuevo(s).");
+
+        return toDTO(actualizado);
+    }
+
+    /**
+     * Normaliza el nombre de un día eliminando tildes y convirtiendo a mayúsculas
+     */
+    private String normalizarDia(String dia) {
+        if (dia == null) return "";
+        return java.text.Normalizer.normalize(dia, java.text.Normalizer.Form.NFD)
+            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+            .toUpperCase();
     }
 }

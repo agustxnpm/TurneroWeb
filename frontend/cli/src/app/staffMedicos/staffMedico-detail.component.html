@@ -1,208 +1,205 @@
-<div class="container-fluid py-4">
-  <div class="row justify-content-center">
-    <div class="col-12 col-lg-8">
-      <div class="card">
-        <!-- HEADER DEL CARD -->
-        <div class="card-header text-white">
-          <div class="d-flex align-items-center">
-            <div class="info-icon me-3" style="background: rgba(255,255,255,0.2);">
-              👥
-            </div>
-            <div>
-              <h4 class="mb-0 fw-bold">
-                <ng-container *ngIf="!esNuevo && staffMedico.id; else nuevoTitle">
-                  Staff Médico #{{ staffMedico.id }}
-                </ng-container>
-                <ng-template #nuevoTitle>
-                  Nuevo Staff Médico
-                </ng-template>
-              </h4>
-              <small class="opacity-75">
-                <ng-container *ngIf="!modoEdicion">Información del Staff Médico</ng-container>
-                <ng-container *ngIf="modoEdicion && !esNuevo">Editando Staff Médico</ng-container>
-                <ng-container *ngIf="modoEdicion && esNuevo">Creando Nuevo Staff Médico</ng-container>
-              </small>
-            </div>
+<div class="staffmedico-detail-card card p-xl mb-xl mx-auto" *ngIf="staffMedico" style="max-width: 1000px;">
+  <!-- Header -->
+  <div class="staffmedico-detail-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">groups</span>
+      <div>
+        <h2 class="mb-0" *ngIf="!esNuevo">
+          Staff Médico #{{ staffMedico.id }}
+        </h2>
+        <h2 class="mb-0" *ngIf="esNuevo">
+          Nuevo Staff Médico
+        </h2>
+        <p class="text-muted mb-0 mt-sm">
+          <ng-container *ngIf="!modoEdicion && !esNuevo">Información del staff médico</ng-container>
+          <ng-container *ngIf="modoEdicion && !esNuevo">Editando información</ng-container>
+          <ng-container *ngIf="esNuevo">Registro de nuevo staff médico</ng-container>
+        </p>
+      </div>
+    </div>
+    
+    <div class="d-flex gap-md" *ngIf="!modoEdicion && !esNuevo">
+      <button type="button" class="btn btn-primary" (click)="activarEdicion()" aria-label="Editar información del staff médico">
+        <span class="material-symbols-outlined me-2">edit</span>
+        <span class="d-none d-sm-inline">Editar</span>
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="goBack()" aria-label="Volver al listado">
+        <span class="material-symbols-outlined me-2">arrow_back</span>
+        <span class="d-none d-sm-inline">Volver</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODO VISTA (Solo lectura) -->
+  <div *ngIf="!modoEdicion && !esNuevo" class="staffmedico-info-view">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">tag</span>
+          <div class="info-content">
+            <label class="info-label">ID del Staff</label>
+            <div class="info-value">{{ staffMedico.id }}</div>
           </div>
         </div>
+      </div>
 
-        <!-- CUERPO DEL CARD -->
-        <div class="card-body">
-          <!-- MODO VISTA -->
-          <div *ngIf="!modoEdicion">
-            <div class="row">
-              <div class="col-12">
-                <div class="info-item d-flex align-items-center">
-                  <div class="info-icon" style="background: var(--staff-medico-gradient);">
-                    🆔
-                  </div>
-                  <div class="flex-grow-1">
-                    <div class="info-label">ID del Staff</div>
-                    <div class="info-value">
-                      <span class="id-display">{{ staffMedico.id }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-12">
-                <div class="info-item d-flex align-items-center">
-                  <div class="info-icon" style="background: var(--centro-atencion-gradient);">
-                    🏥
-                  </div>
-                  <div class="flex-grow-1">
-                    <div class="info-label">Centro de Atención</div>
-                    <div class="info-value">
-                      <span class="centro-display">{{ getCentroNombre() }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-12">
-                <div class="info-item d-flex align-items-center">
-                  <div class="info-icon" style="background: var(--medicos-gradient);">
-                    👨‍⚕️
-                  </div>
-                  <div class="flex-grow-1">
-                    <div class="info-label">Médico</div>
-                    <div class="info-value">
-                      <span class="medico-display">{{ getMedicoNombre() }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-12">
-                <div class="info-item d-flex align-items-center">
-                  <div class="info-icon" style="background: var(--especialidades-gradient);">
-                    🩺
-                  </div>
-                  <div class="flex-grow-1">
-                    <div class="info-label">Especialidad</div>
-                    <div class="info-value">
-                      <span class="especialidad-display">{{ getEspecialidadNombre() }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">local_hospital</span>
+          <div class="info-content">
+            <label class="info-label">Centro de Atención</label>
+            <div class="info-value">{{ getCentroNombre() }}</div>
           </div>
-
-          <!-- MODO EDICIÓN -->
-          <form *ngIf="modoEdicion" (ngSubmit)="save()" #staffForm="ngForm">
-            <div class="row">
-              <div class="col-12">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: var(--centro-atencion-gradient);">🏥</span>
-                    Centro de Atención
-                  </label>
-                  <select
-                    [(ngModel)]="staffMedico.centroAtencionId"
-                    name="centroAtencionId"
-                    class="form-control form-control-modern"
-                    required
-                  >
-                    <option value="">Seleccione un centro...</option>
-                    <option *ngFor="let centro of centros" [value]="centro.id">
-                      {{ centro.nombre }}
-                    </option>
-                  </select>
-                  <div class="form-help">
-                    Seleccione el centro de atención donde trabajará el médico.
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-12">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: var(--medicos-gradient);">👨‍⚕️</span>
-                    Médico
-                  </label>
-                  <select
-                    [(ngModel)]="staffMedico.medicoId"
-                    name="medicoId"
-                    class="form-control form-control-modern"
-                    (change)="onMedicoSeleccionado()"
-                    required
-                  >
-                    <option value="">Seleccione un médico...</option>
-                    <option *ngFor="let medico of medicos" [value]="medico.id">
-                      {{ medico.nombre }} {{ medico.apellido }}
-                    </option>
-                  </select>
-                  <div class="form-help">
-                    Seleccione el médico que formará parte del staff.
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-12">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: var(--especialidades-gradient);">🩺</span>
-                    Especialidad
-                  </label>
-                  <select
-                    [(ngModel)]="staffMedico.especialidadId"
-                    name="especialidadId"
-                    class="form-control form-control-modern"
-                    required
-                  >
-                    <option value="">Seleccione una especialidad...</option>
-                    <option *ngFor="let especialidad of getEspecialidadesDisponibles()" [value]="especialidad.id">
-                      {{ especialidad.nombre }}
-                    </option>
-                  </select>
-                  <div class="form-help">
-                    Seleccione la especialidad en la que trabajará el médico.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form>
         </div>
+      </div>
 
-        <!-- FOOTER DEL CARD -->
-        <div class="card-footer">
-          <div class="d-flex gap-2 flex-wrap">
-            <!-- Botones en modo vista -->
-            <ng-container *ngIf="!modoEdicion">
-              <button type="button" class="btn btn-modern btn-back" (click)="goBack()">
-                ← Volver
-              </button>
-              <button type="button" class="btn btn-modern btn-edit" (click)="activarEdicion()">
-                ✏️ Editar
-              </button>
-              <button 
-                type="button" 
-                class="btn btn-modern btn-delete ms-auto" 
-                (click)="remove(staffMedico)"
-                *ngIf="staffMedico.id"
-              >
-                🗑️ Eliminar
-              </button>
-            </ng-container>
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">person</span>
+          <div class="info-content">
+            <label class="info-label">Médico</label>
+            <div class="info-value">{{ getMedicoNombre() }}</div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Botones en modo edición -->
-            <ng-container *ngIf="modoEdicion">
-              <button 
-                type="submit" 
-                class="btn btn-modern btn-save" 
-                [disabled]="allFieldsEmpty()"
-                (click)="save()"
-              >
-                💾 Guardar
-              </button>
-              <button type="button" class="btn btn-modern btn-cancel" (click)="cancelar()">
-                ❌ Cancelar
-              </button>
-            </ng-container>
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">medical_services</span>
+          <div class="info-content">
+            <label class="info-label">Especialidad</label>
+            <div class="info-value">{{ getEspecialidadNombre() }}</div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- MODO EDICIÓN/CREACIÓN -->
+  <form *ngIf="modoEdicion || esNuevo" #staffForm="ngForm" (ngSubmit)="save()" novalidate>
+    <div class="row g-4">
+      <!-- Centro de Atención -->
+      <div class="col-12">
+        <label for="centroAtencionId" class="form-label">
+          <span class="material-symbols-outlined me-2">local_hospital</span>
+          Centro de Atención
+        </label>
+        <select
+          [(ngModel)]="staffMedico.centroAtencionId"
+          name="centroAtencionId"
+          id="centroAtencionId"
+          class="form-control"
+          required
+          #centroField="ngModel"
+        >
+          <option value="0" disabled selected>Seleccione un centro...</option>
+          <option *ngFor="let centro of centros" [value]="centro.id">
+            {{ centro.nombre }}
+          </option>
+        </select>
+        <div *ngIf="centroField.invalid && centroField.touched" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>Debe seleccionar un centro de atención</small>
+        </div>
+        <small class="text-muted d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">info</span>
+          Seleccione el centro donde trabajará el médico
+        </small>
+      </div>
+
+      <!-- Médico -->
+      <div class="col-12">
+        <label for="medicoId" class="form-label">
+          <span class="material-symbols-outlined me-2">person</span>
+          Médico
+        </label>
+        <select
+          [(ngModel)]="staffMedico.medicoId"
+          name="medicoId"
+          id="medicoId"
+          class="form-control"
+          (change)="onMedicoSeleccionado()"
+          required
+          #medicoField="ngModel"
+        >
+          <option value="0" disabled selected>Seleccione un médico...</option>
+          <option *ngFor="let medico of medicos" [value]="medico.id">
+            {{ medico.nombre }} {{ medico.apellido }}
+          </option>
+        </select>
+        <div *ngIf="medicoField.invalid && medicoField.touched" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>Debe seleccionar un médico</small>
+        </div>
+        <small class="text-muted d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">info</span>
+          Seleccione el médico que formará parte del staff
+        </small>
+      </div>
+
+      <!-- Especialidad -->
+      <div class="col-12">
+        <label for="especialidadId" class="form-label">
+          <span class="material-symbols-outlined me-2">medical_services</span>
+          Especialidad
+        </label>
+        <select
+          [(ngModel)]="staffMedico.especialidadId"
+          name="especialidadId"
+          id="especialidadId"
+          class="form-control"
+          required
+          #especialidadField="ngModel"
+          [disabled]="!staffMedico.medicoId || staffMedico.medicoId === 0"
+        >
+          <option value="0" disabled selected>Seleccione una especialidad...</option>
+          <option *ngFor="let especialidad of getEspecialidadesDisponibles()" [value]="especialidad.id">
+            {{ especialidad.nombre }}
+          </option>
+        </select>
+        <div *ngIf="especialidadField.invalid && especialidadField.touched" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>Debe seleccionar una especialidad</small>
+        </div>
+        <small class="text-muted d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">info</span>
+          Seleccione la especialidad en la que trabajará el médico
+        </small>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="col-12">
+        <div class="d-flex gap-md flex-wrap justify-content-end">
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="staffForm.invalid || allFieldsEmpty()"
+            aria-label="Guardar staff médico"
+          >
+            <span class="material-symbols-outlined me-2">save</span>
+            Guardar
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="cancelar()"
+            aria-label="Cancelar edición"
+          >
+            <span class="material-symbols-outlined me-2">close</span>
+            Cancelar
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-danger" 
+            (click)="confirmDelete()"
+            *ngIf="!esNuevo && staffMedico.id"
+            aria-label="Eliminar staff médico"
+          >
+            <span class="material-symbols-outlined me-2">delete</span>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
 </div>

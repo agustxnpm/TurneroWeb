@@ -21,6 +21,8 @@ public class PacienteDTO {
     private ObraSocialDTO obraSocial;
     private Integer obraSocialId; // Para registro
     
+    private boolean profileCompleted = false; // Indica si el perfil está completo
+    
     // Campo para auditoría
     private String performedBy; // Usuario que realiza la acción
 

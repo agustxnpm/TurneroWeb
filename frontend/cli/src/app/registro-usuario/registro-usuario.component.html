@@ -1,61 +1,55 @@
-<div class="home-container" [@fadeIn]>
-  <!-- Hero Section -->
-  <div class="hero-section" [@slideUp]>
+<div class="login-page-wrapper" [@fadeIn]>
+  <!-- Header con marca -->
+  <div class="login-page-header" [@slideUp]>
     <div class="brand-logo" [@logoWave]>
-      <i class="fas fa-calendar-check"></i>
-      <h1 class="brand-title">CheTurno</h1>
+      <span class="material-symbols-outlined brand-icon">event_available</span>
+      <h1>CheTurno</h1>
     </div>
   </div>
 
-  <!-- Registration Section -->
-  <div class="login-section">
-    <div class="login-card" [@slideUp]>
-      <!-- Login Link -->
-      <div class="login-link">
-        <p>
+  <!-- Card de Registro centrado -->
+  <div class="login-page-content">
+    <div class="card login-card" [@slideUp]>
+      
+      <!-- Link de login -->
+      <div class="register-prompt">
+        <p class="text-small">
           ¿Ya estás registrado?
-          <a
-            class="login-redirect"
-            [@pulse]="pulseState"
-            (click)="navigateToLogin()"
-            >Inicia sesión aquí</a
-          >
+          <a [@pulse]="pulseState" (click)="navigateToLogin()">Inicia sesión aquí</a>
         </p>
       </div>
 
-      <form
-        class="login-form"
-        #registroForm="ngForm"
-        (ngSubmit)="onSubmit(registroForm)"
-        autocomplete="off"
-        novalidate
-      >
-        <div class="form-title">Crea tu cuenta de paciente</div>
+      <form #registroForm="ngForm" (ngSubmit)="onSubmit(registroForm)" novalidate>
+        
+        <h3>Crea tu cuenta de paciente</h3>
 
         <!-- Mensajes de estado -->
-        <div class="alert alert-success" *ngIf="successMessage" [@fadeIn]>
-          <i class="fas fa-check-circle me-2"></i>
-          {{ successMessage }}
+        <div class="alert-success" *ngIf="successMessage" [@fadeIn]>
+          <span class="material-symbols-outlined">check_circle</span>
+          <span>{{ successMessage }}</span>
         </div>
 
-        <div class="alert alert-danger" *ngIf="errorMessage" [@fadeIn]>
-          <i class="fas fa-exclamation-circle me-2"></i>
-          {{ errorMessage }}
-          <button
-            type="button"
-            class="btn-close"
-            (click)="limpiarMensajes()"
-          ></button>
+        <div class="alert-error" *ngIf="errorMessage" [@fadeIn]>
+          <span class="material-symbols-outlined">error</span>
+          <span>{{ errorMessage }}</span>
+          <button type="button" class="btn-close-alert" (click)="limpiarMensajes()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
         </div>
 
+        <!-- Nombre y Apellido -->
         <div class="form-row">
           <div class="form-group">
-            <label for="nombre">Nombre</label>
+            <label for="nombre" class="form-label">
+              <span class="material-symbols-outlined">person</span>
+              Nombre
+            </label>
             <input
               type="text"
               id="nombre"
               name="nombre"
               class="form-control"
+              [class.is-invalid]="nombre.invalid && nombre.touched"
               [(ngModel)]="usuario.nombre"
               required
               minlength="2"
@@ -64,22 +58,24 @@
               #nombre="ngModel"
               (keypress)="onlyText($event)"
               (paste)="validateTextPaste($event)"
+              autocomplete="given-name"
             />
-            <small
-              class="form-text text-danger"
-              *ngIf="nombre.invalid && nombre.touched"
-            >
+            <small class="invalid-feedback" *ngIf="nombre.invalid && nombre.touched">
               El nombre es requerido
             </small>
           </div>
 
           <div class="form-group">
-            <label for="apellido">Apellido</label>
+            <label for="apellido" class="form-label">
+              <span class="material-symbols-outlined">person</span>
+              Apellido
+            </label>
             <input
               type="text"
               id="apellido"
               name="apellido"
               class="form-control"
+              [class.is-invalid]="apellido.invalid && apellido.touched"
               [(ngModel)]="usuario.apellido"
               required
               minlength="2"
@@ -88,23 +84,26 @@
               #apellido="ngModel"
               (keypress)="onlyText($event)"
               (paste)="validateTextPaste($event)"
+              autocomplete="family-name"
             />
-            <small
-              class="form-text text-danger"
-              *ngIf="apellido.invalid && apellido.touched"
-            >
+            <small class="invalid-feedback" *ngIf="apellido.invalid && apellido.touched">
               El apellido es requerido
             </small>
           </div>
         </div>
 
+        <!-- DNI -->
         <div class="form-group">
-          <label for="dni">DNI</label>
+          <label for="dni" class="form-label">
+            <span class="material-symbols-outlined">badge</span>
+            DNI
+          </label>
           <input
             type="text"
             id="dni"
             name="dni"
             class="form-control"
+            [class.is-invalid]="dni.invalid && dni.touched"
             [(ngModel)]="usuario.dni"
             required
             minlength="7"
@@ -114,103 +113,102 @@
             #dni="ngModel"
             (keypress)="onlyNumbers($event)"
             (paste)="validateNumberPaste($event)"
+            autocomplete="off"
           />
-          <small
-            class="form-text text-danger"
-            *ngIf="dni.invalid && dni.touched"
-          >
-            Campo obligatorio
+          <small class="invalid-feedback" *ngIf="dni.invalid && dni.touched">
+            Campo obligatorio (7 a 10 dígitos)
           </small>
         </div>
 
+        <!-- Teléfono -->
         <div class="form-group">
-          <label for="telefono">Teléfono:</label>
+          <label for="countryCode" class="form-label">
+            <span class="material-symbols-outlined">phone</span>
+            Teléfono
+          </label>
           <div class="phone-input-container">
-            <div>
-              <label class="phone-label" for="countryCode">País</label>
-              <select
-                id="countryCode"
-                name="countryCode"
-                class="form-control country-select"
-                [(ngModel)]="usuario.codigoPais"
-                required
-                #countryCode="ngModel"
-              >
-                <option value="+54">🇦🇷 AR (+54)</option>
-                <option value="+55">🇧🇷 BR (+55)</option>
-                <option value="+56">🇨🇱 CL (+56)</option>
-                <option value="+57">🇨🇴 CO (+57)</option>
-                <option value="+598">🇺🇾 UY (+598)</option>
-                <option value="+595">🇵🇾 PY (+595)</option>
-                <option value="+51">🇵🇪 PE (+51)</option>
-                <option value="+58">🇻🇪 VE (+58)</option>
-                <option value="+593">🇪🇨 EC (+593)</option>
-                <option value="+591">🇧🇴 BO (+591)</option>
-                <option value="+1">🇺🇸 US (+1)</option>
-                <option value="+34">🇪🇸 ES (+34)</option>
-              </select>
-            </div>
-            <div>
-              <label class="phone-label" for="telefono"
-                >Número del teléfono móvil</label
-              >
-              <input
-                type="tel"
-                id="telefono"
-                name="telefono"
-                class="form-control phone-number"
-                [(ngModel)]="usuario.telefono"
-                required
-                pattern="[0-9]{6,10}"
-                maxlength="10"
-                placeholder="11 2345 6789"
-                #telefono="ngModel"
-                (keypress)="onlyNumbers($event)"
-                (paste)="validateNumberPaste($event)"
-              />
-            </div>
+            <select
+              id="countryCode"
+              name="countryCode"
+              class="form-control country-select"
+              [(ngModel)]="usuario.codigoPais"
+              required
+              #countryCode="ngModel"
+            >
+              <option value="+54">🇦🇷 AR (+54)</option>
+              <option value="+55">🇧🇷 BR (+55)</option>
+              <option value="+56">🇨🇱 CL (+56)</option>
+              <option value="+57">🇨🇴 CO (+57)</option>
+              <option value="+598">🇺🇾 UY (+598)</option>
+              <option value="+595">🇵🇾 PY (+595)</option>
+              <option value="+51">🇵🇪 PE (+51)</option>
+              <option value="+58">🇻🇪 VE (+58)</option>
+              <option value="+593">🇪🇨 EC (+593)</option>
+              <option value="+591">🇧🇴 BO (+591)</option>
+              <option value="+1">🇺🇸 US (+1)</option>
+              <option value="+34">🇪🇸 ES (+34)</option>
+            </select>
+            <input
+              type="tel"
+              id="telefono"
+              name="telefono"
+              class="form-control phone-number"
+              [class.is-invalid]="telefono.invalid && telefono.touched"
+              [(ngModel)]="usuario.telefono"
+              required
+              pattern="[0-9]{6,10}"
+              maxlength="10"
+              placeholder="11 2345 6789"
+              #telefono="ngModel"
+              (keypress)="onlyNumbers($event)"
+              (paste)="validateNumberPaste($event)"
+              autocomplete="tel"
+            />
           </div>
-          <small class="form-text"
-            >Selecciona el país e ingresa tu número de teléfono</small
-          >
-          <small
-            class="form-text text-danger"
-            *ngIf="telefono.invalid && telefono.touched"
-          >
-            Campo obligatorio
+          <small class="form-text">Selecciona el país e ingresa tu número de teléfono</small>
+          <small class="invalid-feedback" *ngIf="telefono.invalid && telefono.touched">
+            Número de teléfono inválido
           </small>
         </div>
 
+        <!-- Email -->
         <div class="form-group">
-          <label for="email">E-Mail</label>
+          <label for="email" class="form-label">
+            <span class="material-symbols-outlined">email</span>
+            E-Mail
+          </label>
           <input
             type="email"
             id="email"
             name="email"
             class="form-control"
+            [class.is-invalid]="email.invalid && email.touched"
             [(ngModel)]="usuario.email"
             required
             pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
             placeholder="tu@email.com"
             title="Ingresa un email válido"
             #email="ngModel"
+            autocomplete="email"
           />
-          <small
-            class="form-text text-danger"
-            *ngIf="email.invalid && email.touched"
-          >
+          <small class="invalid-feedback" *ngIf="email.invalid && email.touched">
             Ingresa un email válido
           </small>
         </div>
 
+        <!-- Contraseña y Confirmar Contraseña -->
         <div class="form-row">
           <div class="form-group">
-            <label for="password">Contraseña</label>
+            <label for="password" class="form-label">
+              <span class="material-symbols-outlined">lock</span>
+              Contraseña
+            </label>
             <input
               type="password"
               id="password"
               name="password"
               class="form-control"
+              [class.is-invalid]="password.invalid && password.touched"
               [(ngModel)]="usuario.password"
               required
               minlength="8"
@@ -218,66 +216,53 @@
               placeholder="Contraseña"
               title="Mínimo 8 caracteres, debe incluir letras y números"
               #password="ngModel"
+              autocomplete="new-password"
             />
-            <small class="form-text"
-              >Mínimo 8 caracteres con letras y números</small
-            >
-            <small
-              class="form-text text-danger"
-              *ngIf="password.invalid && password.touched"
-            >
-              <span *ngIf="password.errors?.['required']"
-                >La contraseña es requerida</span
-              >
-              <span *ngIf="password.errors?.['minlength']"
-                >La contraseña debe tener al menos 8 caracteres</span
-              >
-              <span *ngIf="password.errors?.['pattern']"
-                >La contraseña debe incluir letras y números</span
-              >
+            <small class="form-text">Mínimo 8 caracteres con letras y números</small>
+            <small class="invalid-feedback" *ngIf="password.invalid && password.touched">
+              <span *ngIf="password.errors?.['required']">La contraseña es requerida</span>
+              <span *ngIf="password.errors?.['minlength']">Mínimo 8 caracteres</span>
+              <span *ngIf="password.errors?.['pattern']">Debe incluir letras y números</span>
             </small>
           </div>
 
           <div class="form-group">
-            <label for="confirmPassword">Confirmar contraseña</label>
+            <label for="confirmPassword" class="form-label">
+              <span class="material-symbols-outlined">lock</span>
+              Confirmar contraseña
+            </label>
             <input
               type="password"
               id="confirmPassword"
               name="confirmPassword"
               class="form-control"
+              [class.is-invalid]="(confirmPassword.invalid && confirmPassword.touched) || (!passwordsMatch() && confirmPassword.touched)"
               [(ngModel)]="usuario.confirmPassword"
               required
               placeholder="Repite la contraseña"
               title="Debe coincidir con la contraseña"
               #confirmPassword="ngModel"
+              autocomplete="new-password"
             />
             <small class="form-text">Debe coincidir con la contraseña</small>
-            <small
-              class="form-text text-danger"
-              *ngIf="confirmPassword.invalid && confirmPassword.touched"
-            >
+            <small class="invalid-feedback" *ngIf="confirmPassword.invalid && confirmPassword.touched">
               Confirma tu contraseña
             </small>
-            <small
-              class="form-text text-danger"
-              *ngIf="!passwordsMatch() && confirmPassword.touched"
-            >
+            <small class="invalid-feedback" *ngIf="!passwordsMatch() && confirmPassword.touched">
               Las contraseñas no coinciden
             </small>
           </div>
         </div>
 
-        <div class="form-actions">
-          <button
-            type="submit"
-            class="btn btn-register"
-            [disabled]="registroForm.invalid || !passwordsMatch() || isLoading"
-          >
-            <i class="fas fa-spinner fa-spin" *ngIf="isLoading"></i>
-            <i class="fas fa-user-check" *ngIf="!isLoading"></i>
-            {{ isLoading ? "Registrando..." : "Crear Cuenta" }}
-          </button>
-        </div>
+        <button
+          type="submit"
+          class="btn btn-success btn-full-width"
+          [disabled]="registroForm.invalid || !passwordsMatch() || isLoading"
+        >
+          <span class="material-symbols-outlined" *ngIf="!isLoading">person_add</span>
+          <span class="material-symbols-outlined spinner" *ngIf="isLoading">sync</span>
+          {{ isLoading ? "Registrando..." : "Crear Cuenta" }}
+        </button>
       </form>
     </div>
   </div>

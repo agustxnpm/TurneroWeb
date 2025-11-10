@@ -1,0 +1,204 @@
+
+<div class="card p-xl mb-xl">
+  <!-- Encabezado -->
+  <div class="d-flex justify-content-between align-items-center mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined">notifications</span>
+      <h2 class="mb-0">Notificaciones</h2>
+      <span *ngIf="contadorNoLeidas > 0" class="badge bg-danger ms-md">{{ contadorNoLeidas }}</span>
+    </div>
+    <div class="d-flex gap-md">
+      <button
+        class="btn btn-secondary"
+        (click)="marcarTodasComoLeidas()"
+        [disabled]="contadorNoLeidas === 0"
+        title="Marcar todas como leídas"
+      >
+
+        <span class="material-symbols-outlined">mark_email_read</span>
+        Marcar todas como leídas
+      </button>
+      <button class="btn btn-primary" (click)="actualizarNotificaciones()">
+        <span class="material-symbols-outlined">sync</span>
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+
+  <!-- Filtros -->
+  <div class="card p-lg mb-lg">
+    <div class="d-flex flex-wrap gap-lg">
+      <div class="form-group flex-fill">
+        <label class="form-label" for="filtroEstado">Estado</label>
+        <select
+          id="filtroEstado"
+          class="form-control"
+          [(ngModel)]="filtroEstado"
+          (change)="aplicarFiltros()"
+        >
+          <option value="">Todas</option>
+          <option value="no-leidas">No leídas</option>
+          <option value="leidas">Leídas</option>
+        </select>
+      </div>
+
+      <div class="form-group flex-fill">
+        <label class="form-label" for="filtroTipo">Tipo</label>
+        <select
+          id="filtroTipo"
+          class="form-control"
+          [(ngModel)]="filtroTipo"
+          (change)="aplicarFiltros()"
+        >
+          <option value="">Todos los tipos</option>
+          <option value="CONFIRMACION">Confirmaciones</option>
+          <option value="CANCELACION">Cancelaciones</option>
+          <option value="REAGENDAMIENTO">Reagendamientos</option>
+          <option value="NUEVO_TURNO">Nuevos turnos</option>
+          <option value="RECORDATORIO">Recordatorios</option>
+        </select>
+      </div>
+
+      <div class="form-group flex-fill">
+        <label class="form-label" for="textoBusqueda">Buscar</label>
+        <input
+          id="textoBusqueda"
+          type="text"
+          class="form-control"
+          placeholder="Buscar en título o mensaje..."
+          [(ngModel)]="textoBusqueda"
+          (input)="aplicarFiltros()"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-xl">
+    <span class="material-symbols-outlined loading-icon">sync</span>
+    <div class="mt-md text-muted">Cargando notificaciones...</div>
+  </div>
+
+  <!-- Sin resultados -->
+  <div *ngIf="!loading && notificacionesFiltradas.length === 0" class="text-center py-xl">
+    <span class="material-symbols-outlined mb-md estado-vacio-icon">
+      notifications_off
+    </span>
+    <h4 class="mb-sm">No hay notificaciones</h4>
+    <p class="text-muted">
+      No se encontraron notificaciones que coincidan con los filtros aplicados.
+    </p>
+  </div>
+
+  <!-- Lista de Notificaciones -->
+  <div *ngIf="!loading && notificacionesFiltradas.length > 0" class="card">
+    <div class="list-group">
+      <div
+        *ngFor="let notif of notificacionesFiltradas; trackBy: trackByNotificacion"
+        class="list-group-item p-md notificacion-item"
+        [ngClass]="notif.leida ? 'leida' : 'no-leida'"
+      >
+        <div class="d-flex align-items-start gap-md" (click)="marcarComoLeida(notif)">
+          <span 
+            class="material-symbols-outlined notif-icon"
+            [ngClass]="obtenerClaseTipo(notif.tipo)">
+            {{ obtenerIconoTipo(notif.tipo) }}
+          </span>
+          
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-sm mb-xs">
+              <h6 class="mb-0" [ngClass]="notif.leida ? 'fw-medium' : 'fw-bold'">
+                {{ notif.titulo }}
+              </h6>
+              <span *ngIf="!notif.leida" class="badge bg-primary">Nuevo</span>
+              <span *ngIf="notif.esNueva && !notif.leida" class="badge bg-warning">Reciente</span>
+            </div>
+            
+            <p class="mb-xs text-muted">{{ notif.mensaje }}</p>
+            
+            <div class="d-flex align-items-center gap-xs text-secondary notificacion-fecha">
+              <span class="material-symbols-outlined">schedule</span>
+              <span>{{ formatearFecha(notif.fechaCreacion) }}</span>
+              <span *ngIf="notif.leida && notif.fechaLeida" class="d-flex align-items-center gap-xs ms-md">
+                <span class="material-symbols-outlined">check_circle</span>
+                <span>Leída el {{ formatearFecha(notif.fechaLeida) }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Botones de Acción -->
+        <div class="d-flex justify-content-end gap-md mt-sm">
+          <button 
+            *ngIf="notif.turnoId"
+            class="btn btn-sm btn-secondary"
+            (click)="verTurno(notif.turnoId, $event)"
+            aria-label="Ver Turno"
+          >
+            <span class="material-symbols-outlined me-xs">visibility</span>
+            Ver Turno
+          </button>
+          <button
+            *ngIf="!notif.leida"
+            class="btn btn-sm btn-primary"
+            (click)="marcarComoLeida(notif, $event)"
+            aria-label="Marcar como leída"
+          >
+            <span class="material-symbols-outlined me-xs">mark_chat_read</span>
+            Marcar leída
+          </button>
+          <button
+            class="btn btn-sm btn-danger"
+            (click)="eliminarNotificacion(notif, $event)"
+            aria-label="Eliminar notificación"
+          >
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paginación -->
+    <nav aria-label="Paginación de notificaciones" class="mt-lg" *ngIf="totalPages > 1">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" [class.disabled]="currentPage === 0">
+          <button
+            class="page-link"
+            (click)="cambiarPagina(currentPage - 1)"
+            [disabled]="currentPage === 0"
+            aria-label="Página anterior"
+          >
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+        </li>
+
+        <li
+          class="page-item"
+          *ngFor="let page of getPageNumbers()"
+          [class.active]="page === currentPage"
+        >
+          <button 
+            class="page-link" 
+            (click)="cambiarPagina(page)"
+            [attr.aria-label]="'Ir a página ' + (page + 1)"
+            [attr.aria-current]="page === currentPage ? 'page' : null"
+          >
+            {{ page + 1 }}
+          </button>
+        </li>
+
+        <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+          <button
+            class="page-link"
+            (click)="cambiarPagina(currentPage + 1)"
+            [disabled]="currentPage === totalPages - 1"
+            aria-label="Página siguiente"
+          >
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</div>

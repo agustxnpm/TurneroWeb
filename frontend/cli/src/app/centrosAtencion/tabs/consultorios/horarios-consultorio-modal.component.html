@@ -1,0 +1,167 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="fa fa-clock me-2"></i>
+    Horarios de Atención - {{ consultorio?.nombre }}
+  </h4>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+<div class="modal-body">
+  <!-- Alert Messages -->
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="fa fa-exclamation-triangle me-2"></i>
+    {{ mensajeError }}
+  </div>
+
+  <div *ngIf="mensajeExito" class="alert alert-success">
+    <i class="fa fa-check-circle me-2"></i>
+    {{ mensajeExito }}
+  </div>
+
+  <!-- Información del Consultorio -->
+  <div
+    class="mb-4 p-3"
+    style="
+      background: rgba(54, 185, 204, 0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(54, 185, 204, 0.2);
+    "
+  >
+    <div class="d-flex align-items-center">
+      <div class="consultorio-icon me-3">
+        {{ consultorio?.numero }}
+      </div>
+      <div>
+        <h6 class="mb-1">{{ consultorio?.nombre }}</h6>
+        <small class="text-muted">
+          <i class="fa fa-map-marker-alt me-1"></i
+          >{{ consultorio?.nombreCentro }}
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuración de Horarios por Día -->
+  <div class="horarios-configuracion">
+    <h6 class="mb-3">
+      <i class="fa fa-calendar-week me-2"></i>
+      Configuración Semanal
+    </h6>
+
+    <div class="horarios-grid">
+      <div
+        *ngFor="let horario of horariosSemanales; let i = index"
+        class="horario-dia-config"
+      >
+        <!-- Día de la semana -->
+        <div class="dia-header">
+          <span class="dia-nombre">{{ getDiaNombre(horario.diaSemana) }}</span>
+        </div>
+
+        <!-- Toggle activo -->
+        <div class="dia-toggle">
+          <div class="form-check form-switch">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              [(ngModel)]="horario.activo"
+              [id]="'activo-' + i"
+            />
+            <label class="form-check-label" [for]="'activo-' + i">
+              {{ horario.activo ? "Abierto" : "Cerrado" }}
+            </label>
+          </div>
+        </div>
+
+        <!-- Horarios (solo si está activo) -->
+        <div class="dia-horarios" *ngIf="horario.activo">
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label-small">Apertura</label>
+              <input
+                type="time"
+                class="form-control form-control-sm"
+                [(ngModel)]="horario.horaApertura"
+                [name]="'apertura-' + i"
+              />
+            </div>
+            <div class="col-6">
+              <label class="form-label-small">Cierre</label>
+              <input
+                type="time"
+                class="form-control form-control-sm"
+                [(ngModel)]="horario.horaCierre"
+                [name]="'cierre-' + i"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje de cerrado -->
+        <div class="dia-cerrado" *ngIf="!horario.activo">
+          <span class="text-muted">
+            <i class="fa fa-times-circle me-1"></i>
+            Consultorio cerrado este día
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="acciones-rapidas mt-4">
+      <h6 class="mb-2">
+        <i class="fa fa-bolt me-2"></i>
+        Acciones Rápidas
+      </h6>
+      <div class="d-flex gap-2 flex-wrap">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          (click)="aplicarHorarioTodos('08:00', '17:00')"
+        >
+          <i class="fa fa-sun me-1"></i>8:00 - 17:00 (Todos los días)
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          (click)="aplicarHorarioLaborables('08:00', '17:00')"
+        >
+          <i class="fa fa-briefcase me-1"></i>8:00 - 17:00 (Solo laborables)
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary"
+          (click)="cerrarFinesDesemana()"
+        >
+          <i class="fa fa-calendar-times me-1"></i>Cerrar fines de semana
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-footer">
+  <button
+    type="button"
+    class="btn btn-secondary"
+    (click)="activeModal.dismiss()"
+  >
+    <i class="fa fa-times me-2"></i>Cancelar
+  </button>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="guardarHorarios()"
+    [disabled]="guardando"
+  >
+    <i
+      class="fa"
+      [class.fa-save]="!guardando"
+      [class.fa-spinner]="guardando"
+      [class.fa-spin]="guardando"
+    ></i>
+    {{ guardando ? "Guardando..." : "Guardar Horarios" }}
+  </button>
+</div>

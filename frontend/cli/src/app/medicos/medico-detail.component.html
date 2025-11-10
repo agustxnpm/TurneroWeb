@@ -1,0 +1,392 @@
+<div class="medico-detail-card card p-xl mb-xl mx-auto" *ngIf="medico" style="max-width: 1000px;">
+  <!-- Header -->
+  <div class="medico-detail-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">medical_services</span>
+      <div>
+        <h2 class="mb-0" *ngIf="!esNuevo">
+          {{ medico.nombre }} {{ medico.apellido }}
+        </h2>
+        <h2 class="mb-0" *ngIf="esNuevo">
+          Nuevo Médico
+        </h2>
+        <p class="text-muted mb-0 mt-sm">
+          <ng-container *ngIf="!modoEdicion && !esNuevo">Información del médico</ng-container>
+          <ng-container *ngIf="modoEdicion && !esNuevo">Editando información</ng-container>
+          <ng-container *ngIf="esNuevo">Registro de nuevo profesional médico</ng-container>
+        </p>
+      </div>
+    </div>
+    
+    <div class="d-flex gap-md" *ngIf="!modoEdicion && !esNuevo">
+      <button type="button" class="btn btn-primary" (click)="activarEdicion()" aria-label="Editar información del médico">
+        <span class="material-symbols-outlined me-2">edit</span>
+        <span class="d-none d-sm-inline">Editar</span>
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="goBack()" aria-label="Volver al listado">
+        <span class="material-symbols-outlined me-2">arrow_back</span>
+        <span class="d-none d-sm-inline">Volver</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODO VISTA (Solo lectura) -->
+  <div *ngIf="!modoEdicion && !esNuevo" class="medico-info-view">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">person</span>
+          <div class="info-content">
+            <label class="info-label">Nombre Completo</label>
+            <div class="info-value">{{ medico.nombre }} {{ medico.apellido }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">tag</span>
+          <div class="info-content">
+            <label class="info-label">ID del Médico</label>
+            <div class="info-value">#{{ medico.id }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">badge</span>
+          <div class="info-content">
+            <label class="info-label">DNI</label>
+            <div class="info-value">{{ medico.dni }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">workspace_premium</span>
+          <div class="info-content">
+            <label class="info-label">Matrícula</label>
+            <div class="info-value">{{ medico.matricula }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">email</span>
+          <div class="info-content">
+            <label class="info-label">Email</label>
+            <div class="info-value">{{ medico.email }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">phone</span>
+          <div class="info-content">
+            <label class="info-label">Teléfono</label>
+            <div class="info-value">{{ medico.telefono }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">clinical_notes</span>
+          <div class="info-content">
+            <label class="info-label">Especialidades</label>
+            <div class="info-value">
+              <div *ngIf="medico.especialidades && medico.especialidades.length > 0; else noEspecialidades" class="especialidades-chips">
+                <span *ngFor="let esp of medico.especialidades" class="especialidad-chip">
+                  {{ esp.nombre }}
+                </span>
+              </div>
+              <ng-template #noEspecialidades>
+                <span class="text-muted">Sin especialidades asignadas</span>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODO EDICIÓN/CREACIÓN -->
+  <form *ngIf="modoEdicion || esNuevo" #form="ngForm" (ngSubmit)="save()" novalidate>
+    <div class="row g-4">
+      <!-- Nombre -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="nombre">
+            <span class="material-symbols-outlined me-2">person</span>
+            Nombre*
+          </label>
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            class="form-control"
+            [(ngModel)]="medico.nombre"
+            required
+            placeholder="Nombre del médico"
+            autocomplete="given-name"
+            aria-label="Nombre del médico"
+            #nombre="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="nombre.invalid && (nombre.dirty || nombre.touched)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El nombre es requerido
+          </small>
+        </div>
+      </div>
+
+      <!-- Apellido -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="apellido">
+            <span class="material-symbols-outlined me-2">person</span>
+            Apellido*
+          </label>
+          <input
+            type="text"
+            id="apellido"
+            name="apellido"
+            class="form-control"
+            [(ngModel)]="medico.apellido"
+            required
+            placeholder="Apellido del médico"
+            autocomplete="family-name"
+            aria-label="Apellido del médico"
+            #apellido="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="apellido.invalid && (apellido.dirty || apellido.touched)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El apellido es requerido
+          </small>
+        </div>
+      </div>
+
+      <!-- DNI -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="dni">
+            <span class="material-symbols-outlined me-2">badge</span>
+            DNI*
+          </label>
+          <input
+            type="text"
+            id="dni"
+            name="dni"
+            class="form-control"
+            [(ngModel)]="medico.dni"
+            required
+            placeholder="Documento Nacional de Identidad"
+            autocomplete="off"
+            aria-label="DNI del médico"
+            #dni="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="dni.invalid && (dni.dirty || dni.touched)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El DNI es requerido
+          </small>
+          <small class="form-text text-muted d-flex align-items-center gap-xs mt-xs">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+            Ingrese el número sin puntos ni espacios
+          </small>
+        </div>
+      </div>
+
+      <!-- Matrícula -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="matricula">
+            <span class="material-symbols-outlined me-2">workspace_premium</span>
+            Matrícula*
+          </label>
+          <input
+            type="text"
+            id="matricula"
+            name="matricula"
+            class="form-control"
+            [(ngModel)]="medico.matricula"
+            required
+            placeholder="Número de matrícula profesional"
+            autocomplete="off"
+            aria-label="Matrícula del médico"
+            #matricula="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="matricula.invalid && (matricula.dirty || matricula.touched)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            La matrícula es requerida
+          </small>
+          <small class="form-text text-muted d-flex align-items-center gap-xs mt-xs">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+            Número de matrícula profesional del médico
+          </small>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="email">
+            <span class="material-symbols-outlined me-2">email</span>
+            Email*
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-control"
+            [(ngModel)]="medico.email"
+            required
+            placeholder="Correo electrónico"
+            autocomplete="email"
+            aria-label="Email del médico"
+            #email="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="email.invalid && (email.dirty || email.touched)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            <span *ngIf="email.errors?.['required']">El email es requerido</span>
+            <span *ngIf="email.errors?.['email']">Debe ser un email válido</span>
+          </small>
+          <small class="form-text text-muted d-flex align-items-center gap-xs mt-xs">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+            Correo electrónico de contacto
+          </small>
+        </div>
+      </div>
+
+      <!-- Teléfono -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="telefono">
+            <span class="material-symbols-outlined me-2">phone</span>
+            Teléfono*
+          </label>
+          <input
+            type="tel"
+            id="telefono"
+            name="telefono"
+            class="form-control"
+            [(ngModel)]="medico.telefono"
+            required
+            placeholder="Teléfono de contacto"
+            autocomplete="tel"
+            aria-label="Teléfono del médico"
+            #telefono="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="telefono.invalid && (telefono.dirty || telefono.touched)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El teléfono es requerido
+          </small>
+          <small class="form-text text-muted d-flex align-items-center gap-xs mt-xs">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+            Número de teléfono de contacto
+          </small>
+        </div>
+      </div>
+
+      <!-- Especialidades -->
+      <div class="col-12">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="especialidades">
+            <span class="material-symbols-outlined me-2">clinical_notes</span>
+            Especialidades*
+          </label>
+
+          <!-- Lista de especialidades seleccionadas -->
+          <div *ngIf="medico.especialidades && medico.especialidades.length > 0" class="selected-especialidades mb-md">
+            <small class="text-muted d-block mb-sm">Especialidades seleccionadas:</small>
+            <div class="especialidades-chips">
+              <span *ngFor="let esp of medico.especialidades" class="especialidad-chip-editable">
+                {{ esp.nombre }}
+                <button
+                  type="button"
+                  class="btn-remove-chip"
+                  (click)="removeEspecialidad(esp)"
+                  aria-label="Eliminar especialidad"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </span>
+            </div>
+          </div>
+
+          <!-- Selector para agregar especialidades -->
+          <select
+            id="especialidades"
+            name="selectedEspecialidad"
+            class="form-control"
+            [(ngModel)]="selectedEspecialidad"
+            (change)="addEspecialidad()"
+            aria-label="Seleccionar especialidad"
+          >
+            <option [ngValue]="null">Seleccione una especialidad para agregar...</option>
+            <option *ngFor="let especialidad of getAvailableEspecialidades()" [ngValue]="especialidad">
+              {{ especialidad.nombre }}
+            </option>
+          </select>
+
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="!medico.especialidades || medico.especialidades.length === 0">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            Debe seleccionar al menos una especialidad
+          </small>
+          <small class="form-text text-muted d-flex align-items-center gap-xs mt-xs">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+            Puede agregar múltiples especialidades
+          </small>
+        </div>
+      </div>
+
+      <!-- Información sobre contraseña automática -->
+      <div class="col-12" *ngIf="esNuevo">
+        <div class="info-badge d-flex align-items-start gap-sm mb-lg">
+          <span class="material-symbols-outlined">info</span>
+          <div>
+            <strong>Contraseña automática:</strong>
+            Se generará una contraseña segura automáticamente y será enviada por correo electrónico al médico.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="d-flex flex-wrap gap-md mt-xl pt-lg border-top">
+      <button
+        type="submit"
+        class="btn btn-success"
+        [disabled]="form.invalid || !medico.especialidades || medico.especialidades.length === 0"
+        aria-label="Guardar médico"
+      >
+        <span class="material-symbols-outlined me-2">save</span>
+        Guardar Médico
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="cancelar()"
+        aria-label="Cancelar cambios"
+      >
+        <span class="material-symbols-outlined me-2">close</span>
+        Cancelar
+      </button>
+
+      <button
+        *ngIf="medico.id && !esNuevo"
+        type="button"
+        class="btn btn-danger"
+        (click)="confirmDelete()"
+        aria-label="Eliminar médico"
+      >
+        <span class="material-symbols-outlined me-2">delete</span>
+        Eliminar
+      </button>
+    </div>
+  </form>
+</div>
+

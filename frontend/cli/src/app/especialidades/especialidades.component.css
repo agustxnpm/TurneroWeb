@@ -1,0 +1,121 @@
+/* ===================================
+   ESPECIALIDADES LISTADO COMPONENT
+   Estilos ESPECÍFICOS del componente
+   (Los estilos globales como .btn, .table, .card están en styles.css)
+   =================================== */
+
+/* ===================================
+   1. CONTENEDOR PRINCIPAL
+   =================================== */
+.especialidades-container .card {
+  max-width: 1600px;
+}
+
+/* ===================================
+   2. HEADER DEL LISTADO
+   =================================== */
+.listado-header {
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.listado-header .header-icon {
+  font-size: 3rem;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.listado-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+}
+
+.listado-header .text-muted {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* ===================================
+   3. TABLA
+   =================================== */
+.header-cell {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+}
+
+.header-cell .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* Fila seleccionada */
+.table tbody tr.selected {
+  background-color: rgba(var(--color-accent-rgb), 0.1);
+  border-left: 3px solid var(--color-accent);
+}
+
+.table tbody tr.selected:hover {
+  background-color: rgba(var(--color-accent-rgb), 0.15);
+}
+
+/* ===================================
+   4. ESTADO VACÍO
+   =================================== */
+.empty-state-icon {
+  font-size: 4rem;
+  color: var(--text-secondary);
+  opacity: 0.3;
+  font-variation-settings: 'FILL' 0, 'wght' 300;
+}
+
+/* ===================================
+   5. SOBRESCRITURAS DE ICONOS EN BOTONES
+   =================================== */
+/* Override solo para los iconos en botones de acciones de tabla */
+.especialidades-container .btn .material-symbols-outlined {
+  font-size: 1.25rem;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* ===================================
+   6. RESPONSIVE DESIGN
+   =================================== */
+@media (max-width: 768px) {
+  .listado-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--space-md);
+  }
+
+  .listado-header .header-icon {
+    font-size: 2.5rem;
+  }
+
+  .listado-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .header-cell {
+    font-size: var(--font-size-xs);
+  }
+
+  .header-cell .material-symbols-outlined {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .listado-header .header-icon {
+    font-size: 2rem;
+  }
+  
+  .listado-header h2 {
+    font-size: var(--font-size-lg);
+  }
+}

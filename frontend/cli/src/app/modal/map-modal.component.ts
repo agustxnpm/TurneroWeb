@@ -7,56 +7,8 @@ import { FormsModule } from '@angular/forms'; // Importar FormsModule
   selector: 'app-map-modal',
   standalone: true, // Declarar como componente standalone
   imports: [FormsModule], // Importar FormsModule aquí
-  template: `
-    <div class="modal-backdrop">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Seleccionar ubicación</h5>
-          <button type="button" class="btn-close" (click)="close()"></button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group mb-3">
-            <label for="search">Buscar ubicación:</label>
-            <input id="search" name="search" type="text" class="form-control" [(ngModel)]="searchQuery" placeholder="Ingrese una dirección">
-            <button class="btn btn-primary mt-2" (click)="searchLocation()">Buscar</button>
-          </div>
-          <div #mapContainer style="height: 500px; width: 100%;"></div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1050;
-    }
-    .modal-content {
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-      width: 80%;
-      max-width: 600px;
-      z-index: 1051;
-    }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      border-bottom: 1px solid #dee2e6;
-    }
-    .modal-body {
-      padding: 1rem;
-    }
-  `]
+  templateUrl: './map-modal.component.html',
+  styleUrl: './map-modal.component.css'
 })
 export class MapModalComponent implements AfterViewInit {
   @Output() locationSelected = new EventEmitter<{ latitud: number, longitud: number } | null>();

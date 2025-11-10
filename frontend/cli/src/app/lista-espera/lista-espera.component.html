@@ -1,0 +1,296 @@
+<div class="container-fluid mt-lg">
+  <!-- HEADER LVE NORMALIZADO -->
+  <div class="card p-xl mb-xl mx-auto">
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-md">
+        <span class="material-symbols-outlined header-icon">hourglass_empty</span>
+        <div>
+          <h2 class="mb-0">Lista de Espera</h2>
+          <p class="text-white mb-0 mt-sm">Gestión de solicitudes de turnos pendientes</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="nuevaSolicitud()">
+        <span class="material-symbols-outlined">add</span>
+        Nueva Solicitud
+      </button>
+    </div>
+
+    <!-- INFO BADGE -->
+    <div class="info-badge mb-lg" *ngIf="totalElements > 0">
+      <span class="material-symbols-outlined">info</span>
+      Total de solicitudes: {{totalElements}}
+    </div>
+
+    <!-- FILTROS DE BÚSQUEDA -->
+    <div class="filters-section mb-lg">
+      <h5 class="filters-title mb-md">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtros de búsqueda
+      </h5>
+
+      <form [formGroup]="filtrosForm" class="filters-form">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">
+              <span class="material-symbols-outlined">medical_services</span>
+              Especialidad
+            </label>
+            <select class="form-select" id="especialidadId" formControlName="especialidadId">
+              <option value="">Todas</option>
+              <option *ngFor="let esp of especialidades" [value]="esp.id">
+                {{esp.nombre}}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">
+              <span class="material-symbols-outlined">local_hospital</span>
+              Centro de Atención
+            </label>
+            <select class="form-select" id="centroAtencionId" formControlName="centroAtencionId">
+              <option value="">Todos</option>
+              <option *ngFor="let centro of centros" [value]="centro.id">
+                {{centro.nombre}}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">
+              <span class="material-symbols-outlined">person</span>
+              Médico
+            </label>
+            <select class="form-select" id="medicoId" formControlName="medicoId">
+              <option value="">Todos</option>
+              <option *ngFor="let medico of medicos" [value]="medico.id">
+                {{medico.nombre}} {{medico.apellido}}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">
+              <span class="material-symbols-outlined">check_circle</span>
+              Estado
+            </label>
+            <select class="form-select" id="estado" formControlName="estado">
+              <option *ngFor="let estado of estados" [value]="estado.value">
+                {{estado.label}}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-sm">
+          <div class="col-md-3">
+            <label class="form-label">
+              <span class="material-symbols-outlined">calendar_today</span>
+              Fecha Desde
+            </label>
+            <input type="date" class="form-control" id="fechaDesde" formControlName="fechaDesde">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">
+              <span class="material-symbols-outlined">event</span>
+              Fecha Hasta
+            </label>
+            <input type="date" class="form-control" id="fechaHasta" formControlName="fechaHasta">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">
+              <span class="material-symbols-outlined">emergency</span>
+              Nivel de Urgencia
+            </label>
+            <select class="form-select" id="urgenciaMedica" formControlName="urgenciaMedica">
+              <option *ngFor="let nivel of nivelesUrgencia" [value]="nivel.value">
+                {{nivel.label}}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-3 d-flex align-items-end">
+            <button type="button" class="btn btn-primary w-100" (click)="buscarSolicitudes()">
+              <span class="material-symbols-outlined">search</span>
+              Actualizar Lista
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- TABLA DE SOLICITUDES -->
+    <div class="agenda-section">
+      <!-- Loading State -->
+      <div class="loading-state" *ngIf="cargando">
+        <div class="loading-content">
+          <span class="material-symbols-outlined spinning">sync</span>
+          <h6>Cargando solicitudes...</h6>
+        </div>
+      </div>
+
+      <!-- Tabla de Resultados -->
+      <div class="table-responsive" *ngIf="!cargando && listaSolicitudes.length > 0">
+        <table class="table table-hover align-middle lista-espera-table">
+          <thead>
+            <tr>
+              <th>
+                <span class="material-symbols-outlined">person</span>
+                Paciente
+              </th>
+              <th>
+                <span class="material-symbols-outlined">medical_services</span>
+                Especialidad
+              </th>
+              <th>
+                <span class="material-symbols-outlined">local_hospital</span>
+                Centro
+              </th>
+              <th>
+                <span class="material-symbols-outlined">calendar_today</span>
+                Fecha Solicitud
+              </th>
+              <th>
+                <span class="material-symbols-outlined">schedule</span>
+                Días en Espera
+              </th>
+              <th>
+                <span class="material-symbols-outlined">emergency</span>
+                Urgencia
+              </th>
+              <th>
+                <span class="material-symbols-outlined">check_circle</span>
+                Estado
+              </th>
+              <th class="text-center">
+                <span class="material-symbols-outlined">settings</span>
+                Acciones
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let solicitud of listaSolicitudes" class="solicitud-row">
+              <td>
+                <div class="entity-info">
+                  <div class="entity-avatar entity-avatar-paciente">
+                    {{ solicitud.pacienteNombre?.charAt(0) }}{{ solicitud.pacienteApellido?.charAt(0) }}
+                  </div>
+                  <div class="entity-details">
+                    <strong>{{ solicitud.pacienteNombre }} {{ solicitud.pacienteApellido }}</strong>
+                    <small class="text-muted d-block">DNI: {{ solicitud.pacienteDni }}</small>
+                  </div>
+                </div>
+              </td>
+
+              <td>{{ solicitud.especialidadNombre }}</td>
+              <td>{{ solicitud.centroAtencionNombre }}</td>
+              <td>{{ solicitud.fechaSolicitud | date:'dd/MM/yyyy' }}</td>
+
+              <td>
+                <span class="badge-dias" 
+                      [class.badge-dias-warning]="solicitud.diasEnEspera > 30 && solicitud.diasEnEspera <= 60"
+                      [class.badge-dias-danger]="solicitud.diasEnEspera > 60" 
+                      [class.badge-dias-info]="solicitud.diasEnEspera <= 30">
+                  <span class="material-symbols-outlined">schedule</span>
+                  {{ solicitud.diasEnEspera }} días
+                </span>
+              </td>
+
+              <td>
+                <span class="badge-urgencia" [class]="getUrgenciaClass(solicitud.urgenciaMedica)">
+                  <span class="material-symbols-outlined">{{ getUrgenciaIcon(solicitud.urgenciaMedica) }}</span>
+                  {{ getUrgenciaLabel(solicitud.urgenciaMedica) }}
+                </span>
+              </td>
+
+              <td>
+                <span class="badge-estado" [class]="getEstadoClass(solicitud.estado)">
+                  <span class="material-symbols-outlined">{{ getEstadoIcon(solicitud.estado) }}</span>
+                  {{ solicitud.estado }}
+                </span>
+              </td>
+
+              <td class="text-center">
+                <div class="acciones-group">
+                  <button type="button" 
+                          class="btn btn-sm btn-success"
+                          (click)="marcarComoResueltaManual(solicitud.id)" 
+                          *ngIf="solicitud.estado === 'PENDIENTE'"
+                          title="Marcar como resuelta">
+                    <span class="material-symbols-outlined">check</span>
+                  </button>
+
+                  <button type="button" 
+                          class="btn btn-sm btn-info"
+                          (click)="mostrarInfoContacto(solicitud)"
+                          title="Ver información de contacto">
+                    <span class="material-symbols-outlined">phone</span>
+                  </button>
+
+                  <button type="button" 
+                          class="btn btn-sm btn-primary"
+                          (click)="editarSolicitud(solicitud)"
+                          *ngIf="solicitud.estado === 'PENDIENTE'"
+                          title="Editar solicitud">
+                    <span class="material-symbols-outlined">edit</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Paginador -->
+        <div class="paginacion-footer">
+          <div class="paginacion-info">
+            <span class="material-symbols-outlined">description</span>
+            Mostrando {{ listaSolicitudes.length }} de {{ totalElements }} solicitudes
+          </div>
+
+          <nav aria-label="Navegación de página">
+            <ul class="pagination mb-0">
+              <li class="page-item" [class.disabled]="currentPage === 0">
+                <a class="page-link" href="javascript:void(0)" (click)="cambiarPagina(0)">
+                  <span class="material-symbols-outlined">first_page</span>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === 0">
+                <a class="page-link" href="javascript:void(0)" (click)="cambiarPagina(currentPage - 1)">
+                  <span class="material-symbols-outlined">chevron_left</span>
+                </a>
+              </li>
+              <li class="page-item" *ngFor="let page of getPaginationArray()" [class.active]="page === currentPage">
+                <a class="page-link" href="javascript:void(0)" (click)="cambiarPagina(page)">
+                  {{ page + 1 }}
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                <a class="page-link" href="javascript:void(0)" (click)="cambiarPagina(currentPage + 1)">
+                  <span class="material-symbols-outlined">chevron_right</span>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                <a class="page-link" href="javascript:void(0)" (click)="cambiarPagina(totalPages - 1)">
+                  <span class="material-symbols-outlined">last_page</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Estado Vacío -->
+      <div class="empty-state" *ngIf="!cargando && listaSolicitudes.length === 0">
+        <div class="empty-state-content">
+          <span class="material-symbols-outlined empty-icon">inbox</span>
+          <h3>No hay solicitudes</h3>
+          <p>No se encontraron solicitudes con los filtros seleccionados.</p>
+          <p>Intenta cambiar los criterios de búsqueda.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

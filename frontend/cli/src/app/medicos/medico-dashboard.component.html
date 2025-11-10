@@ -1,0 +1,255 @@
+<div class="dashboard-wrapper">  
+  <!-- Header del Dashboard -->
+  <div class="dashboard-header card">
+    <div class="header-content">
+      <div class="welcome-info">
+        <span class="material-symbols-outlined header-icon">medical_services</span>
+        <div>
+          <h1>Panel de Médico</h1>
+          <p class="header-subtitle">Panel de control médico profesional</p>
+        </div>
+      </div>
+      <div class="user-info" *ngIf="medicoActual">
+        <div class="info-item">
+          <span class="material-symbols-outlined">person</span>
+          <span>{{ medicoActual.nombre }} {{ medicoActual.apellido }}</span>
+        </div>
+        <div class="info-item">
+          <span class="material-symbols-outlined">badge</span>
+          <span>Matrícula: {{ medicoActual.matricula }}</span>
+        </div>
+        <div class="info-item">
+          <span class="material-symbols-outlined">stethoscope</span>
+          <span *ngIf="medicoActual.especialidades && medicoActual.especialidades.length > 0; else especialidadUnica">
+            <span *ngFor="let esp of medicoActual.especialidades; let last = last">
+              {{ esp.nombre }}<span *ngIf="!last">, </span>
+            </span>
+          </span>
+          <ng-template #especialidadUnica>
+            <span *ngIf="medicoActual.especialidad">
+              {{ medicoActual.especialidad.nombre }}
+            </span>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección Estadísticas -->
+  <section class="stats-section card">
+    <h2>
+      <span class="material-symbols-outlined">insights</span>
+      Estadísticas del Día
+    </h2>
+    <p class="section-description">Resumen de tu actividad médica</p>
+    
+    <div class="stats-grid">
+      <div class="card stat-card stat-today">
+        <span class="material-symbols-outlined stat-icon">calendar_today</span>
+        <div class="stat-content">
+          <div class="stat-number">{{ stats.turnosHoy }}</div>
+          <div class="stat-label">Turnos Hoy</div>
+          <div class="stat-subtitle">{{ fechaHoy | date : "dd/MM/yyyy" }}</div>
+        </div>
+      </div>
+
+      <div class="card stat-card stat-tomorrow">
+        <span class="material-symbols-outlined stat-icon">schedule</span>
+        <div class="stat-content">
+          <div class="stat-number">{{ stats.turnosManana }}</div>
+          <div class="stat-label">Mañana</div>
+          <div class="stat-subtitle">Próxima jornada</div>
+        </div>
+      </div>
+
+      <div class="card stat-card stat-week">
+        <span class="material-symbols-outlined stat-icon">date_range</span>
+        <div class="stat-content">
+          <div class="stat-number">{{ stats.turnosSemana }}</div>
+          <div class="stat-label">Esta Semana</div>
+          <div class="stat-subtitle">Total semanal</div>
+        </div>
+      </div>
+
+      <div class="card stat-card stat-pending">
+        <span class="material-symbols-outlined stat-icon">pending_actions</span>
+        <div class="stat-content">
+          <div class="stat-number">{{ stats.turnosPendientes }}</div>
+          <div class="stat-label">Pendientes</div>
+          <div class="stat-subtitle">Por confirmar</div>
+        </div>
+        <span class="notification-badge" *ngIf="stats.turnosPendientes > 0">{{ stats.turnosPendientes }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Acciones Rápidas -->
+  <section class="quick-actions-section card">
+    <h2>
+      <span class="material-symbols-outlined">bolt</span>
+      Acciones Rápidas
+    </h2>
+    <p class="section-description">Accede rápidamente a las funciones principales</p>
+    
+    <div class="actions-grid">
+      <div class="card action-card" (click)="gestionarHorarios()">
+        <span class="material-symbols-outlined card-icon">schedule</span>
+        <div class="card-content">
+          <h3>Gestionar Horarios</h3>
+          <p>Configurar disponibilidad y horarios</p>
+        </div>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="verNotificaciones()">
+        <span class="material-symbols-outlined card-icon">notifications</span>
+        <div class="card-content">
+          <h3>Notificaciones</h3>
+          <p>Ver alertas y mensajes importantes</p>
+        </div>
+        <span class="notification-badge" *ngIf="stats.turnosPendientes > 0">{{ stats.turnosPendientes }}</span>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="verEstadisticas()">
+        <span class="material-symbols-outlined card-icon">bar_chart</span>
+        <div class="card-content">
+          <h3>Estadísticas</h3>
+          <p>Análisis y reportes médicos</p>
+        </div>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="configurarPerfil()">
+        <span class="material-symbols-outlined card-icon">settings</span>
+        <div class="card-content">
+          <h3>Configuración</h3>
+          <p>Ajustes de perfil y preferencias</p>
+        </div>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Mis Turnos -->
+  <section class="appointments-section card">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="material-symbols-outlined">event_available</span>
+        <div>
+          <h2>Mis Turnos Médicos</h2>
+          <p class="section-description">Gestiona tus consultas médicas</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-tabs">
+      <button 
+        class="filter-tab" 
+        [class.active]="currentFilter === 'upcoming'" 
+        (click)="setTurnosFilter('upcoming')">
+        <span class="material-symbols-outlined">schedule</span>
+        <span>Próximos</span>
+        <span class="tab-count" *ngIf="getFilterCount('upcoming') > 0">{{ getFilterCount("upcoming") }}</span>
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="currentFilter === 'past'" 
+        (click)="setTurnosFilter('past')">
+        <span class="material-symbols-outlined">history</span>
+        <span>Pasados</span>
+        <span class="tab-count" *ngIf="getFilterCount('past') > 0">{{ getFilterCount("past") }}</span>
+      </button>
+      <button 
+        class="filter-tab" 
+        [class.active]="currentFilter === 'all'" 
+        (click)="setTurnosFilter('all')">
+        <span class="material-symbols-outlined">list</span>
+        <span>Todos</span>
+        <span class="tab-count">{{ getFilterCount("all") }}</span>
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-section" *ngIf="isLoadingTurnos">
+      <span class="material-symbols-outlined spinner-large">sync</span>
+      <p>Cargando turnos...</p>
+    </div>
+
+    <!-- Lista de Turnos -->
+    <div class="appointments-grid" *ngIf="!isLoadingTurnos && filteredTurnos.length > 0">
+      <div 
+        class="card appointment-card" 
+        *ngFor="let turno of filteredTurnos; trackBy: trackByTurno">
+        
+        <!-- Fecha y Hora -->
+        <div class="appointment-header">
+          <div class="date-info">
+            <span class="material-symbols-outlined">calendar_today</span>
+            <div class="date-details">
+              <div class="date-day">{{ formatDay(turno.fecha) }}</div>
+              <div class="date-month">{{ formatMonth(turno.fecha) }}</div>
+            </div>
+            <div class="time-details">
+              <span class="material-symbols-outlined">schedule</span>
+              <span class="time-value">{{ turno.horaInicio }} - {{ turno.horaFin }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información del Turno -->
+        <div class="appointment-info">
+          <!-- Paciente -->
+          <div class="info-item patient-info">
+            <span class="material-symbols-outlined">person</span>
+            <div class="info-content">
+              <div class="info-label">Paciente</div>
+              <div class="info-value">{{ turno.nombrePaciente }} {{ turno.apellidoPaciente }}</div>
+            </div>
+          </div>
+
+          <!-- Centro -->
+          <div class="info-item location-info">
+            <span class="material-symbols-outlined">local_hospital</span>
+            <div class="info-content">
+              <div class="info-label">Centro</div>
+              <div class="info-value">{{ turno.nombreCentro || "Centro Médico" }}</div>
+            </div>
+          </div>
+
+          <!-- Consultorio -->
+          <div class="info-item consultorio-info">
+            <span class="material-symbols-outlined">meeting_room</span>
+            <div class="info-content">
+              <div class="info-label">Consultorio</div>
+              <div class="info-value">{{ turno.consultorioNombre || "Consultorio" }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control de Asistencia -->
+        <div class="attendance-controls" *ngIf="isTurnoCompletado(turno)">
+          <div class="toggle-container">
+            <label class="toggle-label-text">{{ getAsistenciaLabel(turno) }}</label>
+            <label class="toggle-switch" [class.checked]="esPresente(turno)">
+              <input 
+                type="checkbox" 
+                [checked]="esPresente(turno)" 
+                (change)="toggleAsistencia(turno)"
+                [disabled]="turno._cargando">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado vacío -->
+    <div class="empty-state card" *ngIf="!isLoadingTurnos && filteredTurnos.length === 0">
+      <span class="material-symbols-outlined empty-icon">event_busy</span>
+      <h3>{{ getEmptyStateMessage() }}</h3>
+      <p>No se encontraron turnos para mostrar.</p>
+    </div>
+  </section>
+</div>

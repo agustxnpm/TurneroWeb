@@ -1,0 +1,136 @@
+<div class="admin-list-container">
+  <div class="card p-xl mb-xl mx-auto">
+    <!-- Header LVE -->
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-3">
+        <span class="material-symbols-outlined header-icon">
+          admin_panel_settings
+        </span>
+        <div>
+          <h2 class="mb-0">Administradores</h2>
+          <p class="text-muted mb-0">Gestión de usuarios administradores del sistema</p>
+        </div>
+      </div>
+      <button class="btn btn-primary d-flex align-items-center gap-2" (click)="goToCreate()">
+        <span class="material-symbols-outlined">add</span>
+        <span class="d-none d-sm-inline">Crear Administrador</span>
+      </button>
+    </div>
+
+    <!-- Tabla de administradores -->
+    <div class="table-responsive mb-lg">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="border-0">
+              <div class="header-cell">
+                <span class="material-symbols-outlined">person</span>
+                Nombre Completo
+              </div>
+            </th>
+            <th class="border-0">
+              <div class="header-cell">
+                <span class="material-symbols-outlined">mail</span>
+                Email
+              </div>
+            </th>
+            <th class="border-0">
+              <div class="header-cell">
+                <span class="material-symbols-outlined">badge</span>
+                DNI
+              </div>
+            </th>
+            <th class="border-0">
+              <div class="header-cell">
+                <span class="material-symbols-outlined">phone</span>
+                Teléfono
+              </div>
+            </th>
+            <th class="border-0 text-center">
+              <div class="header-cell justify-content-center">
+                <span class="material-symbols-outlined">settings</span>
+                Acciones
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data rows -->
+          <tr
+            *ngFor="let admin of admins"
+            class="table-row cursor-pointer"
+            [attr.aria-label]="'Administrador ' + admin.nombre + ' ' + admin.apellido"
+          >
+            <td>
+              <div class="entity-info-full">
+                <div class="entity-avatar-admin">
+                  <span class="material-symbols-outlined">person</span>
+                </div>
+                <div class="entity-details">
+                  <span class="entity-name">{{ admin.nombre }} {{ admin.apellido }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="email-cell">
+                <span class="material-symbols-outlined">mail</span>
+                {{ admin.email }}
+              </div>
+            </td>
+            <td>
+              <span class="badge-dni" *ngIf="admin.dni">
+                {{ admin.dni }}
+              </span>
+              <span class="text-muted" *ngIf="!admin.dni">—</span>
+            </td>
+            <td>
+              <div class="phone-cell" *ngIf="admin.telefono">
+                <span class="material-symbols-outlined">phone</span>
+                {{ admin.telefono }}
+              </div>
+              <span class="text-muted" *ngIf="!admin.telefono">—</span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button
+                  (click)="goToEdit(admin.id); $event.stopPropagation()"
+                  class="btn-action btn-action-edit"
+                  title="Editar administrador"
+                  aria-label="Editar administrador"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty state -->
+          <tr *ngIf="admins.length === 0">
+            <td colspan="5" class="text-center py-5">
+              <div class="empty-state">
+                <div class="empty-state-content">
+                  <span class="material-symbols-outlined empty-icon">admin_panel_settings</span>
+                  <h3>No hay administradores registrados</h3>
+                  <p>Comience agregando un nuevo administrador al sistema</p>
+                  <button
+                    class="btn btn-primary d-flex align-items-center gap-2 mx-auto"
+                    (click)="goToCreate()"
+                  >
+                    <span class="material-symbols-outlined">add</span>
+                    Crear primer administrador
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Información de resultados -->
+    <div class="results-info" *ngIf="admins.length > 0">
+      <span class="material-symbols-outlined">info</span>
+      Total de administradores: {{ admins.length }}
+    </div>
+  </div>
+</div>

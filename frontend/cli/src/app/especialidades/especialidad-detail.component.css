@@ -1,0 +1,148 @@
+/* ===================================
+   ESPECIALIDAD DETAIL COMPONENT
+   Estilos ESPECÍFICOS del componente
+   (Los estilos globales como .btn, .form-control, .card están en styles.css)
+   =================================== */
+
+/* ===================================
+   1. HEADER DEL COMPONENTE
+   =================================== */
+.especialidad-detail-header {
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.especialidad-detail-header .header-icon {
+  font-size: 3rem;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.especialidad-detail-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+}
+
+.especialidad-detail-header .text-muted {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* ===================================
+   2. MODO VISTA (INFO VIEW)
+   =================================== */
+.especialidad-info-view {
+  margin-top: var(--space-lg);
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--color-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+}
+
+.info-item:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-accent);
+  box-shadow: var(--box-shadow-soft);
+}
+
+.info-icon {
+  font-size: 1.5rem;
+  color: var(--color-accent);
+  flex-shrink: 0;
+  margin-top: var(--space-xs);
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+.info-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.info-value {
+  font-size: var(--font-size-base);
+  color: var(--text-main);
+  font-weight: var(--font-weight-regular);
+  word-break: break-word;
+}
+
+/* ===================================
+   3. SOBRESCRITURAS ESPECÍFICAS DE FORMULARIO
+   =================================== */
+.especialidad-detail-card .form-label .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+  margin: 0 !important;
+  margin-right: var(--space-xs) !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+.especialidad-detail-card .text-danger .material-symbols-outlined {
+  font-size: 1rem !important;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+.especialidad-detail-card .text-muted .material-symbols-outlined {
+  font-size: 1rem !important;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* ===================================
+   4. SOBRESCRITURAS DE ICONOS EN BOTONES
+   =================================== */
+.especialidad-detail-card .btn .material-symbols-outlined {
+  font-size: 1.25rem;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* ===================================
+   5. RESPONSIVE DESIGN
+   =================================== */
+@media (max-width: 768px) {
+  .especialidad-detail-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--space-md);
+  }
+
+  .especialidad-detail-header .header-icon {
+    font-size: 2.5rem;
+  }
+
+  .especialidad-detail-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .info-item {
+    padding: var(--space-sm);
+  }
+
+  .info-icon {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .especialidad-detail-header .header-icon {
+    font-size: 2rem;
+  }
+}
+

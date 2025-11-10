@@ -40,7 +40,7 @@ public class StaffMedico {
     @JoinColumn(name = "especialidad_id", nullable = false)
     private Especialidad especialidad;
 
-    @OneToMany(mappedBy = "staffMedico", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "staffMedico", cascade = {CascadeType.PERSIST, CascadeType.REMOVE})
     @JsonManagedReference
     private List<DisponibilidadMedico> disponibilidad;
 

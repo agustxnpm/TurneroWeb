@@ -17,6 +17,15 @@ public interface PacienteRepository extends JpaRepository<Paciente, Integer> {
     boolean existsByEmail(String email);
     Optional<Paciente> findByDni(Long dni);
     Optional<Paciente> findByEmail(String email);
+    
+    /**
+     * Busca un paciente por email del usuario
+     * Nota: Paciente no tiene relación directa con User, se relacionan por email
+     * @param email Email del usuario
+     * @return Optional con el paciente si existe
+     */
+    @Query("SELECT p FROM Paciente p WHERE LOWER(p.email) = LOWER(:email)")
+    Optional<Paciente> findByUserEmail(@Param("email") String email);
 
     /**
      * Método para búsqueda paginada con filtros combinados y ordenamiento dinámico

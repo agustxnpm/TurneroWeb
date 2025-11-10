@@ -857,8 +857,17 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
     this.staffMedicoService.getByCentroAtencion(this.centroAtencion.id).subscribe({
       next: (dataPackage: DataPackage<StaffMedico[]>) => {
         this.staffMedicoCentro = dataPackage.data;
-        // Cargar disponibilidades para cada staff médico
-        this.cargarTodasLasDisponibilidadesStaff();
+
+        // Poblar disponibilidadesStaff directamente desde los datos del backend
+        this.disponibilidadesStaff = {};
+        this.staffMedicoCentro.forEach(staff => {
+          if (staff.id && staff.disponibilidad) {
+            this.disponibilidadesStaff[staff.id] = staff.disponibilidad;
+          }
+        });
+
+        // Forzar detección de cambios
+        this.cdr.detectChanges();
       },
       error: (error: any) => {
         console.error('Error al cargar staff médico:', error);

@@ -95,6 +95,16 @@ public class NotificacionService {
     }
 
     /**
+     * Eliminar una notificación
+     */
+    public void eliminarNotificacion(Long notificacionId, Integer pacienteId) {
+        Notificacion notificacion = notificacionRepository.findByIdAndPacienteId(notificacionId, pacienteId);
+        if (notificacion != null) {
+            notificacionRepository.delete(notificacion);
+        }
+    }
+
+    /**
      * Crear notificación por cancelación de turno
      */
     public NotificacionDTO crearNotificacionCancelacion(Integer pacienteId, Integer turnoId, 

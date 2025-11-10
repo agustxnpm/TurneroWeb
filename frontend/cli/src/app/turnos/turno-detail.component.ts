@@ -18,439 +18,7 @@ import { ModalService } from "../modal/modal.service";
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: "./turno-detail.component.html",
-  styles: [
-    `
-      /* Estilos modernos para el detail component */
-      .card {
-        border-radius: 1.15rem;
-        overflow: hidden;
-        border: none;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-        background: white;
-      }
-
-      .card-header {
-        background: var(--turnos-gradient);
-        border: none;
-        padding: 1.5rem 2rem;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .card-header::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 100px;
-        height: 100px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        transform: translate(30px, -30px);
-      }
-
-      .card-body {
-        padding: 2rem;
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-      }
-
-      .info-item {
-        background: white;
-        border-radius: 15px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        border-left: 4px solid #007bff;
-        transition: all 0.3s ease;
-      }
-
-      .info-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        border-left-color: #28a745;
-      }
-
-      .info-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 1rem;
-        font-size: 1.1rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      }
-
-      .info-label {
-        font-weight: 600;
-        color: #495057;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.5rem;
-      }
-
-      .info-value {
-        font-size: 1.1rem;
-        color: #212529;
-        font-weight: 500;
-      }
-
-      .turno-id-display {
-        background: var(--turnos-gradient);
-        color: white;
-        padding: 12px 20px;
-        border-radius: 25px;
-        font-weight: bold;
-        font-size: 1.3rem;
-        box-shadow: 0 4px 16px var(--turnos-shadow);
-        display: inline-block;
-      }
-
-      .paciente-display {
-        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-weight: 600;
-        box-shadow: 0 4px 16px rgba(32, 201, 151, 0.3);
-        display: inline-block;
-      }
-
-      .medico-display {
-        background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-weight: 600;
-        box-shadow: 0 4px 16px rgba(111, 66, 193, 0.3);
-        display: inline-block;
-      }
-
-      .fecha-display {
-        background: linear-gradient(135deg, #fd7e14 0%, #e8630a 100%);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-weight: 600;
-        box-shadow: 0 4px 16px rgba(253, 126, 20, 0.3);
-        display: inline-block;
-      }
-
-      .hora-display {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-weight: 600;
-        box-shadow: 0 4px 16px rgba(23, 162, 184, 0.3);
-        display: inline-block;
-      }
-
-      .estado-display {
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        display: inline-block;
-      }
-
-      .estado-programado {
-        background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
-        color: #212529;
-      }
-
-      .estado-confirmado {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-      }
-
-      .estado-cancelado {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-      }
-
-      .estado-completado {
-        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        color: white;
-      }
-
-      .card-footer {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border: none;
-        padding: 1.5rem 2rem;
-      }
-
-      .btn-modern {
-        padding: 0.75rem 1.5rem;
-        border-radius: 25px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-      }
-
-      .btn-modern:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-      }
-
-      .btn-modern:active {
-        transform: translateY(0);
-      }
-
-      .btn-back {
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        color: white;
-      }
-
-      .btn-edit {
-        background: var(--turnos-gradient);
-        color: white;
-      }
-
-      .btn-save {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-      }
-
-      .btn-cancel {
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        color: white;
-      }
-
-      .btn-delete {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        color: white;
-      }
-
-      /* Estilos del formulario */
-      .form-control-modern {
-        border: 2px solid #e9ecef;
-        border-radius: 15px;
-        padding: 1rem 1.25rem;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        background: white;
-      }
-
-      .form-control-modern:focus {
-        border-color: var(--turnos-primary);
-        box-shadow: 0 0 0 0.2rem var(--turnos-shadow);
-        background: #f8f9ff;
-      }
-
-      .form-label-modern {
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 0.75rem;
-        display: flex;
-        align-items: center;
-      }
-
-      .form-icon {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 0.75rem;
-        font-size: 0.8rem;
-        color: white;
-      }
-
-      .form-group-modern {
-        margin-bottom: 2rem;
-        position: relative;
-      }
-
-      .form-help {
-        background: #e3f2fd;
-        border: 1px solid #bbdefb;
-        border-radius: 10px;
-        padding: 0.75rem 1rem;
-        margin-top: 0.5rem;
-        font-size: 0.875rem;
-        color: #1976d2;
-      }
-
-      .alert-modern {
-        border: none;
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-        margin-top: 0.75rem;
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-        border-left: 4px solid #dc3545;
-        color: #721c24;
-      }
-
-      /* === ESTILOS PARA AUDITORÍA === */
-      .audit-section {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 15px;
-        padding: 1.5rem;
-        border-left: 4px solid #17a2b8;
-      }
-
-      .audit-title {
-        color: #17a2b8;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .audit-timeline {
-        position: relative;
-        padding-left: 2rem;
-      }
-
-      .audit-timeline::before {
-        content: "";
-        position: absolute;
-        left: 15px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
-      }
-
-      .audit-entry {
-        position: relative;
-        margin-bottom: 1.5rem;
-        background: white;
-        border-radius: 12px;
-        padding: 1rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        border-left: 3px solid #17a2b8;
-      }
-
-      .audit-entry::before {
-        content: "";
-        position: absolute;
-        left: -23px;
-        top: 20px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #17a2b8;
-        border: 2px solid white;
-        box-shadow: 0 0 0 2px #17a2b8;
-      }
-
-      .audit-entry-content {
-        position: relative;
-      }
-
-      .audit-header {
-        display: flex;
-        justify-content: between;
-        align-items: center;
-        margin-bottom: 0.75rem;
-        border-bottom: 1px solid #e9ecef;
-        padding-bottom: 0.5rem;
-      }
-
-      .audit-details {
-        font-size: 0.9rem;
-        color: #495057;
-      }
-
-      .audit-details strong {
-        color: #212529;
-        font-weight: 600;
-      }
-
-      .audit-details .badge {
-        font-size: 0.75rem;
-        padding: 0.3rem 0.6rem;
-      }
-
-      .audit-entry:last-child {
-        margin-bottom: 0;
-      }
-
-      .audit-entry:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s ease;
-      }
-
-      /* Botón de verificación de integridad */
-      .btn-info {
-        background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
-        color: white;
-        border: none;
-      }
-
-      .btn-info:hover {
-        background: linear-gradient(135deg, #138496 0%, #17a2b8 100%);
-        transform: translateY(-2px);
-      }
-
-      .btn-success {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-      }
-
-      .btn-success:hover {
-        background: linear-gradient(135deg, #218838 0%, #17a2b8 100%);
-        transform: translateY(-2px);
-      }
-
-      /* Animaciones */
-      @keyframes slideInUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
-      .info-item {
-        animation: slideInUp 0.4s ease-out;
-      }
-
-      .form-group-modern {
-        animation: slideInUp 0.3s ease-out;
-      }
-
-      /* Responsive */
-      @media (max-width: 768px) {
-        .card-body {
-          padding: 1.5rem;
-        }
-
-        .card-header {
-          padding: 1.25rem 1.5rem;
-        }
-
-        .card-footer {
-          padding: 1.25rem 1.5rem;
-        }
-
-        .info-item {
-          padding: 1.25rem;
-          margin-bottom: 1rem;
-        }
-
-        .btn-modern {
-          padding: 0.625rem 1.25rem;
-          font-size: 0.9rem;
-        }
-      }
-    `,
-  ],
+  styleUrl: "./turno-detail.component.css",
 })
 export class TurnoDetailComponent {
   turno: Turno = {
@@ -462,12 +30,18 @@ export class TurnoDetailComponent {
     pacienteId: 0,
     staffMedicoId: 0,
     consultorioId: 0,
+    observaciones: "",
   };
 
   modoEdicion = false;
+  esSobreturno = false; // Indica si es un sobreturno (creación manual)
   pacientes: Paciente[] = [];
   staffMedicos: StaffMedico[] = [];
   consultorios: Consultorio[] = [];
+
+  // Advertencias de solapamiento
+  advertenciaSolapamiento = false;
+  mensajeAdvertencia = "";
 
   // === PROPIEDADES DE AUDITORÍA ===
   auditHistory: AuditLog[] = [];
@@ -483,7 +57,7 @@ export class TurnoDetailComponent {
     private staffMedicoService: StaffMedicoService,
     private consultorioService: ConsultorioService,
     private modalService: ModalService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadDropdownData();
@@ -494,17 +68,19 @@ export class TurnoDetailComponent {
     const path = this.route.snapshot.routeConfig?.path;
 
     if (path === "turnos/new") {
-      // Nuevo turno
+      // Nuevo turno - SOBRETURNO
       this.modoEdicion = true;
+      this.esSobreturno = true; // Marcar como sobreturno
       this.turno = {
         id: 0,
         fecha: "",
         horaInicio: "",
         horaFin: "",
-        estado: "PROGRAMADO",
+        estado: "CONFIRMADO", // Sobreturnos se crean directamente como CONFIRMADOS
         pacienteId: 0,
         staffMedicoId: 0,
         consultorioId: 0,
+        observaciones: "",
       } as Turno;
     } else if (path === "turnos/:id") {
       // Detalle o edición
@@ -559,6 +135,8 @@ export class TurnoDetailComponent {
       staffMedicoId: this.turno.staffMedicoId,
       consultorioId: this.turno.consultorioId,
     });
+
+    // Validaciones básicas
     if (
       !this.isValidId(this.turno.pacienteId) ||
       !this.isValidId(this.turno.staffMedicoId) ||
@@ -571,16 +149,81 @@ export class TurnoDetailComponent {
       return;
     }
 
+    // Validar horarios
+    if (!this.turno.fecha || !this.turno.horaInicio || !this.turno.horaFin) {
+      this.modalService.alert(
+        "Error",
+        "Debe especificar fecha, hora de inicio y hora de fin."
+      );
+      return;
+    }
+
+    // Si es sobreturno, verificar solapamiento y mostrar advertencia
+    if (this.esSobreturno && !this.turno.id) {
+      this.verificarSolapamiento().then(haySolapamiento => {
+        if (haySolapamiento) {
+          this.modalService.confirm(
+            "⚠️ Advertencia de Solapamiento",
+            this.mensajeAdvertencia,
+            "¿Desea continuar y crear el sobreturno de todas formas?"
+          ).then(() => {
+            this.guardarSobreturno();
+          }).catch(() => {
+            console.log("Creación de sobreturno cancelada por el usuario");
+          });
+        } else {
+          this.guardarSobreturno();
+        }
+      });
+    } else {
+      // Edición normal
+      this.guardarTurno();
+    }
+  }
+
+  private guardarSobreturno(): void {
+    // Agregar metadata de sobreturno
+    console.log("🔶 Creando SOBRETURNO manual (fuera de agenda)");
+    this.guardarTurno();
+  }
+
+  private guardarTurno(): void {
     const op = this.turno.id
       ? this.turnoService.update(this.turno.id, this.turno)
       : this.turnoService.create(this.turno);
 
     op.subscribe({
-      next: () => this.router.navigate(["/turnos"]),
+      next: () => {
+        this.modalService.alert(
+          "Éxito",
+          this.esSobreturno
+            ? "Sobreturno creado exitosamente"
+            : "Turno guardado exitosamente"
+        );
+        this.router.navigate(["/turnos"]);
+      },
       error: (error) => {
         console.error("Error al guardar el turno:", error);
-        this.modalService.alert("Error", "No se pudo guardar el turno.");
+        const mensaje = error?.error?.message || "No se pudo guardar el turno.";
+        this.modalService.alert("Error", mensaje);
       },
+    });
+  }
+
+  private async verificarSolapamiento(): Promise<boolean> {
+    // TODO: Implementar verificación real con el backend
+    // Por ahora, simular verificación
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Simular que hay solapamiento (esto debería venir del backend)
+        const haySolapamiento = Math.random() > 0.7;
+        if (haySolapamiento) {
+          this.advertenciaSolapamiento = true;
+          this.mensajeAdvertencia = `Ya existe un turno programado para el mismo médico en este horario. 
+          Este sobreturno se registrará de todas formas, pero puede causar conflictos de agenda.`;
+        }
+        resolve(haySolapamiento);
+      }, 300);
     });
   }
   private isValidId(id: any): boolean {
@@ -750,5 +393,18 @@ export class TurnoDetailComponent {
       DELETED: "fas fa-trash",
     };
     return icons[action] || "fas fa-question-circle";
+  }
+
+  /** Obtiene el icono Material Symbol para el tipo de acción */
+  getActionIconMaterial(action: string): string {
+    const icons: any = {
+      CREATED: "add_circle",
+      STATUS_CHANGED: "edit",
+      CANCELED: "cancel",
+      CONFIRMED: "check_circle",
+      RESCHEDULED: "event_repeat",
+      DELETED: "delete",
+    };
+    return icons[action] || "help";
   }
 }

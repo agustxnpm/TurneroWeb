@@ -1,0 +1,355 @@
+<div class="esquema-turno-container">
+  <div class="card p-xl mb-xl mx-auto">
+    <!-- HEADER LVE NORMALIZADO -->
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-md">
+        <span class="material-symbols-outlined header-icon">event_repeat</span>
+        <div>
+          <h2 class="mb-0">Esquemas de Turno</h2>
+          <p class="text-muted mb-0 mt-sm">Gestión de esquemas de turnos para médicos</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="router.navigate(['/esquema-turno/new'])">
+        <span class="material-symbols-outlined">add_circle</span>
+        <span class="d-none d-sm-inline">Nuevo Esquema</span>
+      </button>
+    </div>
+
+    <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+    <div class="filters-section mb-lg">
+      <h5 class="filters-title mb-md">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtros de búsqueda
+      </h5>
+
+      <div class="row g-3">
+        <!-- Búsqueda por staff médico -->
+        <div class="col-md-4">
+          <label for="staffMedicoFilter" class="form-label">
+            <span class="material-symbols-outlined">medical_services</span>
+            Staff Médico
+          </label>
+          <input
+            type="text"
+            id="staffMedicoFilter"
+            class="form-control"
+            placeholder="Buscar por nombre..."
+            [(ngModel)]="filters.staffMedico"
+            (input)="applyFilters()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Búsqueda por consultorio -->
+        <div class="col-md-4">
+          <label for="consultorioFilter" class="form-label">
+            <span class="material-symbols-outlined">door_open</span>
+            Consultorio
+          </label>
+          <input
+            type="text"
+            id="consultorioFilter"
+            class="form-control"
+            placeholder="Buscar por consultorio..."
+            [(ngModel)]="filters.consultorio"
+            (input)="applyFilters()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Búsqueda por centro -->
+        <div class="col-md-4">
+          <label for="centroFilter" class="form-label">
+            <span class="material-symbols-outlined">apartment</span>
+            Centro
+          </label>
+          <input
+            type="text"
+            id="centroFilter"
+            class="form-control"
+            placeholder="Buscar por centro..."
+            [(ngModel)]="filters.centro"
+            (input)="applyFilters()"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <!-- Fila de controles -->
+      <div class="row g-3 mt-sm">
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="d-flex gap-sm w-100">
+            <button
+              class="btn btn-secondary flex-fill"
+              (click)="clearFilters()"
+              [disabled]="!filters.staffMedico && !filters.consultorio && !filters.centro"
+            >
+              <span class="material-symbols-outlined">close</span>
+              Limpiar filtros
+            </button>
+            <button
+              class="btn btn-primary flex-fill"
+              (click)="applyFilters()"
+            >
+              <span class="material-symbols-outlined">sync</span>
+              Actualizar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de resultados -->
+      <div class="row mt-md" *ngIf="resultsPage.totalElements > 0">
+        <div class="col-12">
+          <div class="info-badge">
+            <span class="material-symbols-outlined">info</span>
+            Mostrando {{ resultsPage.numberOfElements }} de {{ resultsPage.totalElements }} registros
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA LVE NORMALIZADA -->
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>
+              <button
+                class="header-button"
+                (click)="toggleSort('staffMedico')"
+                [class.active]="filters.sortBy === 'staffMedico'"
+                aria-label="Ordenar por staff médico"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">medical_services</span>
+                  Staff Médico
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="filters.sortBy === 'staffMedico'"
+                    aria-hidden="true"
+                  >
+                    {{ filters.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="filters.sortBy !== 'staffMedico'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <button
+                class="header-button"
+                (click)="toggleSort('consultorio')"
+                [class.active]="filters.sortBy === 'consultorio'"
+                aria-label="Ordenar por consultorio"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">door_open</span>
+                  Consultorio
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="filters.sortBy === 'consultorio'"
+                    aria-hidden="true"
+                  >
+                    {{ filters.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="filters.sortBy !== 'consultorio'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <button
+                class="header-button"
+                (click)="toggleSort('centro')"
+                [class.active]="filters.sortBy === 'centro'"
+                aria-label="Ordenar por centro"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">apartment</span>
+                  Centro
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="filters.sortBy === 'centro'"
+                    aria-hidden="true"
+                  >
+                    {{ filters.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="filters.sortBy !== 'centro'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">schedule</span>
+                Horarios
+              </div>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">timer</span>
+                Intervalo
+              </div>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">settings</span>
+                Acciones
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading state -->
+          <tr *ngIf="resultsPage.content.length === 0 && resultsPage.totalElements === 0">
+            <td colspan="6" class="loading-state">
+              <div class="loading-content">
+                <span class="material-symbols-outlined spinning">sync</span>
+                <h6>Cargando esquemas de turno...</h6>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data rows -->
+          <tr
+            *ngFor="let esquema of resultsPage.content || []; let i = index"
+            (click)="goToDetail(esquema.id)"
+            class="table-row cursor-pointer"
+          >
+            <td>
+              <div class="entity-info-full">
+                <div class="entity-avatar-medico">
+                  <span class="material-symbols-outlined" aria-hidden="true">medical_services</span>
+                </div>
+                <div class="entity-details">
+                  <div class="entity-name">
+                    {{ getStaffMedicoNombre(esquema.staffMedicoId) }}
+                  </div>
+                  <div class="entity-subtitle">
+                    <span class="badge badge-especialidad">
+                      <span class="material-symbols-outlined" aria-hidden="true">stethoscope</span>
+                      {{ getStaffMedicoEspecialidad(esquema.staffMedicoId) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="entity-info-compact">
+                <span class="material-symbols-outlined entity-icon" aria-hidden="true">door_open</span>
+                <span class="entity-text">{{ getConsultorioNombre(esquema.consultorioId) }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="entity-info-compact">
+                <span class="material-symbols-outlined entity-icon" aria-hidden="true">apartment</span>
+                <span class="entity-text">{{ getCentroAtencionNombre(esquema.centroId) }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="horarios-container">
+                <div
+                  *ngFor="let horario of esquema.horarios"
+                  class="badge badge-horario"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">event</span>
+                  <div class="horario-content">
+                    <span class="dia-label">{{ horario.dia }}</span>
+                    <span class="hora-range">{{ horario.horaInicio }} - {{ horario.horaFin }}</span>
+                  </div>
+                </div>
+                <div
+                  *ngIf="!esquema.horarios || esquema.horarios.length === 0"
+                  class="badge badge-muted"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">schedule_off</span>
+                  Sin horarios configurados
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="badge badge-intervalo">
+                <span class="material-symbols-outlined" aria-hidden="true">timer</span>
+                {{ esquema.intervalo }} min
+              </div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  (click)="goToEdit(esquema.id); $event.stopPropagation()"
+                  class="btn-action btn-action-edit"
+                  title="Editar esquema"
+                  aria-label="Editar esquema"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                </button>
+                <button
+                  (click)="remove(esquema.id); $event.stopPropagation()"
+                  class="btn-action btn-action-delete"
+                  title="Eliminar esquema"
+                  aria-label="Eliminar esquema"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty state -->
+          <tr
+            *ngIf="resultsPage.content.length === 0 && resultsPage.totalElements >= 0"
+          >
+            <td colspan="6" class="empty-state">
+              <div class="empty-state-content">
+                <span class="material-symbols-outlined empty-icon">event_busy</span>
+                <h3>No hay esquemas de turno registrados</h3>
+                <p>
+                  {{
+                    filters.staffMedico || filters.consultorio || filters.centro
+                      ? "No se encontraron resultados con los filtros aplicados"
+                      : "Comience agregando un nuevo esquema de turno al sistema"
+                  }}
+                </p>
+                <button
+                  *ngIf="filters.staffMedico || filters.consultorio || filters.centro"
+                  class="btn btn-primary"
+                  (click)="clearFilters()"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                  Limpiar filtros
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINADOR -->
+    <div class="pagination-container mt-lg" *ngIf="resultsPage.totalPages > 1">
+      <app-pagination
+        [totalPages]="resultsPage.totalPages"
+        [currentPage]="currentPage"
+        (pageChangeRequested)="onPageChangeRequested($event)"
+        [number]="resultsPage.number"
+        [hidden]="resultsPage.numberOfElements < 1"
+      ></app-pagination>
+    </div>
+  </div>
+</div>

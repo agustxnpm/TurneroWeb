@@ -1,0 +1,431 @@
+/* ================================================
+   ADMIN LIST COMPONENT - ESTILOS LVE NORMALIZADOS
+   ================================================
+   Sistema 100% basado en variables globales (styles.css)
+   Material Symbols para todos los iconos
+   ================================================ */
+
+/* ================================================
+   SECCIÓN 1: CONTENEDOR PRINCIPAL
+   ================================================ */
+
+.admin-list-container .card {
+  max-width: 1600px;
+}
+
+/* ================================================
+   SECCIÓN 2: HEADER LVE
+   ================================================ */
+
+.listado-header {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-gradient-purple) 100%);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  color: var(--text-on-accent);
+}
+
+.listado-header .header-icon {
+  font-size: 64px;
+  opacity: 0.95;
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.listado-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-on-accent);
+}
+
+.listado-header .text-muted {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: var(--font-size-sm);
+}
+
+.listado-header .btn-primary {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--text-on-accent);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.listado-header .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-soft);
+}
+
+.listado-header .btn-primary .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* ================================================
+   SECCIÓN 3: TABLA
+   ================================================ */
+
+.table-responsive {
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.table {
+  margin-bottom: 0;
+  background: var(--color-surface);
+}
+
+.table thead {
+  background: var(--color-background);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.table thead th {
+  padding: var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  border: none;
+  vertical-align: middle;
+}
+
+.header-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.header-cell .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* ================================================
+   SECCIÓN 4: FILAS DE TABLA
+   ================================================ */
+
+.table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table tbody tr.table-row:hover {
+  background: var(--color-background);
+  cursor: pointer;
+}
+
+.table tbody td {
+  padding: var(--space-md);
+  vertical-align: middle;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* ================================================
+   SECCIÓN 5: ENTIDADES (AVATAR, INFO)
+   ================================================ */
+
+.entity-info-full {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.entity-avatar-admin {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-full);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-gradient-purple) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.entity-avatar-admin .material-symbols-outlined {
+  font-size: 24px;
+  color: var(--text-on-accent);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.entity-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.entity-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.entity-subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+/* ================================================
+   SECCIÓN 6: BADGES Y CELDAS ESPECÍFICAS
+   ================================================ */
+
+
+.badge-dni .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.email-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.email-cell .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--color-accent);
+  opacity: 0.6;
+}
+
+.phone-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.phone-cell .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--color-accent);
+  opacity: 0.6;
+}
+
+/* ================================================
+   SECCIÓN 7: BOTONES DE ACCIÓN
+   ================================================ */
+
+.table tbody td:last-child {
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+}
+
+.btn-action {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-action .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--color-text);
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+.btn-action-edit:hover {
+  background: linear-gradient(135deg, rgba(13, 202, 240, 0.15) 0%, rgba(13, 202, 240, 0.05) 100%);
+  border-color: var(--color-info);
+}
+
+.btn-action-edit:hover .material-symbols-outlined {
+  color: var(--color-info);
+}
+
+/* ================================================
+   SECCIÓN 8: ESTADO VACÍO
+   ================================================ */
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-xxl);
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.empty-state-content .empty-icon {
+  font-size: 140px;
+  color: var(--color-text-secondary);
+  opacity: 0.3;
+  font-variation-settings: 'FILL' 0, 'wght' 300;
+}
+
+.empty-state-content h3 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.empty-state-content p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 400px;
+}
+
+.empty-state-content .btn-primary {
+  margin-top: var(--space-md);
+}
+
+/* ================================================
+   SECCIÓN 9: INFO DE RESULTADOS
+   ================================================ */
+
+.results-info {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.results-info .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--color-accent);
+  opacity: 0.7;
+}
+
+/* ================================================
+   SECCIÓN 10: RESPONSIVE
+   ================================================ */
+
+@media (max-width: 992px) {
+  .listado-header {
+    flex-direction: column;
+    gap: var(--space-md);
+    text-align: center;
+  }
+
+  .listado-header .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .table thead th {
+    padding: var(--space-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  .table tbody td {
+    padding: var(--space-sm);
+    font-size: var(--font-size-xs);
+  }
+
+  .header-cell .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  .entity-avatar-admin {
+    width: 36px;
+    height: 36px;
+  }
+
+  .entity-avatar-admin .material-symbols-outlined {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .listado-header .header-icon {
+    font-size: 48px;
+  }
+
+  .listado-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .btn-action {
+    width: 32px;
+    height: 32px;
+  }
+
+  .btn-action .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  .email-cell .material-symbols-outlined,
+  .phone-cell .material-symbols-outlined {
+    display: none;
+  }
+
+  .badge-dni .material-symbols-outlined {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .listado-header {
+    padding: var(--space-md);
+  }
+
+  .listado-header h2 {
+    font-size: var(--font-size-lg);
+  }
+
+  .listado-header .btn-primary span:not(.material-symbols-outlined) {
+    display: none;
+  }
+
+  .table-responsive {
+    font-size: var(--font-size-xs);
+  }
+
+  .empty-state-content .empty-icon {
+    font-size: 100px;
+  }
+
+  .empty-state-content h3 {
+    font-size: var(--font-size-lg);
+  }
+
+  .entity-info-full {
+    gap: var(--space-xs);
+  }
+
+  .entity-avatar-admin {
+    width: 32px;
+    height: 32px;
+  }
+
+  .entity-avatar-admin .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  .entity-details {
+    gap: 2px;
+  }
+}

@@ -1,0 +1,1449 @@
+/* ============================================
+   SECCIÓN 1: HEADER LVE NORMALIZADO
+============================================ */
+
+/* Header principal con icono y título */
+.listado-header {
+  background: var(--color-accent);
+  color: var(--text-on-accent);
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  margin: calc(var(--space-xl) * -1) calc(var(--space-xl) * -1) var(--space-lg);
+}
+
+.listado-header .header-icon {
+  font-size: 64px;
+  color: var(--text-on-accent);
+  opacity: 0.95;
+}
+
+.listado-header h2 {
+  color: var(--text-on-accent);
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-h1);
+}
+
+.listado-header .text-muted {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--font-size-lg);
+}
+
+/* ============================================
+   SECCIÓN 2: FILTROS Y BÚSQUEDA
+============================================ */
+
+.filters-section {
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--box-shadow-soft);
+}
+
+.filters-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-main);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-h3);
+  margin-bottom: var(--space-md);
+}
+
+.filters-title .material-symbols-outlined {
+  color: var(--color-accent);
+  font-size: var(--font-size-xl);
+}
+
+.filters-form .form-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+  margin-bottom: var(--space-sm);
+}
+
+.filters-form .material-symbols-outlined {
+  color: var(--color-accent);
+}
+
+.filters-form .form-select,
+.filters-form .form-control {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-base);
+  transition: all 0.2s ease;
+}
+
+.filters-form .form-select:focus,
+.filters-form .form-control:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+/* Botones de filtros */
+.filters-form .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  border: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.filters-form .btn-primary {
+  background: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+.filters-form .btn-primary:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-md);
+}
+
+.filters-form .btn-secondary {
+  background: var(--text-secondary);
+  color: var(--text-on-accent);
+}
+
+.filters-form .btn-secondary:hover {
+  background: color-mix(in srgb, var(--text-secondary) 90%, black);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   SECCIÓN 3: INFO BADGES Y ALERTAS
+============================================ */
+
+.info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: color-mix(in srgb, var(--color-info) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-info) 30%, transparent);
+  border-radius: var(--border-radius-md);
+  color: color-mix(in srgb, var(--color-info) 100%, black 30%);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-md);
+}
+
+.info-badge .material-symbols-outlined {
+  font-size: var(--font-size-lg);
+}
+
+/* ============================================
+   SECCIÓN 4: AGENDA SECTION - CONTAINER Y HEADER
+============================================ */
+
+.agenda-section {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow-soft);
+  overflow: hidden;
+}
+
+.agenda-header {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-gradient-purple) 100%);
+  color: var(--text-on-accent);
+  padding: var(--space-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.agenda-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-h3);
+  color: var(--text-on-accent);
+}
+
+.agenda-title .material-symbols-outlined {
+  font-size: var(--font-size-2xl);
+}
+
+.agenda-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.agenda-info .info-badge {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--text-on-accent);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ============================================
+   SECCIÓN 5: ESTADOS - LOADING Y EMPTY
+============================================ */
+
+.loading-state,
+.empty-state {
+  padding: var(--space-xxl);
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-content,
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  text-align: center;
+}
+
+.loading-content .material-symbols-outlined {
+  font-size: 48px;
+  color: var(--color-accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-content h6 {
+  color: var(--text-secondary);
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.empty-state-content .empty-icon {
+  font-size: 120px;
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.empty-state-content h3 {
+  color: var(--text-main);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.empty-state-content p {
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-xs) 0;
+  font-size: var(--font-size-base);
+}
+
+.empty-state-content .btn {
+  margin-top: var(--space-md);
+}
+
+/* ============================================
+   SECCIÓN 6: ACORDEÓN DE MÉDICOS (Nivel 1)
+============================================ */
+
+.turnos-grouped {
+  padding: var(--space-xl);
+}
+
+.medico-item {
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin-bottom: var(--space-md);
+}
+
+.medico-item:hover {
+  box-shadow: var(--box-shadow-md);
+}
+
+/* Header del médico (clickeable) */
+.medico-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  cursor: pointer;
+  background: var(--color-background);
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.medico-header:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-background));
+}
+
+.medico-header.medico-expandido {
+  border-bottom-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+}
+
+/* Avatar del médico */
+.medico-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--border-radius-full);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-gradient-purple) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.medico-avatar .material-symbols-outlined {
+  font-size: 28px;
+  color: var(--text-on-accent);
+}
+
+/* Info del médico */
+.medico-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.medico-nombre {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+}
+
+.medico-detalles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.detalle-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.detalle-item .material-symbols-outlined {
+  font-size: var(--font-size-lg);
+  color: var(--color-accent);
+}
+
+/* Stats del médico */
+.medico-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.stat-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-accent);
+  border-radius: var(--border-radius-md);
+  min-width: 60px;
+}
+
+.stat-number {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-on-accent);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-on-accent);
+  margin-top: var(--space-xs);
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.proximo-turno-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  border-radius: var(--border-radius-xl);
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.proximo-turno-badge .material-symbols-outlined {
+  font-size: var(--font-size-base);
+}
+
+/* Icono de expansión */
+.expand-icon {
+  flex-shrink: 0;
+}
+
+.expand-icon .material-symbols-outlined {
+  font-size: 28px;
+  color: var(--color-accent);
+  transition: transform 0.3s ease;
+}
+
+.medico-expandido .expand-icon .material-symbols-outlined {
+  transform: rotate(180deg);
+}
+
+/* Contenedor expandible */
+.medico-turnos-expandible {
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border-top: 1px solid var(--border-color);
+}
+
+/* ============================================
+   SECCIÓN 7: ACORDEÓN DE DÍAS (Nivel 2)
+============================================ */
+
+.dia-acordeon {
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+/* Header del día */
+.fecha-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  cursor: pointer;
+  background: var(--color-background);
+  transition: all 0.3s ease;
+  border-left: 4px solid var(--color-accent);
+}
+
+.fecha-header:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-background));
+}
+
+.fecha-header.fecha-expandida {
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Excepciones - Variantes de color */
+.fecha-header.fecha-excepcional {
+  border-left-width: 6px;
+}
+
+.fecha-header.fecha-feriado {
+  border-left-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 5%, var(--color-background));
+}
+
+.fecha-header.fecha-mantenimiento {
+  border-left-color: #fd7e14;
+  background: color-mix(in srgb, #fd7e14 5%, var(--color-background));
+}
+
+.fecha-header.fecha-atencion-especial {
+  border-left-color: #6f42c1;
+  background: color-mix(in srgb, #6f42c1 5%, var(--color-background));
+}
+
+/* Info de la fecha */
+.fecha-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
+}
+
+.fecha-main {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.fecha-main .material-symbols-outlined {
+  font-size: var(--font-size-xl);
+  color: var(--color-accent);
+}
+
+.fecha-title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+}
+
+/* Badge de excepción compacto */
+.exception-badge-compact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  border-radius: var(--border-radius-xl);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.exception-icon {
+  font-size: var(--font-size-base);
+}
+
+.exception-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Stats del día */
+.fecha-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.stat-badge-sm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-accent);
+  border-radius: var(--border-radius-sm);
+  min-width: 50px;
+}
+
+.stat-badge-sm .stat-number {
+  font-size: var(--font-size-lg);
+}
+
+.stat-badge-sm .stat-label {
+  font-size: 10px;
+}
+
+.primer-turno-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  border-radius: var(--border-radius-xl);
+  color: var(--color-success);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.primer-turno-badge .material-symbols-outlined {
+  font-size: var(--font-size-sm);
+}
+
+.expand-icon-sm .material-symbols-outlined {
+  font-size: 24px;
+  color: var(--color-accent);
+  transition: transform 0.3s ease;
+}
+
+.fecha-expandida .expand-icon-sm .material-symbols-outlined {
+  transform: rotate(180deg);
+}
+
+/* ============================================
+   SECCIÓN 8: SLOTS GRID Y SLOT CARDS
+============================================ */
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--color-background);
+}
+
+/* Slot Card Base */
+.slot-card {
+  position: relative;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Estados del slot - Disponible (estilo de turno-chip) */
+.slot-card.slot-disponible {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 2px solid #e0e0e0;
+  border-radius: var(--border-radius-lg);
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  min-height: auto;
+}
+
+.slot-card.slot-disponible:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 12px rgba(98, 0, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Slot seleccionado */
+.slot-card.slot-selected {
+  border-color: var(--color-accent);
+  background: linear-gradient(135deg, #f8f5ff 0%, #ffffff 100%);
+  box-shadow: 0 4px 16px rgba(98, 0, 234, 0.2);
+}
+
+/* Slot ocupado */
+.slot-card.slot-ocupado {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #f5f5f5;
+  border: 2px solid #e0e0e0;
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* Slots excepcionales */
+.slot-card.slot-excepcional {
+  border-width: 3px;
+}
+
+.slot-card.slot-feriado {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 5%, var(--color-surface));
+}
+
+.slot-card.slot-mantenimiento {
+  border-color: #fd7e14;
+  background: color-mix(in srgb, #fd7e14 5%, var(--color-surface));
+}
+
+.slot-card.slot-atencion-especial {
+  border-color: #6f42c1;
+  background: color-mix(in srgb, #6f42c1 8%, var(--color-surface));
+  position: relative;
+  overflow: hidden;
+}
+
+.slot-card.slot-atencion-especial:hover {
+  border-color: #6f42c1;
+  background: color-mix(in srgb, #6f42c1 12%, var(--color-surface));
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(111, 66, 193, 0.25);
+}
+
+/* Contenido del slot - Hora (exacto a .chip-hora) */
+.slot-time {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.slot-time .material-symbols-outlined {
+  font-size: 1.5rem;
+  color: var(--color-accent);
+}
+
+/* Info adicional (si existe) */
+.slot-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.slot-info .material-symbols-outlined {
+  font-size: var(--font-size-lg);
+  color: var(--color-accent);
+}
+
+/* Ubicación del slot (exacto a .chip-location-info) */
+.slot-location {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-left: var(--space-sm);
+  border-left: 2px solid #e0e0e0;
+}
+
+.location-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.location-item .material-symbols-outlined {
+  font-size: 1.1rem;
+  color: #757575;
+}
+
+/* Información del paciente */
+.slot-paciente {
+  margin-top: var(--space-md);
+  padding: var(--space-sm);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border-radius: var(--border-radius-md);
+  border-left: 3px solid var(--color-success);
+}
+
+.slot-paciente .entity-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.entity-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--border-radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+
+.entity-avatar-paciente {
+  background: var(--color-success);
+  color: var(--text-on-accent);
+}
+
+.entity-details {
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+}
+
+/* ============================================
+   SECCIÓN 9: EXCEPCIONES EN SLOTS
+============================================ */
+
+.slot-exception-info {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background: color-mix(in srgb, var(--color-danger) 5%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-danger) 20%, transparent);
+  border-radius: var(--border-radius-md);
+}
+
+.slot-card.slot-feriado .slot-exception-info {
+  background: color-mix(in srgb, var(--color-danger) 5%, transparent);
+  border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
+}
+
+.slot-card.slot-mantenimiento .slot-exception-info {
+  background: color-mix(in srgb, #fd7e14 5%, transparent);
+  border-color: color-mix(in srgb, #fd7e14 30%, transparent);
+}
+
+.slot-card.slot-atencion-especial .slot-exception-info {
+  background: color-mix(in srgb, #6f42c1 8%, transparent);
+  border: 2px solid color-mix(in srgb, #6f42c1 40%, transparent);
+  box-shadow: 0 3px 12px rgba(111, 66, 193, 0.15);
+}
+
+.exception-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.exception-badge .exception-icon {
+  font-size: var(--font-size-xl);
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+.exception-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  flex: 1;
+}
+
+.exception-type {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  color: var(--color-danger);
+  letter-spacing: 0.5px;
+}
+
+.slot-card.slot-mantenimiento .exception-type {
+  color: #fd7e14;
+}
+
+.slot-card.slot-atencion-especial .exception-type {
+  color: #6f42c1;
+}
+
+.exception-description {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+  line-height: var(--line-height-body);
+}
+
+.exception-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-danger);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.slot-card.slot-mantenimiento .exception-warning {
+  color: #fd7e14;
+}
+
+.slot-card.slot-atencion-especial .exception-warning {
+  color: #6f42c1;
+}
+
+.exception-warning .material-symbols-outlined {
+  font-size: var(--font-size-base);
+}
+
+/* ============================================
+   SECCIÓN 10: BADGES DE ESTADO
+============================================ */
+
+/* Badge de estado (exacto a .chip-estado) */
+.slot-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: var(--space-xs);
+}
+
+.slot-status .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+/* Badge variants - Estilo chip-estado */
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: var(--space-xs);
+}
+
+.badge .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+/* Badge Success (Disponible) - Verde */
+.badge-success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* Badge Primary (Asignado) - Azul */
+.badge-primary {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+/* Badge Danger (Feriado) - Rojo */
+.badge-danger {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* Badge Warning (Atención Especial) - Púrpura */
+.badge-warning {
+  background: #f3e5f5;
+  color: #6f42c1;
+}
+
+/* Badge Secondary (Mantenimiento) - Naranja */
+.badge-secondary {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+/* Check de selección */
+.slot-check {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  color: var(--color-accent);
+  font-size: 32px;
+  background: var(--color-surface);
+  border-radius: var(--border-radius-full);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+/* ============================================
+   SECCIÓN 11: MODAL
+============================================ */
+
+/* Modal backdrop */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  z-index: 1040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: backdropFadeIn 0.2s ease-out;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal dialog */
+.modal-dialog {
+  position: relative;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  animation: modalSlideIn 0.3s ease-out;
+  margin: var(--space-lg);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-dialog-centered {
+  display: flex;
+  align-items: center;
+  min-height: calc(100% - (var(--space-lg) * 2));
+}
+
+/* Modal content */
+.modal-content {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--box-shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+/* Modal header */
+.modal-header {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-gradient-purple) 100%);
+  color: var(--text-on-accent);
+  padding: var(--space-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.modal-title-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  flex: 1;
+}
+
+.modal-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+}
+
+.modal-title-wrapper h3 {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-on-accent);
+}
+
+.modal-title-wrapper p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.btn-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: var(--text-on-accent);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--border-radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.btn-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.btn-close .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* Modal body */
+.modal-body {
+  padding: var(--space-xl);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Info grid en modal */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.info-item {
+  background: var(--color-background);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-md);
+  border-left: 4px solid var(--color-accent);
+}
+
+.info-item-full {
+  grid-column: 1 / -1;
+}
+
+.info-item-exception {
+  border-left-color: var(--color-danger);
+  border-left-width: 6px;
+  background: color-mix(in srgb, var(--color-danger) 2%, var(--color-background));
+}
+
+.info-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+  font-size: var(--font-size-sm);
+}
+
+.info-label .material-symbols-outlined {
+  font-size: var(--font-size-lg);
+  color: var(--color-accent);
+}
+
+.info-item-exception .info-label .material-symbols-outlined {
+  color: var(--color-danger);
+}
+
+.info-value {
+  font-size: var(--font-size-base);
+  color: var(--text-main);
+  font-weight: var(--font-weight-medium);
+}
+
+.info-value .entity-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.info-value .exception-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.exception-type {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  color: var(--color-danger);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Patient assignment section */
+.patient-assignment {
+  background: var(--color-surface);
+  border: 2px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.assignment-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 2px solid color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.assignment-header .material-symbols-outlined {
+  font-size: var(--font-size-xl);
+  color: var(--color-accent);
+}
+
+.assignment-header h4 {
+  margin: 0;
+  color: var(--text-main);
+  font-weight: var(--font-weight-semibold);
+}
+
+.assignment-field .form-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+  margin-bottom: var(--space-sm);
+}
+
+.assignment-field .form-select {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-base);
+  transition: all 0.2s ease;
+  background: var(--color-surface);
+}
+
+.assignment-field .form-select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+/* Special config alert */
+.special-config-alert {
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 2px solid color-mix(in srgb, var(--color-warning) 20%, transparent);
+}
+
+.alert-header .material-symbols-outlined {
+  font-size: var(--font-size-xl);
+  color: #856404;
+}
+
+.alert-header h4 {
+  margin: 0;
+  color: #856404;
+  font-weight: var(--font-weight-semibold);
+}
+
+.special-config-alert p {
+  color: #856404;
+  margin-bottom: var(--space-md);
+  line-height: var(--line-height-body);
+}
+
+.alert-details {
+  background: rgba(255, 255, 255, 0.7);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius-sm);
+  color: #6c5500;
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-body);
+}
+
+/* Modal footer */
+.modal-footer {
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--color-background);
+  display: flex;
+  gap: var(--space-md);
+  justify-content: flex-end;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.modal-footer .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  border: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.modal-footer .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-footer .btn-primary {
+  background: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+.modal-footer .btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-md);
+}
+
+.modal-footer .btn-secondary {
+  background: var(--text-secondary);
+  color: var(--text-on-accent);
+}
+
+.modal-footer .btn-secondary:hover {
+  background: color-mix(in srgb, var(--text-secondary) 90%, black);
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   SECCIÓN 12: RESPONSIVE
+============================================ */
+
+@media (max-width: 992px) {
+  .listado-header {
+    padding: var(--space-lg);
+  }
+
+  .listado-header .header-icon {
+    font-size: 48px;
+  }
+
+  .listado-header h2 {
+    font-size: var(--font-size-h2);
+  }
+
+  .filters-section {
+    padding: var(--space-lg);
+  }
+
+  .medico-header {
+    flex-wrap: wrap;
+  }
+
+  .medico-stats {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .fecha-stats {
+    flex-wrap: wrap;
+  }
+
+  .slots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-sm);
+    padding: var(--space-md);
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .listado-header {
+    margin: calc(var(--space-lg) * -1) calc(var(--space-lg) * -1) var(--space-md);
+    padding: var(--space-md);
+  }
+
+  .listado-header .header-icon {
+    font-size: 40px;
+  }
+
+  .listado-header h2 {
+    font-size: var(--font-size-h3);
+  }
+
+  .listado-header .text-muted {
+    font-size: var(--font-size-base);
+  }
+
+  .filters-section {
+    padding: var(--space-md);
+  }
+
+  .filters-form .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .agenda-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .agenda-info {
+    width: 100%;
+  }
+
+  .turnos-grouped {
+    padding: var(--space-md);
+  }
+
+  .medico-header {
+    padding: var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .medico-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .medico-avatar .material-symbols-outlined {
+    font-size: 24px;
+  }
+
+  .medico-nombre {
+    font-size: var(--font-size-base);
+  }
+
+  .medico-detalles {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .fecha-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+
+  .fecha-stats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .slots-grid {
+    grid-template-columns: 1fr;
+    padding: var(--space-sm);
+  }
+
+  .modal-dialog {
+    width: 95%;
+    margin: var(--space-sm);
+  }
+
+  .modal-header {
+    padding: var(--space-lg);
+  }
+
+  .modal-title-wrapper {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .modal-icon {
+    font-size: 32px;
+  }
+
+  .modal-body {
+    padding: var(--space-lg);
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .slot-card {
+    padding: var(--space-md);
+  }
+
+  .medico-turnos-expandible {
+    padding: var(--space-md);
+  }
+
+  .exception-badge {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,0 +1,387 @@
+<div class="paciente-detail-card card p-xl mb-xl mx-auto" *ngIf="paciente" style="max-width: 1000px;">
+  <!-- Header -->
+  <div class="paciente-detail-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">person</span>
+      <div>
+        <h2 class="mb-0" *ngIf="!esNuevo()">
+          {{ paciente.nombre }} {{ paciente.apellido }}
+        </h2>
+        <h2 class="mb-0" *ngIf="esNuevo()">
+          Nuevo Paciente
+        </h2>
+        <p class="text-muted mb-0 mt-sm">
+          <ng-container *ngIf="!modoEdicion && !esNuevo()">Información del paciente</ng-container>
+          <ng-container *ngIf="modoEdicion && !esNuevo()">Editando información</ng-container>
+          <ng-container *ngIf="esNuevo()">Registro de nuevo paciente</ng-container>
+        </p>
+      </div>
+    </div>
+    
+    <div class="d-flex gap-md" *ngIf="!modoEdicion && !esNuevo()">
+      <button type="button" class="btn btn-primary" (click)="activarEdicion()" aria-label="Editar información del paciente">
+        <span class="material-symbols-outlined me-2">edit</span>
+        <span class="d-none d-sm-inline">Editar</span>
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="goBack()" aria-label="Volver al listado">
+        <span class="material-symbols-outlined me-2">arrow_back</span>
+        <span class="d-none d-sm-inline">Volver</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODO VISTA (Solo lectura) -->
+  <div *ngIf="!modoEdicion && !esNuevo()" class="paciente-info-view">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">person</span>
+          <div class="info-content">
+            <label class="info-label">Nombre Completo</label>
+            <div class="info-value">{{ paciente.nombre }} {{ paciente.apellido }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">email</span>
+          <div class="info-content">
+            <label class="info-label">Correo Electrónico</label>
+            <div class="info-value">{{ paciente.email }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">phone</span>
+          <div class="info-content">
+            <label class="info-label">Teléfono</label>
+            <div class="info-value">{{ paciente.telefono }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">badge</span>
+          <div class="info-content">
+            <label class="info-label">Documento</label>
+            <div class="info-value">{{ paciente.dni }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">calendar_today</span>
+          <div class="info-content">
+            <label class="info-label">Fecha de Nacimiento</label>
+            <div class="info-value">{{ paciente.fechaNacimiento | date : 'dd/MM/yyyy' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">local_hospital</span>
+          <div class="info-content">
+            <label class="info-label">Obra Social</label>
+            <div class="info-value">{{ paciente.obraSocial?.nombre || 'Sin obra social' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODO EDICIÓN/CREACIÓN -->
+  <form *ngIf="modoEdicion || esNuevo()" #form="ngForm" (ngSubmit)="save()" novalidate>
+    <div class="row g-4">
+      <!-- Nombre -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="nombre">
+            <span class="material-symbols-outlined me-2">person</span>
+            Nombre*
+          </label>
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            class="form-control"
+            [(ngModel)]="paciente.nombre"
+            required
+            autocomplete="given-name"
+            aria-label="Nombre del paciente"
+            #nombre="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="isInvalidField(nombre)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El nombre es requerido
+          </small>
+        </div>
+      </div>
+
+      <!-- Apellido -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="apellido">
+            <span class="material-symbols-outlined me-2">person</span>
+            Apellido*
+          </label>
+          <input
+            type="text"
+            id="apellido"
+            name="apellido"
+            class="form-control"
+            [(ngModel)]="paciente.apellido"
+            required
+            autocomplete="family-name"
+            aria-label="Apellido del paciente"
+            #apellido="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="isInvalidField(apellido)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El apellido es requerido
+          </small>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="email">
+            <span class="material-symbols-outlined me-2">email</span>
+            Correo Electrónico*
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-control"
+            [(ngModel)]="paciente.email"
+            required
+            [disabled]="esPacienteVendoSuPerfil()"
+            autocomplete="email"
+            aria-label="Correo electrónico del paciente"
+            #email="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="isInvalidField(email)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            <span *ngIf="email.errors?.['required']">El email es requerido</span>
+            <span *ngIf="email.errors?.['email']">Debe ser un email válido</span>
+          </small>
+        </div>
+      </div>
+
+      <!-- Teléfono -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="telefono">
+            <span class="material-symbols-outlined me-2">phone</span>
+            Teléfono*
+          </label>
+          <input
+            type="tel"
+            id="telefono"
+            name="telefono"
+            class="form-control"
+            [(ngModel)]="paciente.telefono"
+            required
+            autocomplete="tel"
+            aria-label="Teléfono del paciente"
+            #telefono="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="isInvalidField(telefono)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El teléfono es requerido
+          </small>
+        </div>
+      </div>
+
+      <!-- DNI -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="dni">
+            <span class="material-symbols-outlined me-2">badge</span>
+            Documento (DNI)*
+          </label>
+          <input
+            type="text"
+            id="dni"
+            name="dni"
+            class="form-control"
+            [(ngModel)]="paciente.dni"
+            required
+            [disabled]="esPacienteVendoSuPerfil()"
+            autocomplete="off"
+            aria-label="Documento de identidad del paciente"
+            #dni="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="isInvalidField(dni)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El DNI es requerido
+          </small>
+        </div>
+      </div>
+
+      <!-- Fecha de Nacimiento -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="fechaNacimiento">
+            <span class="material-symbols-outlined me-2">calendar_today</span>
+            Fecha de Nacimiento*
+          </label>
+          <input
+            type="date"
+            id="fechaNacimiento"
+            name="fechaNacimiento"
+            class="form-control"
+            [(ngModel)]="paciente.fechaNacimiento"
+            required
+            [disabled]="esPacienteVendoSuPerfil()"
+            autocomplete="bday"
+            aria-label="Fecha de nacimiento del paciente"
+            #fechaNacimiento="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="isInvalidField(fechaNacimiento)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            La fecha de nacimiento es requerida
+          </small>
+        </div>
+      </div>
+
+      <!-- Obra Social -->
+      <div class="col-12">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="obraSocial">
+            <span class="material-symbols-outlined me-2">local_hospital</span>
+            Obra Social (Opcional)
+          </label>
+          <select
+            id="obraSocial"
+            name="obraSocial"
+            class="form-control"
+            [(ngModel)]="paciente.obraSocial"
+            aria-label="Seleccionar obra social"
+            #obraSocial="ngModel"
+          >
+            <option [ngValue]="null">Sin obra social</option>
+            <option *ngFor="let obraSocial of obrasSociales" [ngValue]="obraSocial">
+              {{ obraSocial.nombre }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Información sobre contraseña automática -->
+      <div class="col-12" *ngIf="esNuevo()">
+        <div class="info-badge d-flex align-items-start gap-sm mb-lg">
+          <span class="material-symbols-outlined">info</span>
+          <div>
+            <strong>Contraseña automática:</strong>
+            Se generará una contraseña segura automáticamente y será enviada por correo electrónico al paciente.
+          </div>
+        </div>
+      </div>
+
+      <!-- Cambio de contraseña -->
+      <div class="col-12" *ngIf="modoEdicion && !esNuevo() && puedeCambiarContrasena()">
+        <div class="password-section card p-lg mb-lg">
+          <h3 class="d-flex align-items-center gap-sm mb-md">
+            <span class="material-symbols-outlined">lock</span>
+            Cambiar Contraseña
+          </h3>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="form-label" for="currentPassword">Contraseña Actual</label>
+                <input
+                  type="password"
+                  id="currentPassword"
+                  name="currentPassword"
+                  class="form-control"
+                  [(ngModel)]="changePasswordForm.currentPassword"
+                  autocomplete="current-password"
+                  aria-label="Contraseña actual"
+                  placeholder="Ingrese su contraseña actual"
+                />
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="form-label" for="newPassword">Nueva Contraseña</label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  name="newPassword"
+                  class="form-control"
+                  [(ngModel)]="changePasswordForm.newPassword"
+                  autocomplete="new-password"
+                  aria-label="Nueva contraseña"
+                  placeholder="Ingrese la nueva contraseña"
+                />
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-group">
+                <label class="form-label" for="confirmPassword">Confirmar Nueva Contraseña</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  class="form-control"
+                  [(ngModel)]="changePasswordForm.confirmPassword"
+                  autocomplete="new-password"
+                  aria-label="Confirmar nueva contraseña"
+                  placeholder="Confirme la nueva contraseña"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="mt-md">
+            <button type="button" class="btn btn-primary" (click)="changePassword()">
+              <span class="material-symbols-outlined me-2">save</span>
+              Cambiar Contraseña
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="d-flex flex-wrap gap-md mt-xl pt-lg border-top">
+      <button
+        type="submit"
+        class="btn btn-success"
+        [disabled]="form.invalid"
+        aria-label="Guardar cambios del paciente"
+      >
+        <span class="material-symbols-outlined me-2">save</span>
+        Guardar Paciente
+      </button>
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="cancelar()"
+        aria-label="Cancelar cambios"
+      >
+        <span class="material-symbols-outlined me-2">close</span>
+        Cancelar
+      </button>
+
+      <button
+        *ngIf="paciente.id && !esNuevo() && !esPacienteVendoSuPerfil()"
+        type="button"
+        class="btn btn-danger"
+        (click)="confirmDelete()"
+        aria-label="Eliminar paciente"
+      >
+        <span class="material-symbols-outlined me-2">delete</span>
+        Eliminar
+      </button>
+    </div>
+  </form>
+</div>

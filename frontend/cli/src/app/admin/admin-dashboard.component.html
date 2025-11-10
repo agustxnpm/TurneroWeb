@@ -1,0 +1,125 @@
+<div class="dashboard-wrapper">  
+  <!-- Header del Dashboard -->
+  <div class="dashboard-header card" *ngIf="isAuthenticated()">
+    <div class="header-content">
+      <div class="welcome-info">
+        <span class="material-symbols-outlined header-icon">admin_panel_settings</span>
+        <div>
+          <h1>Panel de Administración</h1>
+          <p class="header-subtitle">Control total del sistema y usuarios</p>
+        </div>
+      </div>
+      <div class="user-info">
+        <div class="info-item">
+          <span class="material-symbols-outlined">person</span>
+          <span>{{ getUserName() }}</span>
+        </div>
+        <div class="info-item">
+          <span class="material-symbols-outlined">email</span>
+          <span>{{ getUserEmail() }}</span>
+        </div>
+        <div class="info-item">
+          <span class="material-symbols-outlined">shield</span>
+          <span>Administrador del Sistema</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección Acciones Rápidas -->
+  <section class="quick-actions-section card">
+    <h2>
+      <span class="material-symbols-outlined">bolt</span>
+      Acciones Rápidas
+    </h2>
+    <p class="section-description">Accede rápidamente a las funciones principales</p>
+    
+    <div class="actions-grid">
+      <div class="card action-card" role="button" aria-label="Dashboard de Auditoría" (click)="goToAudit()">
+        <span class="material-symbols-outlined card-icon">assignment</span>
+        <h3>Dashboard de Auditoría</h3>
+        <p>Monitorea actividad y eventos del sistema</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" role="button" aria-label="Gestión de Usuarios" (click)="goToUsers()">
+        <span class="material-symbols-outlined card-icon">groups</span>
+        <h3>Gestión de Usuarios</h3>
+        <p>Administra operadores y permisos</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" role="button" aria-label="Configuración del Sistema" (click)="goToConfigSis()">
+        <span class="material-symbols-outlined card-icon">settings</span>
+        <h3>Configuración del Sistema</h3>
+        <p>Ajustes de turnos y notificaciones</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" role="button" aria-label="Configuración General" (click)="goToConfig()">
+        <span class="material-symbols-outlined card-icon">tune</span>
+        <h3>Configuración General</h3>
+        <p>Ajustes del sistema y preferencias</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" role="button" aria-label="Reportes y Estadísticas" (click)="goToReports()">
+        <span class="material-symbols-outlined card-icon">bar_chart</span>
+        <h3>Reportes</h3>
+        <p>Estadísticas y análisis del sistema</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Estado del Sistema -->
+  <section class="system-status-section card">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="material-symbols-outlined">monitoring</span>
+        <div>
+          <h2>Estado del Sistema</h2>
+          <p class="section-description">Monitoreo en tiempo real de la plataforma</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-grid">
+      <div class="card status-card status-online">
+        <span class="material-symbols-outlined status-icon">check_circle</span>
+        <div class="status-content">
+          <h3>Sistema Online</h3>
+          <p>Todos los servicios funcionando</p>
+        </div>
+        <span class="status-indicator online"></span>
+      </div>
+
+      <div class="card status-card status-users">
+        <span class="material-symbols-outlined status-icon">groups</span>
+        <div class="status-content">
+          <h3>Usuarios Activos</h3>
+          <p>{{ getActiveUsersCount() }} usuarios conectados</p>
+        </div>
+        <span class="status-indicator active"></span>
+      </div>
+
+      <div class="card status-card status-security">
+        <span class="material-symbols-outlined status-icon">shield</span>
+        <div class="status-content">
+          <h3>Seguridad</h3>
+          <p>Sin alertas de seguridad</p>
+        </div>
+        <span class="status-indicator secure"></span>
+      </div>
+
+      <div class="card status-card status-performance">
+        <span class="material-symbols-outlined status-icon">speed</span>
+        <div class="status-content">
+          <h3>Rendimiento</h3>
+          <p>Óptimo - 98% disponibilidad</p>
+        </div>
+        <span class="status-indicator optimal"></span>
+      </div>
+    </div>
+  </section>
+</div>

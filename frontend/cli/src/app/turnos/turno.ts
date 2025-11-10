@@ -5,31 +5,36 @@ export interface Turno {
     horaInicio: string;             // LocalTime como string  
     horaFin: string;                // LocalTime como string
     estado: string;                 // "PROGRAMADO", "CONFIRMADO", "CANCELADO"
-    
+    observaciones?: string;         // Observaciones del SobreTurno
+
+    // ⭐ CAMPOS DE ASISTENCIA (ACTUALIZADOS)
+    asistio?: boolean;             // Indica si el paciente asistió al turno
+
+
     // Campos de paciente
     pacienteId?: number;
     nombrePaciente?: string;
     apellidoPaciente?: string;
-    
+
     // Campos de staff médico
     staffMedicoId: number;
     staffMedicoNombre?: string;
     staffMedicoApellido?: string;
     especialidadStaffMedico?: string;
-    
+
     // Campos de centro y consultorio
     centroId?: number;
     nombreCentro?: string;
     consultorioId?: number;
     consultorioNombre?: string;
-    
+
     // Campo para título personalizado
     titulo?: string;
-    
+
     // Campos para manejo de SLOTS en la agenda
     esSlot?: boolean;               // true = slot generado, false/undefined = turno real
     ocupado?: boolean;              // true = slot ocupado por un turno, false = disponible
-    
+
     // === CAMPOS DE AUDITORÍA ===
     ultimoUsuarioModificacion?: string;    // Usuario que realizó la última modificación
     fechaUltimaModificacion?: string;      // Fecha/hora de la última modificación como string
@@ -52,22 +57,22 @@ export interface TurnoFilter {
     consultorioId?: number;
     nombreConsultorio?: string;  // Agregado para filtros de reporte
     centroId?: number; // Agregado para compatibilidad con backend y servicio de exportación
-    
+
     // Filtros de fecha
     fechaDesde?: string;
     fechaHasta?: string;
     fechaExacta?: string;
-    
+
     // Filtros de auditoría
     usuarioModificacion?: string;
     conModificaciones?: boolean;
-    
+
     // Paginación y ordenamiento
     page?: number;
     size?: number;
     sortBy?: string;
     sortDirection?: string;
-    
+
     // Formato de exportación
     exportFormat?: string;  // CSV, PDF
 }

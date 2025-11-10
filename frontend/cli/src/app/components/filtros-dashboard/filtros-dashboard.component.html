@@ -1,0 +1,72 @@
+<div class="filtros-dashboard">
+  <div class="filters-section">
+    <div class="filters-title">
+      <span class="material-symbols-outlined">filter_list</span>
+      Filtros de análisis
+    </div>
+    
+    <div class="filters-grid">
+      <div class="filter-item">
+        <label for="centroSelect" class="form-label">
+          <span class="material-symbols-outlined">location_on</span>
+          Centro de Atención
+        </label>
+        <select 
+          id="centroSelect"
+          class="form-select" 
+          [(ngModel)]="centroAtencionId"
+          (change)="onCentroChange()">
+          <option [value]="null">Todos los centros</option>
+          <option *ngFor="let centro of centrosAtencion" [value]="centro.id">
+            {{ centro.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label for="fechaDesde" class="form-label">
+          <span class="material-symbols-outlined">calendar_today</span>
+          Desde
+        </label>
+        <input 
+          id="fechaDesde"
+          class="form-control" 
+          type="date" 
+          [(ngModel)]="fechaDesde">
+      </div>
+
+      <div class="filter-item">
+        <label for="fechaHasta" class="form-label">
+          <span class="material-symbols-outlined">event</span>
+          Hasta
+        </label>
+        <input 
+          id="fechaHasta"
+          class="form-control" 
+          type="date" 
+          [(ngModel)]="fechaHasta">
+      </div>
+
+      <div class="filter-item filter-actions">
+        <button 
+          class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" 
+          (click)="submit()">
+          <span class="material-symbols-outlined">analytics</span>
+          Aplicar filtros
+        </button>
+        <button 
+          class="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2" 
+          (click)="clearFilters()"
+          *ngIf="hasActiveFilters()">
+          <span class="material-symbols-outlined">filter_list_off</span>
+          Limpiar
+        </button>
+      </div>
+    </div>
+
+    <div class="filter-info" *ngIf="centroSeleccionado">
+      <span class="material-symbols-outlined">info</span>
+      Filtrando por: <strong>{{ centroSeleccionado.nombre }}</strong>
+    </div>
+  </div>
+</div>

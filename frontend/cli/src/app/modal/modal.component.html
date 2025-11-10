@@ -1,12 +1,29 @@
-<div class="modal-header bg-light border-bottom-0 pb-2 pt-3 d-flex align-items-center justify-content-between">
-  <h4 class="modal-title w-100 text-center fw-bold mb-0" id="modal-title">{{ title }}</h4>
-  <button type="button" class="btn-close position-absolute end-0 me-3" aria-label="Cerrar" (click)="dismiss()"></button>
+<div class="modal-header">
+  <h3 class="modal-title" id="modal-title">{{ title }}</h3>
+  <button
+    type="button"
+    class="modal-close-btn"
+    aria-label="Cerrar"
+    aria-describedby="modal-title"
+    (click)="modal.dismiss()"
+  >
+    <span class="material-symbols-outlined">close</span>
+  </button>
 </div>
-<div class="modal-body text-center">
-  <p class="fs-5 mb-2"><strong>{{ message }}</strong></p>
-  <p *ngIf="description" class="text-muted mb-0">{{ description }}</p>
+<div class="modal-body">
+  <p class="modal-message">{{ message }}</p>
+  <p class="modal-description" *ngIf="description">{{ description }}</p>
 </div>
-<div class="modal-footer justify-content-center border-top-0 pb-3">
-  <button *ngIf="!isAlert" type="button" class="btn btn-outline-secondary px-4 me-2" (click)="dismiss()">Cancelar</button>
-  <button type="button" class="btn btn-success px-4" (click)="close()">Aceptar</button>
+<div class="modal-footer">
+  <button
+    *ngIf="!isAlert"
+    type="button"
+    class="btn btn-secondary"
+    (click)="modal.dismiss()"
+  >
+    Cancelar
+  </button>
+  <button type="button" class="btn btn-primary" (click)="modal.close()">
+    Aceptar
+  </button>
 </div>

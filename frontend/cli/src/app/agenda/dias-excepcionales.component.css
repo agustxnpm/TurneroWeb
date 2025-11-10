@@ -1,0 +1,218 @@
+.page-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  margin-bottom: 2rem;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  background-color: #f8f9fa;
+  color: #495057;
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+  border-color: #e9ecef;
+}
+
+/* Mejoras de visualización para columnas */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+  width: 12%;
+} /* Fecha */
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 15%;
+} /* Tipo */
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  width: 20%;
+} /* Descripción */
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  width: 25%;
+} /* Centro/Consultorio */
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 12%;
+} /* Horario */
+.table th:nth-child(6),
+.table td:nth-child(6) {
+  width: 10%;
+} /* duracion */
+.table th:nth-child(7),
+.table td:nth-child(7) {
+  width: 6%;
+} /* Acciones */
+
+.descripcion-cell {
+  max-width: 200px;
+}
+
+.descripcion-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
+  max-height: 2.6em;
+}
+
+.centro-info {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.centro-info strong {
+  font-weight: 600;
+  color: #495057;
+}
+
+.centro-info small {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.badge.fs-6 {
+  font-size: 0.875rem !important;
+  padding: 0.5rem 0.8rem;
+}
+
+.badge-danger {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+}
+
+.badge-warning {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  color: #212529;
+}
+
+.badge-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+}
+
+.modal.show {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.btn-group-sm .btn {
+  padding: 0.25rem 0.5rem;
+}
+
+/* Estilos para la información del esquema de turno */
+.esquema-horarios-info {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.esquema-info-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.esquema-header {
+  margin-bottom: 1rem;
+}
+
+.esquema-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+}
+
+.detail-item strong {
+  margin-left: 0.25rem;
+  margin-right: 0.5rem;
+}
+
+.horarios-container {
+  border-top: 1px solid #dee2e6;
+  padding-top: 1rem;
+}
+
+.horarios-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.horario-badge {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.horario-badge .dia-label {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.2rem;
+}
+
+.horario-badge .hora-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.no-horarios-warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  color: #856404;
+  font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.85rem;
+  }
+
+  .descripcion-text {
+    -webkit-line-clamp: 1;
+    max-height: 1.3em;
+  }
+
+  .centro-info {
+    font-size: 0.8rem;
+  }
+
+  .badge.fs-6 {
+    font-size: 0.75rem !important;
+    padding: 0.35rem 0.6rem;
+  }
+}

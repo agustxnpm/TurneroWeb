@@ -194,13 +194,25 @@
                      [attr.data-dia]="['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'][i]">
                   
                   <!-- Esquemas del día -->
-                  <div *ngFor="let esquema of getEsquemasDelConsultorioPorDia(consultorio.id!, dia)" 
+                  <div *ngFor="let esquema of getEsquemasDelConsultorioPorDia(consultorio.id!, dia)"
                        class="esquema-dia-card">
                     <div class="esquema-horario">
                       {{ getHorarioStringPorDia(esquema, dia) }}
                     </div>
                     <div class="esquema-medico">
                       Dr. {{ esquema.nombreStaffMedico || 'Sin asignar' }}
+                    </div>
+                    <div class="esquema-actions">
+                      <button class="btn btn-sm btn-outline-primary me-1"
+                              (click)="onEditarEsquema(esquema)"
+                              title="Editar esquema">
+                        <i class="fa fa-edit"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger"
+                              (click)="onEliminarEsquema(esquema)"
+                              title="Eliminar esquema">
+                        <i class="fa fa-trash"></i>
+                      </button>
                     </div>
                   </div>
                   

@@ -1,0 +1,59 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-body text-center p-5">
+          <div *ngIf="loading" class="loading-state">
+            <div
+              class="spinner-border text-primary mb-3"
+              role="status"
+              style="width: 3rem; height: 3rem"
+            >
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <h4 class="mb-2">Verificando acceso...</h4>
+            <p class="text-muted">
+              Por favor espere mientras validamos su enlace
+            </p>
+          </div>
+
+          <div *ngIf="confirmingAppointment" class="confirming-state">
+            <div
+              class="spinner-border text-warning mb-3"
+              role="status"
+              style="width: 3rem; height: 3rem"
+            >
+              <span class="visually-hidden">Confirmando...</span>
+            </div>
+            <h4 class="mb-2 text-warning">Confirmando turno...</h4>
+            <p class="text-muted">
+              Estamos procesando la confirmación de tu turno
+            </p>
+          </div>
+
+          <div *ngIf="error" class="error-state">
+            <i
+              class="fas fa-exclamation-circle text-danger mb-3"
+              style="font-size: 3rem"
+            ></i>
+            <h4 class="mb-2 text-danger">Error de Acceso</h4>
+            <p class="text-muted mb-4">{{ errorMessage }}</p>
+            <button class="btn btn-primary" (click)="goToLogin()">
+              <i class="fas fa-sign-in-alt me-2"></i>Ir al Login
+            </button>
+          </div>
+
+          <div *ngIf="success" class="success-state">
+            <i
+              class="fas fa-check-circle text-success mb-3"
+              style="font-size: 3rem"
+            ></i>
+            <h4 class="mb-2 text-success">¡Turno Confirmado!</h4>
+            <p class="text-muted">Tu turno ha sido confirmado exitosamente.</p>
+            <p class="text-muted">Redirigiendo a la agenda...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,630 @@
+<div class="container-fluid mt-4">
+  <!-- HEADER -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="banner-operador-agenda">
+        <div class="header-content">
+          <div class="header-actions">
+            <button class="btn btn-header-glass" (click)="goBack()">
+              <i class="fas fa-arrow-left"></i>
+              Volver
+            </button>
+          </div>
+          <div class="header-icon">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <div class="header-text">
+            <h1>Gestión de Agenda</h1>
+            <p>Administra turnos y consulta la disponibilidad médica</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTROS DE TURNOS -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="filtros-card">
+        <div class="filtros-header">
+          <span class="filtros-icon">🔍</span>
+          <h3>Filtrar Agenda y Turnos</h3>
+        </div>
+        <div class="filtros-body">
+          <!-- Filtro por Especialidad -->
+          <div class="filtro-step" [class.active]="especialidadSeleccionada">
+            <div class="step-header">
+              <div class="step-number">1</div>
+              <h4>Especialidad (Opcional)</h4>
+            </div>
+            <select
+              class="form-control-operador"
+              [(ngModel)]="especialidadSeleccionada"
+              (change)="onEspecialidadChange()"
+              [disabled]="isLoadingEspecialidades"
+            >
+              <option value="">Todas las especialidades</option>
+              <option
+                *ngFor="let especialidad of especialidades"
+                [value]="especialidad.nombre"
+              >
+                {{ especialidad.nombre }}
+              </option>
+            </select>
+            <div class="loading-indicator" *ngIf="isLoadingEspecialidades">
+              <i class="fas fa-spinner fa-spin"></i> Cargando especialidades...
+            </div>
+          </div>
+
+          <!-- Filtro por Staff Médico -->
+          <div class="filtro-step" [class.active]="staffMedicoSeleccionado">
+            <div class="step-header">
+              <div class="step-number">2</div>
+              <h4>Médico (Opcional)</h4>
+            </div>
+            <select
+              class="form-control-operador"
+              [(ngModel)]="staffMedicoSeleccionado"
+              (change)="onStaffMedicoChange()"
+              [disabled]="isLoadingStaffMedicos"
+            >
+              <option value="">Todos los médicos</option>
+              <option *ngFor="let staff of staffMedicos" [value]="staff.id">
+                {{ staff.medico?.nombre }} {{ staff.medico?.apellido }} -
+                {{ staff.especialidad?.nombre }}
+              </option>
+            </select>
+            <div class="loading-indicator" *ngIf="isLoadingStaffMedicos">
+              <i class="fas fa-spinner fa-spin"></i> Cargando médicos...
+            </div>
+          </div>
+
+          <!-- Filtro por Centro de Atención -->
+          <div class="filtro-step" [class.active]="centroAtencionSeleccionado">
+            <div class="step-header">
+              <div class="step-number">3</div>
+              <h4>Centro de Atención (Opcional)</h4>
+            </div>
+            <select
+              class="form-control-operador"
+              [(ngModel)]="centroAtencionSeleccionado"
+              (change)="onCentroAtencionChange()"
+              [disabled]="isLoadingCentros"
+            >
+              <option value="">Todos los centros</option>
+              <option
+                *ngFor="let centro of centrosAtencion"
+                [value]="centro.id"
+              >
+                {{ centro.nombre }}
+              </option>
+            </select>
+            <div class="loading-indicator" *ngIf="isLoadingCentros">
+              <i class="fas fa-spinner fa-spin"></i> Cargando centros...
+            </div>
+          </div>
+
+          <!-- Filtro por Estado de Turno -->
+          <div class="filtro-step" [class.active]="estadoSeleccionado">
+            <div class="step-header">
+              <div class="step-number">4</div>
+              <h4>Estado de Turno (Opcional)</h4>
+            </div>
+            <select
+              class="form-control-operador"
+              [(ngModel)]="estadoSeleccionado"
+              (change)="onEstadoChange()"
+            >
+              <option value="">Todos los estados</option>
+              <option value="DISPONIBLE">Disponibles</option>
+              <option value="PROGRAMADO">Programados</option>
+              <option value="CONFIRMADO">Confirmados</option>
+              <option value="REAGENDADO">Reagendados</option>
+              <option value="CANCELADO">Cancelados</option>
+              <option value="COMPLETO">Completados</option>
+            </select>
+          </div>
+
+          <!-- Filtros aplicados -->
+          <div class="filtros-aplicados" *ngIf="hayFiltrosAplicados()">
+            <h5>Filtros aplicados:</h5>
+            <div class="filter-tags">
+              <span class="filter-tag" *ngIf="especialidadSeleccionada">
+                <i class="fas fa-stethoscope"></i>
+                {{ especialidadSeleccionada }}
+                <button type="button" (click)="limpiarEspecialidad()">×</button>
+              </span>
+              <span class="filter-tag" *ngIf="staffMedicoSeleccionado">
+                <i class="fas fa-user-md"></i>
+                {{ getStaffMedicoNombre(staffMedicoSeleccionado) }}
+                <button type="button" (click)="limpiarStaffMedico()">×</button>
+              </span>
+              <span class="filter-tag" *ngIf="centroAtencionSeleccionado">
+                <i class="fas fa-hospital"></i>
+                {{ getCentroAtencionNombre(centroAtencionSeleccionado) }}
+                <button type="button" (click)="limpiarCentroAtencion()">
+                  ×
+                </button>
+              </span>
+              <span class="filter-tag" *ngIf="estadoSeleccionado">
+                <i class="fas fa-info-circle"></i>
+                {{ getEstadoLabel(estadoSeleccionado) }}
+                <button type="button" (click)="limpiarEstado()">×</button>
+              </span>
+              <button
+                type="button"
+                class="btn btn-clear-filters"
+                (click)="limpiarTodosFiltros()"
+              >
+                <i class="fas fa-times"></i> Limpiar filtros
+              </button>
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="filtros-actions">
+            <button
+              type="button"
+              class="btn btn-operador-primary"
+              (click)="aplicarFiltros()"
+              [disabled]="isLoadingTurnos"
+            >
+              <i class="fas fa-search"></i>
+              {{ isLoadingTurnos ? "Cargando..." : "Aplicar Filtros" }}
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-operador-secondary"
+              (click)="cargarTodosLosTurnos()"
+              [disabled]="isLoadingTurnos"
+            >
+              <i class="fas fa-sync-alt"></i>
+              Actualizar Agenda
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-operador-mapa"
+              (click)="mostrarMapaCentros()"
+              [disabled]="isLoadingCentros"
+            >
+              <i class="fas fa-map-marked-alt"></i>
+              Ver Mapa de Centros
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENDA AGRUPADA POR FECHA -->
+  <div class="row" *ngIf="showCalendar">
+    <div class="col-12">
+      <div class="turnos-card">
+        <div class="turnos-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <h3><i class="fas fa-calendar-alt"></i> Agenda de Turnos</h3>
+            <div class="turnos-info">
+              <span class="info-text disponibles">
+                {{ contarTurnosPorEstado("DISPONIBLE") }} Disponibles
+              </span>
+              <span class="info-text ocupados">
+                {{ contarTurnosPorEstado("OCUPADO") }} Ocupados
+              </span>
+              <span class="info-text total">
+                {{ slotsDisponibles.length }} Total
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="turnos-body">
+          <!-- Loading State -->
+          <div class="loading-turnos" *ngIf="isLoadingTurnos">
+            <i class="fas fa-spinner fa-spin"></i>
+            Cargando agenda...
+          </div>
+
+          <!-- Turnos Agrupados por Fecha -->
+          <div
+            class="turnos-grouped"
+            *ngIf="!isLoadingTurnos && slotsDisponibles.length > 0"
+          >
+            <div *ngFor="let fecha of fechasOrdenadas" class="fecha-group">
+              <!-- Header de fecha -->
+              <div
+                class="fecha-header"
+                [class.fecha-feriado]="getTipoExcepcion(fecha) === 'FERIADO'"
+              >
+                <div class="fecha-info">
+                  <h3 class="fecha-title">
+                    <i class="fas fa-calendar-day"></i>
+                    {{ formatearFecha(fecha) }}
+                  </h3>
+                  <div class="fecha-stats">
+                    <span class="stat disponibles"
+                      >{{
+                        contarTurnosPorFechaYEstado(fecha, "DISPONIBLE")
+                      }}
+                      Disponibles</span
+                    >
+                    <span class="stat ocupados"
+                      >{{
+                        contarTurnosPorFechaYEstado(fecha, "OCUPADO")
+                      }}
+                      Ocupados</span
+                    >
+                  </div>
+                  <!-- Mostrar excepciones del día -->
+                  <div
+                    class="fecha-exception-badge"
+                    *ngIf="getTipoExcepcion(fecha)"
+                  >
+                    <span class="exception-icon">{{
+                      getIconoExcepcion(fecha)
+                    }}</span>
+                    <span class="exception-label">{{
+                      getTipoExcepcionLabel(fecha)
+                    }}</span>
+                    <span
+                      class="exception-description"
+                      *ngIf="getDescripcionExcepcion(fecha)"
+                    >
+                      - {{ getDescripcionExcepcion(fecha) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slots de la fecha -->
+              <div class="slots-grid">
+                <ng-container
+                  *ngFor="let slot of slotsPorFecha[fecha]; let i = index"
+                >
+                  <!-- Cabecera de médico unificada (primer slot o cambio de médico) -->
+                  <div
+                    *ngIf="i === 0 || esCambioMedico(fecha, i)"
+                    class="medico-header"
+                  >
+                    <i class="fas fa-user-md"></i>
+                    <span>{{ getNombreMedico(slot) }}</span>
+                    <span class="especialidad-badge">{{
+                      slot.especialidadStaffMedico
+                    }}</span>
+                  </div>
+
+                  <div
+                    class="slot-card-operador"
+                    [class.selected]="slotSeleccionado?.id === slot.id"
+                    [class.slot-disponible]="
+                      !slot.ocupado && !slotAfectadoPorExcepcion(slot)
+                    "
+                    [class.slot-ocupado]="slot.ocupado"
+                    [class.slot-excepcion]="slotAfectadoPorExcepcion(slot)"
+                    (click)="seleccionarSlot(slot, $event)"
+                  >
+                    <div class="slot-time">
+                      <i class="fas fa-clock"></i>
+                      {{ slot.horaInicio }} - {{ slot.horaFin }}
+                    </div>
+
+                    <div class="slot-location">
+                      <div class="location-line">
+                        <i class="fas fa-door-open"></i>
+                        {{ slot.consultorioNombre }}
+                      </div>
+                      <div class="location-line">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ slot.nombreCentro }}
+                      </div>
+                    </div>
+
+                    <!-- Información del paciente si está ocupado -->
+                    <div
+                      class="slot-paciente"
+                      *ngIf="slot.ocupado && slot.pacienteNombre"
+                    >
+                      <div class="paciente-info">
+                        <i class="fas fa-user"></i>
+                        <strong
+                          >{{ slot.pacienteNombre }}
+                          {{ slot.pacienteApellido }}</strong
+                        >
+                      </div>
+                      <div class="paciente-dni" *ngIf="slot.pacienteDni">
+                        <i class="fas fa-id-card"></i>
+                        DNI: {{ slot.pacienteDni }}
+                      </div>
+                      <div class="turno-estado" *ngIf="slot.estadoTurno">
+                        <span
+                          class="badge"
+                          [ngClass]="getBadgeClass(slot.estadoTurno)"
+                        >
+                          {{ slot.estadoTurno }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Estado del slot -->
+                    <div class="slot-status">
+                      <div
+                        *ngIf="slotAfectadoPorExcepcion(slot)"
+                        class="status-excepcion"
+                      >
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ getTipoExcepcionLabel(slot.fecha) }}
+                      </div>
+                      <div
+                        *ngIf="!slotAfectadoPorExcepcion(slot) && slot.ocupado"
+                        class="status-ocupado"
+                      >
+                        <i class="fas fa-user-check"></i>
+                        Ocupado
+                      </div>
+                      <div
+                        *ngIf="!slotAfectadoPorExcepcion(slot) && !slot.ocupado"
+                        class="status-disponible"
+                      >
+                        <i class="fas fa-calendar-plus"></i>
+                        Disponible
+                      </div>
+                    </div>
+
+                    <div
+                      class="slot-check"
+                      *ngIf="slotSeleccionado?.id === slot.id"
+                    >
+                      <i class="fas fa-check-circle"></i>
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENSAJE INICIAL -->
+  <div class="row" *ngIf="!showCalendar && !isLoadingTurnos">
+    <div class="col-12">
+      <div class="filtros-inicial-card">
+        <div class="filtros-inicial-content">
+          <i class="fas fa-calendar-alt"></i>
+          <h4>Gestión de Agenda</h4>
+          <p>Utiliza los filtros para ver y gestionar la agenda de turnos:</p>
+          <ul>
+            <li><strong>Sin filtros:</strong> Ve toda la agenda disponible</li>
+            <li>
+              <strong>Por especialidad:</strong> Filtra turnos por especialidad
+              médica
+            </li>
+            <li>
+              <strong>Por médico:</strong> Ve la agenda de un médico específico
+            </li>
+            <li><strong>Por centro:</strong> Filtra por centro de atención</li>
+            <li>
+              <strong>Por estado:</strong> Ve solo turnos disponibles, ocupados,
+              etc.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENSAJE CUANDO NO HAY TURNOS -->
+  <div class="row" *ngIf="showCalendar && slotsDisponibles.length === 0">
+    <div class="col-12">
+      <div class="no-turnos-card">
+        <div class="no-turnos-content">
+          <i class="fas fa-calendar-times"></i>
+          <h4>No hay turnos para mostrar</h4>
+          <p>No se encontraron turnos con los filtros seleccionados.</p>
+          <p>Intenta cambiar los filtros o cargar toda la agenda.</p>
+          <button
+            class="btn btn-operador-primary"
+            (click)="limpiarTodosFiltros()"
+          >
+            <i class="fas fa-filter"></i>
+            Limpiar Filtros
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEYENDA -->
+  <div class="row mt-3" *ngIf="showCalendar && slotsDisponibles.length > 0">
+    <div class="col-12">
+      <div class="legend-card">
+        <div class="legend-content">
+          <h5>Leyenda:</h5>
+          <div class="legend-items">
+            <div class="legend-item">
+              <div class="legend-color available"></div>
+              <span>Turnos Disponibles</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color occupied"></div>
+              <span>Turnos Ocupados</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color exception"></div>
+              <span>Afectados por Excepciones</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALLES TURNO -->
+<div *ngIf="showDetailsModal" class="modal-contextual">
+  <div class="modal-content operador-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h4>
+        <i class="fas fa-info-circle"></i>
+        {{
+          slotSeleccionado?.ocupado ? "Detalles del Turno" : "Slot Disponible"
+        }}
+      </h4>
+      <button type="button" class="btn-close" (click)="closeDetailsModal()">
+        ×
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="turno-details">
+        <div class="detail-section">
+          <h5><i class="fas fa-calendar"></i> Información del Turno</h5>
+          <div class="detail-item">
+            <strong>Fecha:</strong>
+            {{ formatearFecha(slotSeleccionado!.fecha) }}
+          </div>
+          <div class="detail-item">
+            <strong>Horario:</strong>
+            {{ slotSeleccionado?.horaInicio }} -
+            {{ slotSeleccionado?.horaFin }}
+          </div>
+          <div class="detail-item">
+            <strong>Médico:</strong>
+            {{ getNombreMedico(slotSeleccionado!) }}
+          </div>
+          <div class="detail-item">
+            <strong>Especialidad:</strong>
+            {{ slotSeleccionado?.especialidadStaffMedico }}
+          </div>
+          <div class="detail-item">
+            <strong>Consultorio:</strong>
+            {{ slotSeleccionado?.consultorioNombre }}
+          </div>
+          <div class="detail-item">
+            <strong>Centro:</strong>
+            {{ slotSeleccionado?.nombreCentro }}
+          </div>
+        </div>
+
+        <!-- Información del paciente si existe -->
+        <div
+          class="detail-section"
+          *ngIf="slotSeleccionado?.ocupado && slotSeleccionado?.pacienteNombre"
+        >
+          <h5><i class="fas fa-user"></i> Información del Paciente</h5>
+          <div class="detail-item">
+            <strong>Nombre:</strong>
+            {{ slotSeleccionado?.pacienteNombre }}
+            {{ slotSeleccionado?.pacienteApellido }}
+          </div>
+          <div class="detail-item" *ngIf="slotSeleccionado?.pacienteDni">
+            <strong>DNI:</strong>
+            {{ slotSeleccionado?.pacienteDni }}
+          </div>
+          <div class="detail-item" *ngIf="slotSeleccionado?.estadoTurno">
+            <strong>Estado:</strong>
+            <span
+              class="badge"
+              [ngClass]="getBadgeClass(slotSeleccionado?.estadoTurno)"
+            >
+              {{ slotSeleccionado?.estadoTurno }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Estado del slot -->
+        <div class="detail-section">
+          <h5><i class="fas fa-info"></i> Estado</h5>
+          <div class="status-info">
+            <div
+              *ngIf="slotAfectadoPorExcepcion(slotSeleccionado!)"
+              class="status-excepcion"
+            >
+              <i class="fas fa-exclamation-triangle"></i>
+              Afectado por
+              {{ getTipoExcepcionLabel(slotSeleccionado!.fecha) }}
+              <div
+                *ngIf="getDescripcionExcepcion(slotSeleccionado!.fecha)"
+                class="status-description"
+              >
+                {{ getDescripcionExcepcion(slotSeleccionado!.fecha) }}
+              </div>
+            </div>
+            <div
+              *ngIf="
+                !slotAfectadoPorExcepcion(slotSeleccionado!) &&
+                slotSeleccionado?.ocupado
+              "
+              class="status-ocupado"
+            >
+              <i class="fas fa-user-check"></i>
+              Turno Ocupado
+            </div>
+            <div
+              *ngIf="
+                !slotAfectadoPorExcepcion(slotSeleccionado!) &&
+                !slotSeleccionado?.ocupado
+              "
+              class="status-disponible"
+            >
+              <i class="fas fa-calendar-plus"></i>
+              Slot Disponible para Asignación
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button
+        type="button"
+        class="btn btn-operador-secondary"
+        (click)="closeDetailsModal()"
+      >
+        Cerrar
+      </button>
+      <button
+        type="button"
+        class="btn btn-operador-primary"
+        (click)="gestionarTurno()"
+        *ngIf="slotSeleccionado?.ocupado"
+      >
+        <i class="fas fa-edit"></i>
+        Gestionar Turno
+      </button>
+      <button
+        type="button"
+        class="btn btn-operador-success"
+        (click)="asignarTurno()"
+        *ngIf="
+          !slotSeleccionado?.ocupado &&
+          !slotAfectadoPorExcepcion(slotSeleccionado!)
+        "
+      >
+        <i class="fas fa-user-plus"></i>
+        Asignar Paciente
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Backdrop para cerrar modal -->
+<div
+  *ngIf="showDetailsModal"
+  class="modal-backdrop"
+  (click)="closeDetailsModal()"
+></div>
+
+<!-- MODAL DE MAPA DE CENTROS -->
+<app-centros-mapa-modal
+  *ngIf="showMapaModal"
+  [centros]="centrosAtencionCompletos"
+  [especialidades]="especialidadesCompletas"
+  [slotsDisponibles]="slotsOriginales"
+  [especialidadSeleccionadaInicial]="especialidadSeleccionada"
+  (centroSeleccionado)="onCentroSeleccionadoDelMapa($event)"
+  (modalCerrado)="cerrarMapaModal()"
+>
+</app-centros-mapa-modal>

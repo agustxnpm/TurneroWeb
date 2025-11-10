@@ -14,6 +14,7 @@ import { ActivatedRoute, Router } from "@angular/router";
   selector: "app-recuperar-contrasena",
   standalone: true,
   templateUrl: "./recuperar-contrasena.component.html",
+  styleUrls: ["./recuperar-contrasena.component.css"],
   imports: [CommonModule, ReactiveFormsModule],
 })
 export class RecuperarContrasenaComponent implements OnInit {
@@ -28,8 +29,6 @@ export class RecuperarContrasenaComponent implements OnInit {
   tokenChecked = false;
   resetSuccess = false;
   resetError = '';
-  // Particles for background animation
-  particles: Array<{x: number, y: number}> = [];
 
 
   constructor(
@@ -38,7 +37,6 @@ export class RecuperarContrasenaComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router
   ) {
-    this.initializeParticles();
   }
 
   ngOnInit(): void {
@@ -141,15 +139,5 @@ export class RecuperarContrasenaComponent implements OnInit {
   }
   get confirmPasswordControl() {
     return this.passwordForm.get("confirmPassword");
-  }
-
-  private initializeParticles() {
-    this.particles = [];
-    for (let i = 0; i < 20; i++) {
-      this.particles.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight
-      });
-    }
   }
 }

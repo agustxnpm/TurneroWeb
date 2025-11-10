@@ -1,0 +1,190 @@
+<div class="profile-container">
+  <div class="profile-header">
+    <div class="header-content">
+      <div class="back-button">
+        <button class="btn-back" (click)="goBack()">
+          <i class="fas fa-arrow-left"></i>
+          Volver
+        </button>
+      </div>
+      <div class="header-info">
+        <h1>Configuración de Perfil</h1>
+        <p>Gestiona tu información personal y configuración como operador</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="profile-content">
+    <!-- Información Personal -->
+    <div class="section-card">
+      <div class="section-header">
+        <i class="fas fa-user"></i>
+        <h2>Información Personal</h2>
+      </div>
+      <div class="section-body">
+        <form *ngIf="!editMode; else editForm">
+          <div class="info-group">
+            <label>Nombre:</label>
+            <p>{{ userData.nombre || "No especificado" }}</p>
+          </div>
+          <div class="info-group">
+            <label>Apellido:</label>
+            <p>{{ userData.apellido || "No especificado" }}</p>
+          </div>
+          <div class="info-group">
+            <label>Email:</label>
+            <p>{{ userData.email }}</p>
+          </div>
+          <div class="info-group">
+            <label>Teléfono:</label>
+            <p>{{ userData.telefono || "No especificado" }}</p>
+          </div>
+          <div class="info-group">
+            <label>DNI:</label>
+            <p>{{ userData.dni || "No especificado" }}</p>
+          </div>
+          <div class="info-group">
+            <label>Rol:</label>
+            <p class="role-badge operador">{{ getUserRole() }}</p>
+          </div>
+          <button class="btn-secondary" type="button" (click)="editMode = true">
+            <i class="fas fa-edit"></i> Editar Datos
+          </button>
+        </form>
+        <ng-template #editForm>
+          <div class="info-group">
+            <label>Nombre:</label>
+            <input
+              class="form-control"
+              [(ngModel)]="editUserData.nombre"
+              name="nombre"
+              required
+            />
+          </div>
+          <div class="info-group">
+            <label>Apellido:</label>
+            <input
+              class="form-control"
+              [(ngModel)]="editUserData.apellido"
+              name="apellido"
+            />
+          </div>
+          <div class="info-group">
+            <label>Email:</label>
+            <input
+              class="form-control"
+              [(ngModel)]="editUserData.email"
+              name="email"
+              type="email"
+              required
+            />
+          </div>
+          <div class="info-group">
+            <label>Teléfono:</label>
+            <input
+              class="form-control"
+              [(ngModel)]="editUserData.telefono"
+              name="telefono"
+            />
+          </div>
+          <div class="info-group">
+            <label>DNI:</label>
+            <input
+              class="form-control"
+              [(ngModel)]="editUserData.dni"
+              name="dni"
+            />
+          </div>
+          <div class="info-group">
+            <label>Rol:</label>
+            <p class="role-badge operador">{{ getUserRole() }}</p>
+          </div>
+          <button
+            class="btn-primary"
+            type="button"
+            (click)="savePersonalData()"
+          >
+            <i class="fas fa-save"></i> Guardar
+          </button>
+          <button class="btn-secondary" type="button" (click)="cancelEdit()">
+            Cancelar
+          </button>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Cambiar Contraseña -->
+    <div class="section-card">
+      <div class="section-header">
+        <i class="fas fa-lock"></i>
+        <h2>Seguridad</h2>
+      </div>
+      <div class="section-body">
+        <div class="form-group">
+          <label for="currentPassword">Contraseña Actual:</label>
+          <input
+            type="password"
+            id="currentPassword"
+            [(ngModel)]="changePasswordForm.currentPassword"
+            class="form-control"
+            placeholder="Ingrese su contraseña actual"
+          />
+        </div>
+        <div class="form-group">
+          <label for="newPassword">Nueva Contraseña:</label>
+          <input
+            type="password"
+            id="newPassword"
+            [(ngModel)]="changePasswordForm.newPassword"
+            class="form-control"
+            placeholder="Ingrese la nueva contraseña"
+          />
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirmar Nueva Contraseña:</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            [(ngModel)]="changePasswordForm.confirmPassword"
+            class="form-control"
+            placeholder="Confirme la nueva contraseña"
+          />
+        </div>
+        <button class="btn-primary" (click)="changePassword()">
+          <i class="fas fa-save"></i>
+          Cambiar Contraseña
+        </button>
+      </div>
+    </div>
+
+    <!-- Configuración de Sistema -->
+    <div class="section-card">
+      <div class="section-header">
+        <i class="fas fa-cog"></i>
+        <h2>Configuración del Sistema</h2>
+      </div>
+      <div class="section-body">
+        <div class="config-option">
+          <input
+            type="checkbox"
+            id="notifications"
+            [(ngModel)]="systemConfig.notifications"
+          />
+          <label for="notifications">Recibir notificaciones por email</label>
+        </div>
+        <div class="config-option">
+          <input
+            type="checkbox"
+            id="autoRefresh"
+            [(ngModel)]="systemConfig.autoRefresh"
+          />
+          <label for="autoRefresh">Actualización automática de datos</label>
+        </div>
+        <button class="btn-secondary" (click)="saveSystemConfig()">
+          <i class="fas fa-save"></i>
+          Guardar Configuración
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

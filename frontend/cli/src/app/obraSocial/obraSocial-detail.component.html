@@ -1,112 +1,228 @@
-<div class="container mt-4">
-  <div class="card shadow-sm">
-    <!-- MODO VISTA -->
-    <div *ngIf="!modoEdicion">
-      <div class="card-header bg-primary text-white d-flex align-items-center" 
-           style="border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
-        <i class="fa fa-heart me-2"></i>
-        <h2 class="fw-bold mb-0 fs-4">{{ obraSocial.nombre }}</h2>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-8">
-            <div class="mb-3">
-              <i class="fa fa-tag text-secondary me-2"></i>
-              <span class="fw-semibold text-secondary">ID:</span>
-              <span class="badge bg-light text-dark border ms-2">#{{ obraSocial.id }}</span>
-            </div>
-            <div class="mb-3">
-              <i class="fa fa-heart text-secondary me-2"></i>
-              <span class="fw-semibold text-secondary">Obra Social:</span>
-              <span class="ms-2 fw-bold">{{ obraSocial.nombre }}</span>
-            </div>
-            <div class="mb-3">
-              <i class="fa fa-barcode text-secondary me-2"></i>
-              <span class="fw-semibold text-secondary">Código:</span>
-              <span class="ms-2 font-monospace fw-bold">{{ obraSocial.codigo }}</span>
-            </div>
-            <div class="mb-3">
-              <i class="fa fa-info-circle text-secondary me-2"></i>
-              <span class="fw-semibold text-secondary">Descripción:</span>
-              <p class="mt-2 text-muted">{{ obraSocial.descripcion || 'Sin descripción' }}</p>
-            </div>
-          </div>
+<div class="container mt-4" *ngIf="obraSocial">
+  <div class="card modern-card">
+    <!-- HEADER MODERNO -->
+    <div class="card-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <i class="fas fa-heart-pulse"></i>
         </div>
-      </div>
-      <div class="card-footer bg-white d-flex gap-2">
-        <button class="btn btn-outline-secondary" (click)="goBack()">
-          <i class="fa fa-arrow-left me-1"></i> Volver
-        </button>
-        <button class="btn btn-primary" (click)="activarEdicion()">
-          <i class="fa fa-edit me-1"></i> Editar
-        </button>
+        <div class="header-text">
+          <h1>
+            {{
+              esNuevo ? "Nueva Obra Social" : "Obra Social #" + obraSocial.id
+            }}
+          </h1>
+          <p>
+            {{ esNuevo ? "Registre una nueva obra social" : obraSocial.nombre }}
+          </p>
+        </div>
       </div>
     </div>
 
-    <!-- MODO EDICIÓN -->
-    <form *ngIf="modoEdicion" (ngSubmit)="save()" #form="ngForm">
-      <div class="card-header bg-primary text-white d-flex align-items-center" 
-           style="border-top-left-radius: 1rem; border-top-right-radius: 1rem;">
-        <i class="fa fa-edit me-2"></i>
-        <h2 class="fw-bold mb-0 fs-4">
-          <ng-container *ngIf="obraSocial.id && obraSocial.id !== 0; else nueva">
-            Editando: {{ obraSocial.nombre }}
-          </ng-container>
-          <ng-template #nueva>
-            Nueva Obra Social
-          </ng-template>
-        </h2>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-8">
-            <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="fa fa-heart text-primary me-2"></i>Nombre de la Obra Social
-              </label>
-              <input
-                [(ngModel)]="obraSocial.nombre"
-                name="nombre"
-                class="form-control form-control-lg"
-                placeholder="Ej: OSDE, Swiss Medical..."
-                required
-              />
+    <!-- BODY DEL CARD -->
+    <div class="card-body">
+      <!-- MODO VISTA -->
+      <div *ngIf="!modoEdicion">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">
+              <span
+                class="info-icon"
+                style="background: var(--obra-social-gradient)"
+                >🆔</span
+              >
+              ID de la Obra Social
             </div>
-            <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="fa fa-barcode text-primary me-2"></i>Código
-              </label>
-              <input
-                [(ngModel)]="obraSocial.codigo"
-                name="codigo"
-                class="form-control"
-                placeholder="Código único de identificación"
-                required
-              />
+            <div class="info-value">
+              {{ obraSocial.id }}
             </div>
-            <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="fa fa-info-circle text-primary me-2"></i>Descripción
-              </label>
-              <textarea
-                [(ngModel)]="obraSocial.descripcion"
-                name="descripcion"
-                class="form-control"
-                rows="4"
-                placeholder="Describe los servicios y características de esta obra social..."
-              ></textarea>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <span
+                class="info-icon"
+                style="background: var(--obra-social-gradient)"
+                >💊</span
+              >
+              Nombre de la Obra Social
+            </div>
+            <div class="info-value">
+              {{ obraSocial.nombre }}
+            </div>
+          </div>
+
+          <div class="info-item">
+            <div class="info-label">
+              <span
+                class="info-icon"
+                style="background: var(--obra-social-gradient)"
+                >🏷️</span
+              >
+              Código
+            </div>
+            <div class="info-value">
+              {{ obraSocial.codigo }}
+            </div>
+          </div>
+
+          <div class="info-item" *ngIf="obraSocial.descripcion">
+            <div class="info-label">
+              <span
+                class="info-icon"
+                style="background: var(--obra-social-gradient)"
+                >📝</span
+              >
+              Descripción
+            </div>
+            <div class="info-value">
+              {{ obraSocial.descripcion }}
             </div>
           </div>
         </div>
       </div>
-      <div class="card-footer bg-white d-flex gap-2">
-        <button type="submit" class="btn btn-success" [disabled]="form.invalid">
-          <i class="fa fa-save me-1"></i> Guardar
-        </button>
-        <button type="button" class="btn btn-outline-secondary" (click)="goBack()">
-          <i class="fa fa-times me-1"></i> Cancelar
-        </button>
+
+      <!-- MODO EDICIÓN -->
+      <form *ngIf="modoEdicion" #form="ngForm" (ngSubmit)="save()">
+        <div class="row">
+          <!-- Nombre -->
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label class="form-label-modern">
+                <span
+                  class="form-icon"
+                  style="background: var(--obra-social-gradient)"
+                  >💊</span
+                >
+                Nombre
+              </label>
+              <input
+                type="text"
+                name="nombre"
+                required
+                placeholder="Nombre de la obra social"
+                class="form-control form-control-modern"
+                [(ngModel)]="obraSocial.nombre"
+                #nombre="ngModel"
+              />
+              <div
+                *ngIf="nombre.invalid && (nombre.dirty || nombre.touched)"
+                class="form-help text-danger"
+              >
+                <div *ngIf="nombre.errors?.['required']">
+                  El nombre es requerido
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Código -->
+          <div class="col-md-6">
+            <div class="form-group-modern">
+              <label class="form-label-modern">
+                <span
+                  class="form-icon"
+                  style="background: var(--obra-social-gradient)"
+                  >🏷️</span
+                >
+                Código
+              </label>
+              <input
+                type="text"
+                name="codigo"
+                required
+                placeholder="Código de la obra social"
+                class="form-control form-control-modern"
+                [(ngModel)]="obraSocial.codigo"
+                #codigo="ngModel"
+              />
+              <div
+                *ngIf="codigo.invalid && (codigo.dirty || codigo.touched)"
+                class="form-help text-danger"
+              >
+                <div *ngIf="codigo.errors?.['required']">
+                  El código es requerido
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Descripción -->
+          <div class="col-md-12">
+            <div class="form-group-modern">
+              <label class="form-label-modern">
+                <span
+                  class="form-icon"
+                  style="background: var(--obra-social-gradient)"
+                  >📝</span
+                >
+                Descripción
+              </label>
+              <textarea
+                name="descripcion"
+                placeholder="Descripción de la obra social (opcional)"
+                class="form-control form-control-modern"
+                rows="4"
+                [(ngModel)]="obraSocial.descripcion"
+              ></textarea>
+              <div class="form-help">
+                Proporcione una descripción detallada sobre la obra social
+                (opcional).
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- FOOTER DEL CARD -->
+    <div class="card-footer">
+      <div class="d-flex gap-2 flex-wrap">
+        <!-- Botones en modo vista -->
+        <ng-container *ngIf="!modoEdicion">
+          <button
+            type="button"
+            class="btn btn-modern btn-back"
+            (click)="goBack()"
+          >
+            ← Volver
+          </button>
+          <button
+            type="button"
+            class="btn btn-modern btn-edit"
+            (click)="activarEdicion()"
+          >
+            ✏️ Editar
+          </button>
+          <button
+            type="button"
+            class="btn btn-modern btn-delete ms-auto"
+            (click)="remove()"
+            *ngIf="obraSocial.id && obraSocial.id !== 0"
+          >
+            🗑️ Eliminar
+          </button>
+        </ng-container>
+
+        <!-- Botones en modo edición -->
+        <ng-container *ngIf="modoEdicion">
+          <button
+            type="button"
+            class="btn btn-modern btn-save"
+            [disabled]="!isFormValid()"
+            (click)="save()"
+          >
+            💾 Guardar
+          </button>
+          <button
+            type="button"
+            class="btn btn-modern btn-cancel"
+            (click)="cancelar()"
+          >
+            ❌ Cancelar
+          </button>
+        </ng-container>
       </div>
-    </form>
+    </div>
   </div>
 </div>

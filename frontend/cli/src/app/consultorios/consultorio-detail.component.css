@@ -1,0 +1,331 @@
+/* ===================================
+   CONSULTORIO DETAIL COMPONENT
+   Estilos ESPECÍFICOS del componente
+   (Los estilos globales como .btn, .form-control, .card están en styles.css)
+   =================================== */
+
+/* ===================================
+   1. HEADER DEL COMPONENTE
+   =================================== */
+.consultorio-detail-header {
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.consultorio-detail-header .header-icon {
+  font-size: 3rem;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.consultorio-detail-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+}
+
+.consultorio-detail-header .text-muted {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* ===================================
+   2. MODO VISTA (INFO VIEW)
+   =================================== */
+.consultorio-info-view {
+  margin-top: var(--space-lg);
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--color-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+}
+
+.info-item:hover {
+  background-color: var(--color-surface);
+  border-color: var(--color-accent);
+  box-shadow: var(--box-shadow-soft);
+}
+
+.info-icon {
+  font-size: 1.5rem;
+  color: var(--color-accent);
+  flex-shrink: 0;
+  margin-top: var(--space-xs);
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+.info-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.info-value {
+  font-size: var(--font-size-base);
+  color: var(--text-main);
+  font-weight: var(--font-weight-regular);
+  word-break: break-word;
+}
+
+/* ===================================
+   3. SOBRESCRITURAS ESPECÍFICAS DE FORMULARIO
+   =================================== */
+.consultorio-detail-card .form-label .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+  margin: 0 !important;
+  margin-right: var(--space-xs) !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+.consultorio-detail-card .text-danger .material-symbols-outlined {
+  font-size: 1rem !important;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+.consultorio-detail-card .text-muted .material-symbols-outlined {
+  font-size: 1rem !important;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* ===================================
+   4. SECCIÓN DE HORARIOS
+   =================================== */
+.horarios-section {
+  background-color: var(--color-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+}
+
+.horarios-section h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+}
+
+.horarios-section h3 .material-symbols-outlined {
+  font-size: 1.5rem;
+  color: var(--color-accent);
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* Selector de tipo de horario */
+.schedule-type-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background-color: var(--color-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+}
+
+.schedule-type-selector .form-check-label {
+  cursor: pointer;
+  padding: var(--space-sm);
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease;
+}
+
+.schedule-type-selector .form-check-input:checked + .form-check-label {
+  background-color: rgba(var(--color-accent-rgb), 0.1);
+  color: var(--color-accent);
+}
+
+/* Visualización de horarios */
+.schedule-type-badge {
+  margin-bottom: var(--space-sm);
+}
+
+.badge-info {
+  background-color: rgba(13, 202, 240, 0.1);
+  color: #0dcaf0;
+  border: 1px solid rgba(13, 202, 240, 0.3);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.badge-success {
+  background-color: rgba(25, 135, 84, 0.1);
+  color: #198754;
+  border: 1px solid rgba(25, 135, 84, 0.3);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+
+.schedule-display {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.schedule-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-sm);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-background);
+  border: 1px solid var(--border-color);
+}
+
+.schedule-day.inactive-day {
+  opacity: 0.5;
+}
+
+.day-name {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  color: var(--text-main);
+  margin-bottom: var(--space-xs);
+}
+
+.day-hours {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+}
+
+.day-hours.inactive {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.default-hours {
+  padding: var(--space-md);
+  background-color: var(--color-background);
+  border-radius: var(--border-radius-sm);
+  border-left: 4px solid var(--color-success);
+}
+
+/* Editor de horarios */
+.schedule-editor {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  background-color: var(--color-white);
+}
+
+.schedule-day-editor {
+  display: flex;
+  align-items: center;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--border-color);
+  gap: var(--space-md);
+}
+
+.schedule-day-editor:last-child {
+  border-bottom: none;
+}
+
+.day-header {
+  min-width: 140px;
+}
+
+.day-label {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.day-times {
+  flex: 1;
+}
+
+.day-closed {
+  flex: 1;
+  text-align: center;
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* ===================================
+   5. SOBRESCRITURAS DE ICONOS EN BOTONES
+   =================================== */
+.consultorio-detail-card .btn .material-symbols-outlined {
+  font-size: 1.25rem;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* ===================================
+   6. RESPONSIVE DESIGN
+   =================================== */
+@media (max-width: 768px) {
+  .consultorio-detail-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--space-md);
+  }
+
+  .consultorio-detail-header .header-icon {
+    font-size: 2.5rem;
+  }
+
+  .consultorio-detail-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .info-item {
+    padding: var(--space-sm);
+  }
+
+  .info-icon {
+    font-size: 1.25rem;
+  }
+
+  .horarios-section h3 {
+    font-size: var(--font-size-base);
+  }
+
+  .schedule-type-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-display {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .day-header {
+    min-width: 100px;
+  }
+
+  .schedule-day-editor {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 576px) {
+  .consultorio-detail-header .header-icon {
+    font-size: 2rem;
+  }
+
+  .schedule-display {
+    grid-template-columns: 1fr 1fr;
+  }
+}

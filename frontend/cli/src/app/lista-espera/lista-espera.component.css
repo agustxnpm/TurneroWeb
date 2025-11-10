@@ -1,0 +1,718 @@
+/* ============================================
+   HEADER LVE NORMALIZADO
+============================================ */
+
+.listado-header {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-gradient-purple) 100%);
+  color: var(--text-on-accent);
+  padding: var(--space-xl);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  margin: calc(var(--space-xl) * -1) calc(var(--space-xl) * -1) var(--space-lg);
+}
+
+.listado-header .header-icon {
+  font-size: 32px;
+  color: var(--text-on-accent);
+  opacity: 0.95;
+}
+
+.listado-header h2 {
+  color: var(--text-on-accent);
+  margin: 0;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-h1);
+}
+
+/* ============================================
+   INFO BADGE
+============================================ */
+
+.info-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: color-mix(in srgb, var(--color-info) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-info) 30%, transparent);
+  border-radius: var(--border-radius-md);
+  color: color-mix(in srgb, var(--color-info) 100%, black 30%);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.info-badge .material-symbols-outlined {
+  font-size: var(--font-size-lg);
+}
+
+/* ============================================
+   FILTROS DE BÚSQUEDA
+============================================ */
+
+.filters-section {
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--box-shadow-soft);
+}
+
+.filters-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-main);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-h3);
+  margin-bottom: var(--space-md);
+}
+
+.filters-title .material-symbols-outlined {
+  color: var(--color-accent);
+  font-size: var(--font-size-xl);
+}
+
+.filters-form .form-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+  margin-bottom: var(--space-sm);
+}
+
+.filters-form .material-symbols-outlined {
+  color: var(--color-accent);
+  font-size: var(--font-size-lg);
+}
+
+.filters-form .form-select,
+.filters-form .form-control {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-base);
+  transition: all 0.2s ease;
+}
+
+.filters-form .form-select:focus,
+.filters-form .form-control:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+
+/* ============================================
+   TABLA DE SOLICITUDES
+============================================ */
+
+.agenda-section {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow-soft);
+  overflow: hidden;
+}
+
+.lista-espera-table {
+  margin-bottom: 0;
+}
+
+.lista-espera-table thead {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-gradient-purple) 100%);
+  color: var(--text-on-accent);
+}
+
+.lista-espera-table thead th {
+  padding: var(--space-md) var(--space-lg);
+  font-weight: var(--font-weight-semibold);
+  border: none;
+  vertical-align: middle;
+}
+
+.lista-espera-table thead th .material-symbols-outlined {
+  font-size: var(--font-size-lg);
+  vertical-align: middle;
+  margin-right: var(--space-xs);
+}
+
+.lista-espera-table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s ease;
+}
+
+.lista-espera-table tbody tr:hover {
+  background-color: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+}
+
+.lista-espera-table tbody td {
+  padding: var(--space-md) var(--space-lg);
+  vertical-align: middle;
+}
+
+/* ============================================
+   ENTITY INFO (Avatar + Detalles)
+============================================ */
+
+.entity-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.entity-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+
+.entity-avatar-paciente {
+  background: var(--color-success);
+  color: var(--text-on-accent);
+}
+
+.entity-details strong {
+  display: block;
+  color: var(--text-main);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ============================================
+   BADGES DE DÍAS EN ESPERA
+============================================ */
+
+.badge-dias {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.badge-dias .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.badge-dias-info {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.badge-dias-warning {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.badge-dias-danger {
+  background: #ffebee;
+  color: #c62828;
+  animation: pulse 2s infinite;
+}
+
+/* ============================================
+   BADGES DE URGENCIA
+============================================ */
+
+.badge-urgencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.badge-urgencia .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.badge-urgencia-baja {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-urgencia-media {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.badge-urgencia-alta {
+  background: #ffebee;
+  color: #c62828;
+  animation: pulse 2s infinite;
+}
+
+/* ============================================
+   BADGES DE ESTADO
+============================================ */
+
+.badge-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.badge-estado .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.badge-estado-pendiente {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.badge-estado-resuelta {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.badge-estado-cancelada {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+/* ============================================
+   ACCIONES
+============================================ */
+
+.acciones-group {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: center;
+}
+
+.acciones-group .btn {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-md);
+  transition: all 0.2s ease;
+}
+
+.acciones-group .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-md);
+}
+
+.acciones-group .btn .material-symbols-outlined {
+  font-size: var(--font-size-lg);
+}
+
+/* ============================================
+   LOADING STATE
+============================================ */
+
+.loading-state {
+  padding: var(--space-xxl);
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  text-align: center;
+}
+
+.loading-content .material-symbols-outlined {
+  font-size: 48px;
+  color: var(--color-accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-content h6 {
+  color: var(--text-secondary);
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+/* ============================================
+   EMPTY STATE
+============================================ */
+
+.empty-state {
+  padding: var(--space-xxl);
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  text-align: center;
+}
+
+.empty-state-content .empty-icon {
+  font-size: 120px;
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.empty-state-content h3 {
+  color: var(--text-main);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.empty-state-content p {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: var(--font-size-base);
+}
+
+/* ============================================
+   PAGINACIÓN
+============================================ */
+
+.paginacion-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg);
+  background: var(--color-background);
+  border-top: 1px solid var(--border-color);
+}
+
+.paginacion-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.paginacion-info .material-symbols-outlined {
+  color: var(--color-accent);
+}
+
+.pagination {
+  margin-bottom: 0;
+}
+
+.page-link {
+  color: var(--color-accent);
+  border-color: var(--border-color);
+  padding: var(--space-xs) var(--space-sm);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-link:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+.page-item.active .page-link {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+.page-item.disabled .page-link {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.page-link .material-symbols-outlined {
+  font-size: var(--font-size-lg);
+}
+
+/* ============================================
+   ANIMACIONES
+============================================ */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+/* ========================================
+   BUSCADOR DE PACIENTES - AUTOCOMPLETE
+   ======================================== */
+
+.patient-search-wrapper {
+  position: relative;
+}
+
+.patient-search-wrapper input[type="text"] {
+  padding-right: 3rem;
+}
+
+.patient-search-wrapper input:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+/* Botón para limpiar búsqueda */
+.btn-clear-search {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.2s;
+  z-index: 10;
+}
+
+.btn-clear-search:hover {
+  color: #dc3545;
+}
+
+/* Spinner de búsqueda */
+.search-spinner {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #667eea;
+  font-size: 1rem;
+}
+
+/* Contenedor de resultados */
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #667eea;
+  border-top: none;
+  border-radius: 0 0 0.5rem 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: -2px;
+}
+
+/* Item de resultado */
+.search-result-item {
+  padding: 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f3f5;
+  transition: all 0.2s;
+}
+
+.search-result-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  padding-left: 1.25rem;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.result-name {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.result-name i {
+  color: #667eea;
+  font-size: 0.9rem;
+}
+
+.result-details {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.result-details .badge {
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+/* Sin resultados */
+.no-results {
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
+}
+
+.no-results i {
+  font-size: 2rem;
+  color: #adb5bd;
+  margin-bottom: 0.5rem;
+}
+
+.no-results p {
+  margin: 0.5rem 0 0.25rem;
+  font-weight: 500;
+}
+
+.no-results small {
+  color: #adb5bd;
+}
+
+/* Badge de paciente seleccionado */
+.selected-patient-badge {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #e7f3ff 0%, #f0e7ff 100%);
+  border: 2px solid #667eea;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: slideIn 0.3s ease-in-out;
+}
+
+.selected-patient-badge i {
+  color: #28a745;
+  font-size: 1.25rem;
+}
+
+.selected-patient-badge strong {
+  color: #495057;
+  font-size: 1rem;
+}
+
+.selected-patient-badge .text-muted {
+  margin-left: auto;
+  font-size: 0.875rem;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar personalizado para resultados */
+.search-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-results::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+  background: #667eea;
+  border-radius: 4px;
+}
+
+.search-results::-webkit-scrollbar-thumb:hover {
+  background: #5568d3;
+}
+
+/* Responsive para búsqueda */
+@media (max-width: 576px) {
+  .search-results {
+    max-height: 250px;
+  }
+  
+  .search-result-item {
+    padding: 0.75rem;
+  }
+  
+  .result-details {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .selected-patient-badge {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .selected-patient-badge .text-muted {
+    margin-left: 0;
+  }
+}
+
+/* Estado de focus del input de búsqueda */
+.patient-search-wrapper input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Animación de hover en resultados */
+.search-result-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.search-result-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: #667eea;
+  transform: scaleY(0);
+  transition: transform 0.2s;
+}
+
+.search-result-item:hover::before {
+  transform: scaleY(1);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@media (max-width: 768px) {
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .table td {
+        font-size: 0.875rem;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+}

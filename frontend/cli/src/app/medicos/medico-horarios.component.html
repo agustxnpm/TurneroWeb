@@ -1,0 +1,626 @@
+<div class="medico-horarios">
+  <!-- Floating Particles Background -->
+  <div class="particles-bg">
+    <div
+      class="particle"
+      *ngFor="let p of particles; let i = index"
+      [style.left.px]="p.x"
+      [style.top.px]="p.y"
+      [style.animation-delay.s]="i * 0.2"
+    ></div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-glow"></div>
+    <div class="header-content">
+      <div class="header-info">
+        <div class="header-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="header-text">
+          <h1>Gestión de Horarios</h1>
+          <p class="header-subtitle">Configura tu disponibilidad médica</p>
+        </div>
+      </div>
+      <button class="btn-back" (click)="volverAlDashboard()">
+        <i class="fas fa-arrow-left"></i>
+        <span>Volver al Dashboard</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-section" *ngIf="!mostrarFormulario">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-calendar-check"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-number">{{ disponibilidades.length }}</div>
+        <div class="stat-label">Configuraciones</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-clock"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-number">{{ getTotalHorarios() }}</div>
+        <div class="stat-label">Horarios Activos</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">
+        <i class="fas fa-calendar-week"></i>
+      </div>
+      <div class="stat-content">
+        <div class="stat-number">{{ getDiasActivos() }}</div>
+        <div class="stat-label">Días de la Semana</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selector de Centro de Atención -->
+  <div class="center-selection-section" *ngIf="!mostrarFormulario">
+    <div class="center-selection-background"></div>
+
+    <!-- Estado de error -->
+    <div class="center-error" *ngIf="errorCarga">
+      <div class="error-card">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h4>Error al cargar información</h4>
+        <p>{{ errorCarga }}</p>
+        <button class="btn btn-primary" (click)="reintentar()">
+          <i class="fas fa-redo"></i>
+          Reintentar
+        </button>
+      </div>
+    </div>
+
+    <!-- Estado de carga inicial -->
+    <div class="center-loading" *ngIf="cargando && !errorCarga">
+      <div class="loading-spinner-small">
+        <div class="spinner"></div>
+        <p>Cargando información del médico...</p>
+      </div>
+    </div>
+
+    <!-- Estado de carga de centros -->
+    <div class="center-loading" *ngIf="cargandoCentros && !errorCarga">
+      <div class="loading-spinner-small">
+        <div class="spinner"></div>
+        <p>Cargando centros de atención...</p>
+      </div>
+    </div>
+
+    <!-- Estado de cambio de centro -->
+    <div class="center-loading" *ngIf="cambiandoCentro && !errorCarga">
+      <div class="loading-spinner-small">
+        <div class="spinner"></div>
+        <p>Cambiando centro de atención...</p>
+      </div>
+    </div>
+
+    <!-- Contenido principal simplificado -->
+    <div
+      class="center-content"
+      *ngIf="!cargando && !cargandoCentros && !cambiandoCentro && !errorCarga"
+    >
+      <!-- Solo nombre del centro en la parte superior -->
+      <div class="center-name-header">
+        <h3>
+          <i class="fas fa-building"></i>
+          {{ getNombreCentroActual() }}
+        </h3>
+      </div>
+
+      <!-- Selector para cambiar de centro (solo si hay múltiples centros) -->
+      <div class="center-selector" *ngIf="getTotalCentrosDisponibles() > 1">
+        <label>Cambiar a otro centro:</label>
+        <select class="form-select" (change)="onCambiarCentro($event)">
+          <option value="">Seleccionar centro...</option>
+          <option
+            *ngFor="let centro of getCentrosUnicos()"
+            [value]="centro.nombre"
+          >
+            {{ centro.nombre }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Horarios Actuales -->
+  <div class="horarios-section" *ngIf="!mostrarFormulario">
+    <div class="section-background"></div>
+    <div class="section-header">
+      <div class="section-title">
+        <div class="title-icon">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="title-content">
+          <h2>Mis Horarios Configurados</h2>
+          <p class="section-subtitle">Gestiona tu disponibilidad semanal</p>
+        </div>
+      </div>
+      <button class="btn-add-schedule" (click)="toggleFormulario()">
+        <i class="fas fa-plus" *ngIf="disponibilidades.length === 0"></i>
+        <i class="fas fa-edit" *ngIf="disponibilidades.length > 0"></i>
+        <span>{{
+          disponibilidades.length === 0 ? "Nuevo Horario" : "Editar Horarios"
+        }}</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="cargando">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Cargando horarios...</p>
+      </div>
+    </div>
+
+    <!-- Horarios Grid - Agrupados por Especialidad -->
+    <div
+      class="especialidades-container"
+      *ngIf="!cargando && getEspecialidadesDelCentroActual().length > 0"
+    >
+      <div
+        class="especialidad-section"
+        *ngFor="
+          let especialidad of getEspecialidadesDelCentroActual();
+          let i = index
+        "
+      >
+        <div class="especialidad-card">
+          <div class="card-background"></div>
+          <div class="card-glow"></div>
+
+          <div class="especialidad-header">
+            <div class="especialidad-info">
+              <div
+                class="especialidad-icon"
+                [class]="'icon-variant-' + ((i % 4) + 1)"
+              >
+                <i class="fas fa-stethoscope"></i>
+                <div class="icon-pulse"></div>
+              </div>
+              <div class="especialidad-details">
+                <h3>{{ especialidad.nombre }}</h3>
+                <div
+                  class="status-badge"
+                  [class.status-configured]="
+                    especialidadTieneDisponibilidades(especialidad.id)
+                  "
+                  [class.status-pending]="
+                    !especialidadTieneDisponibilidades(especialidad.id)
+                  "
+                >
+                  <i
+                    class="fas fa-check-circle"
+                    *ngIf="especialidadTieneDisponibilidades(especialidad.id)"
+                  ></i>
+                  <i
+                    class="fas fa-clock"
+                    *ngIf="!especialidadTieneDisponibilidades(especialidad.id)"
+                  ></i>
+                  <span>{{
+                    especialidadTieneDisponibilidades(especialidad.id)
+                      ? "Configurado"
+                      : "Pendiente"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="especialidad-actions">
+              <button
+                class="btn-configure"
+                *ngIf="!especialidadTieneDisponibilidades(especialidad.id)"
+                (click)="nuevaDisponibilidadParaEspecialidad(especialidad.id)"
+              >
+                <i class="fas fa-plus me-2"></i>
+                <span>Configurar Horarios</span>
+                <div class="btn-shine"></div>
+              </button>
+              <div
+                class="summary-stats"
+                *ngIf="especialidadTieneDisponibilidades(especialidad.id)"
+              >
+                <div class="stat-item">
+                  <i class="fas fa-calendar-week"></i>
+                  <span
+                    >{{
+                      getHorariosPorEspecialidad(especialidad.id).length
+                    }}
+                    configuraciones</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Disponibilidades para esta especialidad -->
+          <div
+            class="horarios-content"
+            *ngIf="especialidadTieneDisponibilidades(especialidad.id)"
+          >
+            <div class="horarios-grid">
+              <div
+                class="horario-card"
+                *ngFor="
+                  let disponibilidad of disponibilidadesPorEspecialidad[
+                    especialidad.id
+                  ]
+                "
+              >
+                <div class="card-header">
+                  <div class="card-title">
+                    <div class="title-icon">
+                      <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="title-content">
+                      <span class="title-main"
+                        >Horarios de {{ especialidad.nombre }}</span
+                      >
+                      <span class="title-sub"
+                        >{{ disponibilidad.horarios.length }} días
+                        configurados</span
+                      >
+                    </div>
+                  </div>
+                  <div class="card-actions">
+                    <button
+                      class="action-btn edit-btn"
+                      (click)="editarDisponibilidad(disponibilidad)"
+                      title="Editar horarios"
+                    >
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button
+                      class="action-btn delete-btn"
+                      (click)="eliminarDisponibilidad(disponibilidad)"
+                      title="Eliminar configuración"
+                    >
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card-body">
+                  <div class="horarios-list">
+                    <div
+                      class="horario-item"
+                      *ngFor="
+                        let horario of disponibilidad.horarios;
+                        let j = index
+                      "
+                    >
+                      <div class="day-badge" [class]="'day-' + (j % 7)">
+                        <div class="day-icon">
+                          <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <span class="day-name">{{ horario.dia }}</span>
+                      </div>
+                      <div class="time-range">
+                        <div class="time-block">
+                          <i class="fas fa-clock time-icon"></i>
+                          <span class="time-start">{{
+                            horario.horaInicio | slice : 0 : 5
+                          }}</span>
+                        </div>
+                        <div class="time-separator">
+                          <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="time-block">
+                          <i class="fas fa-clock time-icon"></i>
+                          <span class="time-end">{{
+                            horario.horaFin | slice : 0 : 5
+                          }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario de Horarios -->
+  <div class="form-section" *ngIf="mostrarFormulario">
+    <div class="form-background"></div>
+    <div class="form-container">
+      <div class="form-header">
+        <div class="form-title">
+          <div class="title-icon">
+            <i class="fas fa-plus-circle"></i>
+          </div>
+          <div class="title-content">
+            <h2>{{ modoEdicion ? "Editar" : "Nueva" }} Disponibilidad</h2>
+            <p class="form-subtitle">Configura tus horarios de atención</p>
+          </div>
+        </div>
+        <button class="btn-close" (click)="cancelarFormulario()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <form (ngSubmit)="guardarDisponibilidad()" class="schedule-form">
+        <!-- Plantillas Rápidas -->
+        <div class="templates-section">
+          <h3>
+            <i class="fas fa-magic me-2"></i>
+            Plantillas Rápidas
+          </h3>
+          <div class="templates-grid">
+            <button
+              type="button"
+              class="template-card template-morning"
+              (click)="aplicarPlantilla('manana')"
+            >
+              <div class="template-icon">
+                <i class="fas fa-sun"></i>
+              </div>
+              <div class="template-content">
+                <div class="template-name">Turno Mañana</div>
+                <div class="template-time">08:00 - 13:00</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="template-card template-afternoon"
+              (click)="aplicarPlantilla('tarde')"
+            >
+              <div class="template-icon">
+                <i class="fas fa-cloud-sun"></i>
+              </div>
+              <div class="template-content">
+                <div class="template-name">Turno Tarde</div>
+                <div class="template-time">14:00 - 19:00</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="template-card template-full"
+              (click)="aplicarPlantilla('completo')"
+            >
+              <div class="template-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="template-content">
+                <div class="template-name">Jornada Completa</div>
+                <div class="template-time">08:00 - 18:00</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="template-card template-custom"
+              (click)="aplicarPlantilla('personalizado')"
+            >
+              <div class="template-icon">
+                <i class="fas fa-cogs"></i>
+              </div>
+              <div class="template-content">
+                <div class="template-name">Personalizado</div>
+                <div class="template-time">Configurar</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Selección de Especialidad -->
+        <div class="specialty-section">
+          <h3>
+            <i class="fas fa-stethoscope me-2"></i>
+            Especialidad
+          </h3>
+          <div class="specialty-selection">
+            <div class="form-group">
+              <label class="form-label">Seleccionar Especialidad *</label>
+              <select
+                class="form-select specialty-select"
+                [(ngModel)]="especialidadSeleccionada"
+                name="especialidad"
+                [disabled]="modoEdicion"
+              >
+                <option value="">Seleccionar especialidad...</option>
+                <option
+                  *ngFor="
+                    let especialidad of getEspecialidadesDelCentroActual()
+                  "
+                  [value]="especialidad.id"
+                >
+                  {{ especialidad.nombre }}
+                  <span
+                    *ngIf="
+                      especialidadTieneDisponibilidades(especialidad.id) &&
+                      !modoEdicion
+                    "
+                    class="specialty-status"
+                    >(Ya configurada)</span
+                  >
+                </option>
+              </select>
+              <div class="specialty-info" *ngIf="especialidadSeleccionada">
+                <div class="info-card">
+                  <i class="fas fa-info-circle me-2"></i>
+                  {{
+                    modoEdicion
+                      ? "Editando horarios para:"
+                      : "Configurando horarios para:"
+                  }}
+                  <strong>{{
+                    getNombreEspecialidad(especialidadSeleccionada)
+                  }}</strong>
+                </div>
+              </div>
+              <div class="specialty-warning" *ngIf="!especialidadSeleccionada">
+                <div class="warning-card">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  Debe seleccionar una especialidad antes de configurar horarios
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Configuración de Horarios -->
+        <div class="schedule-section">
+          <div class="section-title-flex">
+            <h3>
+              <i class="fas fa-calendar-alt me-2"></i>
+              Configuración de Horarios
+            </h3>
+            <button
+              type="button"
+              class="btn-add-time"
+              (click)="agregarHorario()"
+            >
+              <i class="fas fa-plus me-1"></i>
+              Agregar Horario
+            </button>
+          </div>
+
+          <div class="horarios-form-list">
+            <div
+              class="horario-form-item"
+              *ngFor="let horario of horariosForm; let i = index"
+            >
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Día</label>
+                  <select
+                    class="form-select"
+                    [(ngModel)]="horariosForm[i].dia"
+                    name="dia{{ i }}"
+                  >
+                    <option value="">Seleccionar día...</option>
+                    <option *ngFor="let dia of diasSemana" [value]="dia.valor">
+                      {{ dia.nombre }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Hora Inicio</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    [(ngModel)]="horariosForm[i].horaInicio"
+                    name="horaInicio{{ i }}"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Hora Fin</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    [(ngModel)]="horariosForm[i].horaFin"
+                    name="horaFin{{ i }}"
+                  />
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    type="button"
+                    class="btn-remove"
+                    (click)="eliminarHorario(i)"
+                    title="Eliminar horario"
+                  >
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="no-schedules" *ngIf="horariosForm.length === 0">
+              <div class="no-schedules-icon">
+                <i class="fas fa-info-circle"></i>
+              </div>
+              <p>
+                Haga clic en "Agregar Horario" para configurar días y horarios
+                de disponibilidad
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions-section">
+          <button
+            type="button"
+            class="btn-cancel"
+            (click)="cancelarFormulario()"
+          >
+            <i class="fas fa-times me-2"></i>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="btn-save"
+            [disabled]="guardando || horariosForm.length === 0"
+          >
+            <i class="fas fa-spinner fa-spin me-2" *ngIf="guardando"></i>
+            <i class="fas fa-save me-2" *ngIf="!guardando"></i>
+            {{
+              guardando
+                ? "Guardando..."
+                : modoEdicion
+                ? "Actualizar"
+                : "Guardar"
+            }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tips Section -->
+  <div class="tips-section" *ngIf="!mostrarFormulario">
+    <div class="tips-background"></div>
+    <div class="tips-header">
+      <div class="tips-icon">
+        <i class="fas fa-lightbulb"></i>
+      </div>
+      <h3>Consejos para la gestión de horarios</h3>
+    </div>
+
+    <div class="tips-grid">
+      <div class="tip-card tip-success">
+        <div class="tip-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="tip-content">
+          <h4>Buenas Prácticas</h4>
+          <ul>
+            <li>Mantén horarios consistentes por día</li>
+            <li>Deja tiempo entre turnos para descanso</li>
+            <li>Actualiza tus horarios con anticipación</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="tip-card tip-info">
+        <div class="tip-icon">
+          <i class="fas fa-info-circle"></i>
+        </div>
+        <div class="tip-content">
+          <h4>Información Importante</h4>
+          <ul>
+            <li>Los cambios afectan turnos futuros</li>
+            <li>Se notificará a pacientes afectados</li>
+            <li>Revisa conflictos antes de confirmar</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

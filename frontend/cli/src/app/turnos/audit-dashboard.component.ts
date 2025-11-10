@@ -419,6 +419,46 @@ export class AuditDashboardComponent implements OnInit {
     return icons[action] || 'fas fa-question-circle';
   }
 
+  /** Obtiene el icono Material Symbol para el tipo de acción */
+  getActionIconMaterial(action: string): string {
+    const icons: any = {
+      'CREATE': 'add_circle',
+      'UPDATE_STATUS': 'edit',
+      'CANCEL': 'cancel',
+      'CONFIRM': 'check_circle',
+      'RESCHEDULE': 'event_repeat',
+      'COMPLETE': 'task_alt',
+      'DELETE': 'delete',
+      'PROGRAMADO': 'event_available',
+      'CONFIRMADO': 'check_circle',
+      'CANCELADO': 'cancel',
+      'ATENDIDO': 'task_alt',
+      'AUSENTE': 'event_busy',
+      'REPROGRAMADO': 'event_repeat'
+    };
+    return icons[action] || 'help';
+  }
+
+  /** Obtiene la clase del badge para el tipo de acción */
+  getActionBadgeClass(action: string): string {
+    const classes: any = {
+      'CREATE': 'bg-info',
+      'UPDATE_STATUS': 'bg-primary',
+      'CANCEL': 'bg-danger',
+      'CONFIRM': 'bg-success',
+      'RESCHEDULE': 'bg-warning',
+      'COMPLETE': 'bg-success',
+      'DELETE': 'bg-dark',
+      'PROGRAMADO': 'bg-warning',
+      'CONFIRMADO': 'bg-success',
+      'CANCELADO': 'bg-danger',
+      'ATENDIDO': 'bg-success',
+      'AUSENTE': 'bg-secondary',
+      'REPROGRAMADO': 'bg-warning'
+    };
+    return classes[action] || 'bg-secondary';
+  }
+
   /** Obtiene un array de las claves de un objeto */
   getObjectKeys(obj: any): string[] {
     return Object.keys(obj || {});

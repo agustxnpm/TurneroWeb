@@ -130,6 +130,8 @@ public class JwtTokenProvider {
                         var pacienteDTO = optionalPacienteDTO.get();
                         if (pacienteDTO.getId() != null) {
                             claims.put("pacienteId", pacienteDTO.getId());
+                            // Añadir claim de profileCompleted
+                            claims.put("profileCompleted", pacienteDTO.isProfileCompleted());
                         }
                     }
                 } catch (Exception e) {

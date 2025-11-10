@@ -1,0 +1,71 @@
+<nav class="pagination-wrapper" aria-label="Navegación de páginas">
+  <div class="pagination-container">
+    <!-- Primera página -->
+    <button
+      class="pagination-btn pagination-btn-nav"
+      [disabled]="currentPage === 1"
+      (click)="onPageChange(-2)"
+      title="Primera página"
+      aria-label="Primera página"
+    >
+      <span class="material-symbols-outlined">first_page</span>
+    </button>
+
+    <!-- Página anterior -->
+    <button
+      class="pagination-btn pagination-btn-nav"
+      [disabled]="currentPage === 1"
+      (click)="onPageChange(-1)"
+      title="Página anterior"
+      aria-label="Página anterior"
+    >
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+
+    <!-- Páginas numéricas -->
+    <div class="pagination-numbers">
+      <ng-container *ngFor="let pageNum of getVisiblePages()">
+        <button
+          *ngIf="pageNum !== -1"
+          class="pagination-btn pagination-btn-number"
+          [class.active]="pageNum === currentPage"
+          (click)="onPageChange(pageNum)"
+          [attr.aria-label]="'Ir a página ' + pageNum"
+          [attr.aria-current]="pageNum === currentPage ? 'page' : null"
+        >
+          {{ pageNum }}
+        </button>
+        <span *ngIf="pageNum === -1" class="pagination-dots" aria-hidden="true">...</span>
+      </ng-container>
+    </div>
+
+    <!-- Página siguiente -->
+    <button
+      class="pagination-btn pagination-btn-nav"
+      [disabled]="currentPage >= totalPages || last"
+      (click)="onPageChange(-3)"
+      title="Página siguiente"
+      aria-label="Página siguiente"
+    >
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+
+    <!-- Última página -->
+    <button
+      class="pagination-btn pagination-btn-nav"
+      [disabled]="currentPage >= totalPages || last"
+      (click)="onPageChange(-4)"
+      title="Última página"
+      aria-label="Última página"
+    >
+      <span class="material-symbols-outlined">last_page</span>
+    </button>
+  </div>
+
+  <!-- Información de paginación -->
+  <div class="pagination-info" *ngIf="totalPages > 0">
+    <span class="page-info-text">
+      Página <strong>{{ currentPage }}</strong> de <strong>{{ totalPages }}</strong>
+    </span>
+  </div>
+</nav>

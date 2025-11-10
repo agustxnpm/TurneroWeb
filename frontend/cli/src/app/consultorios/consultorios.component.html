@@ -1,0 +1,119 @@
+<div class="consultorios-container">
+  <div class="card p-xl mb-xl mx-auto">
+    <!-- Header -->
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-md">
+        <span class="material-symbols-outlined header-icon" aria-hidden="true">meeting_room</span>
+        <div>
+          <h2 class="mb-0">Consultorios</h2>
+          <p class="text-muted mb-0 mt-sm">Gestión de consultorios médicos del sistema</p>
+        </div>
+      </div>
+      
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="router.navigate(['/consultorios/new'])"
+        aria-label="Crear nuevo consultorio"
+      >
+        <span class="material-symbols-outlined me-2" aria-hidden="true">add</span>
+        <span class="d-none d-sm-inline">Nuevo Consultorio</span>
+      </button>
+    </div>
+
+    <!-- Tabla -->
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">
+              <div class="header-cell">
+                <span class="material-symbols-outlined me-2" aria-hidden="true">local_hospital</span>
+                Centro de Atención
+              </div>
+            </th>
+            <th scope="col">
+              <div class="header-cell">
+                <span class="material-symbols-outlined me-2" aria-hidden="true">meeting_room</span>
+                Nombre del Consultorio
+              </div>
+            </th>
+            <th scope="col">
+              <div class="header-cell">
+                <span class="material-symbols-outlined me-2" aria-hidden="true">settings</span>
+                Acciones
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let c of resultsPage.content || []; let i = index"
+            [class.selected]="c.id === selectedId"
+            (click)="goToDetail(c.id)"
+            role="button"
+            [attr.aria-label]="'Ver detalles del consultorio ' + c.nombre"
+            tabindex="0"
+          >
+            <td>
+              <div class="d-flex align-items-center gap-sm">
+                <span class="material-symbols-outlined text-primary" aria-hidden="true">local_hospital</span>
+                <strong>{{ c.centroAtencion }}</strong>
+              </div>
+            </td>
+            <td>
+              <div class="d-flex align-items-center gap-sm">
+                <span class="material-symbols-outlined text-muted" aria-hidden="true">meeting_room</span>
+                {{ c.nombre }}
+              </div>
+            </td>
+            <td>
+              <div class="d-flex gap-xs">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="goToEdit(c.id); $event.stopPropagation()"
+                  [attr.aria-label]="'Editar ' + c.nombre"
+                  title="Editar consultorio"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="confirmDelete(c.id); $event.stopPropagation()"
+                  [attr.aria-label]="'Eliminar ' + c.nombre"
+                  title="Eliminar consultorio"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Estado vacío -->
+          <tr *ngIf="!resultsPage.content || resultsPage.content.length === 0">
+            <td colspan="4" class="text-center py-5">
+              <div class="d-flex flex-column align-items-center gap-md">
+                <span class="material-symbols-outlined empty-state-icon" aria-hidden="true">meeting_room</span>
+                <p class="text-muted mb-0">No hay consultorios registrados</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer/Paginación -->
+    <div class="d-flex justify-content-center mt-lg pt-lg border-top" *ngIf="resultsPage.totalPages > 1">
+      <app-pagination
+        [totalPages]="resultsPage.totalPages"
+        [currentPage]="currentPage"
+        (pageChangeRequested)="onPageChangeRequested($event)"
+        [number]="resultsPage.number"
+        [last]="resultsPage.last"
+      >
+      </app-pagination>
+    </div>
+  </div>
+</div>

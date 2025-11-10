@@ -61,4 +61,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return número de usuarios con ese rol
      */
     long countByRole(unpsjb.labprog.backend.model.Role role);
+
+    /**
+     * Busca usuarios por rol específico
+     * @param role rol a buscar
+     * @return lista de usuarios con el rol especificado
+     */
+    java.util.List<User> findByRole(unpsjb.labprog.backend.model.Role role);
+
+    /**
+     * Cuenta usuarios por rol y estado de habilitación
+     * @param role rol a contar
+     * @param enabled estado de habilitación
+     * @return número de usuarios que cumplen ambas condiciones
+     */
+    long countByRoleAndEnabled(unpsjb.labprog.backend.model.Role role, boolean enabled);
 }

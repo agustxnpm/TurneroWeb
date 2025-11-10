@@ -1,0 +1,85 @@
+<div class="detalle-modal">
+  <div class="modal-header">
+    <h3>
+      <span class="material-symbols-outlined">event_available</span>
+      Detalle del Turno #{{ turno.id }}
+    </h3>
+    <button type="button" class="btn-icon" (click)="cerrar()" aria-label="Cerrar">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  
+  <div class="modal-body" *ngIf="turno">
+    <!-- Estado y Fecha -->
+    <div class="estado-fecha-section">
+      <div class="estado-badge" [ngClass]="'estado-' + turno.estado.toLowerCase()">
+        {{ turno.estado }}
+      </div>
+      <div class="fecha-info">
+        <span class="material-symbols-outlined">calendar_today</span>
+        <div class="fecha-text">
+          <div>{{ turno.fecha | date:'EEEE, d MMMM yyyy':'':'es' }}</div>
+          <div class="hora">
+            <span class="material-symbols-outlined">schedule</span>
+            {{ turno.horaInicio }} - {{ turno.horaFin }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información Principal -->
+    <div class="info-section">
+      <div class="info-row">
+        <div class="info-label">
+          <span class="material-symbols-outlined">person</span>
+          <span>Médico:</span>
+        </div>
+        <div class="info-value">{{ turno.staffMedicoNombre }} {{ turno.staffMedicoApellido }}</div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-label">
+          <span class="material-symbols-outlined">medical_services</span>
+          <span>Especialidad:</span>
+        </div>
+        <div class="info-value">{{ turno.especialidadStaffMedico }}</div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-label">
+          <span class="material-symbols-outlined">local_hospital</span>
+          <span>Centro:</span>
+        </div>
+        <div class="info-value">{{ turno.nombreCentro }}</div>
+      </div>
+
+      <div class="info-row" *ngIf="turno.consultorioNombre">
+        <div class="info-label">
+          <span class="material-symbols-outlined">door_open</span>
+          <span>Consultorio:</span>
+        </div>
+        <div class="info-value">{{ turno.consultorioNombre }}</div>
+      </div>
+
+      <div class="info-row observaciones-row" *ngIf="turno.observaciones">
+        <div class="info-label">
+          <span class="material-symbols-outlined">description</span>
+          <span>Observaciones:</span>
+        </div>
+        <div class="info-value observaciones">
+          {{ turno.observaciones }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Estado de Asistencia -->
+    <div class="asistencia-section">
+      <span class="asistencia-badge" [ngClass]="{'asistio': turno.asistio, 'no-asistio': !turno.asistio}">
+        <span class="material-symbols-outlined">
+          {{ turno.asistio ? 'check_circle' : 'cancel' }}
+        </span>
+        {{ turno.asistio ? 'Asistió al turno' : 'No asistió al turno' }}
+      </span>
+    </div>
+  </div>
+</div>

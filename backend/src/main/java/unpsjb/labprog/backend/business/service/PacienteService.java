@@ -2,6 +2,7 @@ package unpsjb.labprog.backend.business.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -15,18 +16,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import unpsjb.labprog.backend.business.repository.PacienteRepository;
+import unpsjb.labprog.backend.business.repository.PreferenciaHorariaRepository;
 import unpsjb.labprog.backend.dto.ObraSocialDTO;
 import unpsjb.labprog.backend.dto.PacienteDTO;
+import unpsjb.labprog.backend.model.AuditLog;
 import unpsjb.labprog.backend.model.ObraSocial;
 import unpsjb.labprog.backend.model.Paciente;
+import unpsjb.labprog.backend.model.PreferenciaHoraria;
 import unpsjb.labprog.backend.model.User;
-import unpsjb.labprog.backend.model.AuditLog;
 
 @Service
 public class PacienteService {
 
     @Autowired
     private PacienteRepository repository;
+
+    @Autowired
+    private PreferenciaHorariaRepository preferenciaHorariaRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(PacienteService.class);
 
@@ -260,6 +266,65 @@ public class PacienteService {
         repository.deleteById(id);
     }
 
+    /**
+     * Completa el perfil de un usuario que se registró con Google
+     * @param userEmail email del usuario autenticado
+     * @param dto datos para completar el perfil
+     * @throws IllegalStateException si el paciente no existe o el DNI ya está en uso
+     */
+    @Transactional
+    public void completeGoogleUserProfile(String userEmail, unpsjb.labprog.backend.dto.CompleteProfileDTO dto) {
+        // Buscar el paciente por email
+        Paciente paciente = repository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalStateException("No se encontró el paciente con email: " + userEmail));
+        
+        // Validar que el DNI no esté en uso por otro paciente
+        if (dto.getDni() != null) {
+            Optional<Paciente> existingByDni = repository.findByDni(dto.getDni());
+            if (existingByDni.isPresent() && !existingByDni.get().getId().equals(paciente.getId())) {
+                throw new IllegalStateException("Ya existe un paciente con el DNI: " + dto.getDni());
+            }
+            paciente.setDni(dto.getDni());
+        }
+        
+        // Actualizar datos
+        if (dto.getTelefono() != null && !dto.getTelefono().trim().isEmpty()) {
+            paciente.setTelefono(dto.getTelefono());
+        }
+        
+        if (dto.getFechaNacimiento() != null) {
+            paciente.setFechaNacimiento(dto.getFechaNacimiento());
+        }
+        
+        // Obra social es opcional
+        if (dto.getObraSocialId() != null) {
+            // TODO: Buscar y asignar obra social si existe
+            // ObraSocial obraSocial = obraSocialRepository.findById(dto.getObraSocialId()).orElse(null);
+            // paciente.setObraSocial(obraSocial);
+        }
+        
+        // Marcar perfil como completado
+        paciente.setProfileCompleted(true);
+        
+        // Guardar cambios
+        repository.save(paciente);
+        
+        // Actualizar también los datos en la tabla User
+        Optional<User> userOpt = userService.findByEmail(userEmail);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (dto.getDni() != null) {
+                user.setDni(dto.getDni());
+            }
+            if (dto.getTelefono() != null && !dto.getTelefono().trim().isEmpty()) {
+                user.setTelefono(dto.getTelefono());
+            }
+            userService.save(user);
+        }
+        
+        logger.info("✅ Perfil completado para usuario: {}", userEmail);
+    }
+
     private PacienteDTO toDTO(Paciente paciente) {
         PacienteDTO dto = new PacienteDTO();
         dto.setId(paciente.getId());
@@ -269,6 +334,7 @@ public class PacienteService {
         dto.setFechaNacimiento(paciente.getFechaNacimiento());
         dto.setEmail(paciente.getEmail());
         dto.setTelefono(paciente.getTelefono());
+        dto.setProfileCompleted(paciente.isProfileCompleted());
 
         // Mapear la relación con ObraSocial
         if (paciente.getObraSocial() != null) {
@@ -291,6 +357,7 @@ public class PacienteService {
         paciente.setFechaNacimiento(dto.getFechaNacimiento());
         paciente.setEmail(dto.getEmail());
         paciente.setTelefono(dto.getTelefono());
+        paciente.setProfileCompleted(dto.isProfileCompleted());
 
         if (dto.getObraSocial() != null) {
             ObraSocial obraSocial = new ObraSocial();
@@ -407,5 +474,153 @@ public class PacienteService {
         return toDTO(savedPaciente);
     }
 
+
+    // ==================== MÉTODOS PARA GESTIÓN DE PREFERENCIAS HORARIAS ====================
+
+    /**
+     * Busca un Paciente por el User autenticado
+     * Método auxiliar para operaciones de preferencias horarias
+     * 
+     * @param user Usuario autenticado de Spring Security
+     * @return Paciente asociado al usuario, o null si no existe
+     */
+    @Transactional(readOnly = true)
+    public Paciente findByUser(User user) {
+        if (user == null) {
+            return null;
+        }
+        
+        // Buscar paciente por email ya que no hay relación directa User->Paciente
+        Optional<Paciente> pacienteOpt = repository.findByUserEmail(user.getEmail());
+        
+        if (pacienteOpt.isPresent()) {
+            logger.debug("✅ Paciente encontrado para usuario: {} (ID: {})", 
+                        user.getEmail(), pacienteOpt.get().getId());
+        } else {
+            logger.warn("⚠️ No se encontró paciente para usuario: {}", user.getEmail());
+        }
+        
+        return pacienteOpt.orElse(null);
+    }
+
+    /**
+     * Obtiene todas las preferencias horarias del paciente asociado al usuario autenticado
+     * 
+     * @param user Usuario autenticado
+     * @return Set de PreferenciaHoraria del paciente
+     * @throws IllegalStateException si no se encuentra el paciente para el usuario
+     */
+    @Transactional(readOnly = true)
+    public Set<PreferenciaHoraria> getPreferenciasByUser(User user) {
+        // Usar el método findByUser para obtener el paciente
+        Paciente paciente = findByUser(user);
+        
+        if (paciente == null) {
+            throw new IllegalStateException(
+                "No se encontró un paciente asociado al usuario: " + user.getEmail());
+        }
+        
+        logger.info("📅 Obteniendo preferencias horarias para paciente ID: {} ({})", 
+                    paciente.getId(), paciente.getEmail());
+        
+        return paciente.getPreferenciasHorarias();
+    }
+
+    /**
+     * Añade una nueva preferencia horaria al paciente asociado al usuario autenticado
+     * 
+     * @param user Usuario autenticado
+     * @param preferencia Preferencia a crear (sin ID)
+     * @return Optional con la PreferenciaHoraria guardada (con ID generado), o Optional.empty() si el paciente no existe
+     */
+    @Transactional
+    public Optional<PreferenciaHoraria> addPreferencia(User user, PreferenciaHoraria preferencia) {
+        // Buscar paciente usando el método findByUser
+        Paciente paciente = findByUser(user);
+        
+        if (paciente == null) {
+            logger.warn("⚠️ No se puede agregar preferencia - paciente no encontrado para usuario: {}", 
+                       user != null ? user.getEmail() : "null");
+            return Optional.empty();
+        }
+        
+        // Validar datos de la preferencia
+        if (preferencia.getDiaDeLaSemana() == null) {
+            throw new IllegalArgumentException("El día de la semana es obligatorio");
+        }
+        if (preferencia.getHoraDesde() == null) {
+            throw new IllegalArgumentException("La hora desde es obligatoria");
+        }
+        if (preferencia.getHoraHasta() == null) {
+            throw new IllegalArgumentException("La hora hasta es obligatoria");
+        }
+        if (preferencia.getHoraDesde().isAfter(preferencia.getHoraHasta()) ||
+            preferencia.getHoraDesde().equals(preferencia.getHoraHasta())) {
+            throw new IllegalArgumentException(
+                "La hora desde debe ser anterior a la hora hasta");
+        }
+        
+        // Establecer relación bidireccional
+        preferencia.setPaciente(paciente);
+        paciente.getPreferenciasHorarias().add(preferencia);
+        
+        // Guardar el paciente (cascade guardará la preferencia)
+        Paciente pacienteGuardado = repository.save(paciente);
+        
+        // Obtener la preferencia guardada (ahora con ID)
+        PreferenciaHoraria preferenciaGuardada = pacienteGuardado.getPreferenciasHorarias()
+                .stream()
+                .filter(p -> p.getDiaDeLaSemana().equals(preferencia.getDiaDeLaSemana()) &&
+                            p.getHoraDesde().equals(preferencia.getHoraDesde()) &&
+                            p.getHoraHasta().equals(preferencia.getHoraHasta()))
+                .findFirst()
+                .orElse(null);
+        
+        logger.info("✅ Preferencia horaria creada - Paciente: {} ({})", 
+                    paciente.getId(), paciente.getEmail());
+        
+        return Optional.ofNullable(preferenciaGuardada);
+    }
+
+    /**
+     * Elimina una preferencia horaria del paciente asociado al usuario autenticado
+     * Verifica que la preferencia pertenezca al paciente antes de eliminarla
+     * 
+     * @param user Usuario autenticado
+     * @param preferenciaId ID de la preferencia a eliminar
+     * @return true si la preferencia fue encontrada y eliminada, false si el paciente no existe o la preferencia no le pertenece
+     */
+    @Transactional
+    public boolean deletePreferencia(User user, Long preferenciaId) {
+        // Buscar paciente usando el método findByUser
+        Paciente paciente = findByUser(user);
+        
+        if (paciente == null) {
+            logger.warn("⚠️ No se puede eliminar preferencia - paciente no encontrado para usuario: {}", 
+                       user != null ? user.getEmail() : "null");
+            return false;
+        }
+        
+        // Obtener el Set de preferencias del paciente
+        Set<PreferenciaHoraria> preferencias = paciente.getPreferenciasHorarias();
+        
+        // Usar removeIf para eliminar la preferencia por ID
+        boolean removed = preferencias.removeIf(p -> p.getId() == preferenciaId.longValue());
+        
+        if (removed) {
+            // Guardar el paciente para persistir la eliminación (orphanRemoval=true se encarga del resto)
+            repository.save(paciente);
+            
+            logger.info("🗑️ Preferencia horaria eliminada - ID: {}, Paciente: {} ({})", 
+                        preferenciaId, 
+                        paciente.getId(), 
+                        paciente.getEmail());
+        } else {
+            logger.warn("⚠️ Preferencia ID {} no encontrada para paciente {} ({})", 
+                       preferenciaId, paciente.getId(), paciente.getEmail());
+        }
+        
+        return removed;
+    }
 
 }

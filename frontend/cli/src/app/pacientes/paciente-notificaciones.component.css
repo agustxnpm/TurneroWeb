@@ -1,0 +1,121 @@
+/* ========================================
+   COMPONENTE: PACIENTE NOTIFICACIONES
+   Gestión de notificaciones del paciente
+   ======================================== */
+
+/* LISTA DE NOTIFICACIONES */
+.notificacion-item {
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--border-color);
+  margin-bottom: var(--space-sm);
+  border-radius: var(--border-radius-md);
+  background: var(--color-surface);
+}
+
+.notificacion-item:last-child {
+  margin-bottom: 0;
+}
+
+.notificacion-item:hover {
+  background-color: var(--color-background);
+  border-color: var(--color-accent);
+}
+
+/* ESTADO: NO LEÍDA */
+.notificacion-item.no-leida {
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+  border-left: 4px solid var(--color-accent);
+}
+
+.notificacion-item.no-leida h6 {
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+}
+
+/* ESTADO: LEÍDA */
+.notificacion-item.leida {
+  background: var(--color-surface);
+}
+
+.notificacion-item.leida h6 {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+}
+
+/* ICONOS DE TIPO DE NOTIFICACIÓN */
+.notif-icon {
+  font-size: var(--font-size-2xl);
+  flex-shrink: 0;
+}
+
+.notif-icon.text-success {
+  color: var(--color-success);
+}
+
+.notif-icon.text-danger {
+  color: var(--color-danger);
+}
+
+.notif-icon.text-warning {
+  color: var(--color-warning);
+}
+
+.notif-icon.text-info {
+  color: var(--color-info);
+}
+
+.notif-icon.text-primary {
+  color: var(--color-accent);
+}
+
+/* BADGES */
+.badge {
+  font-size: var(--font-size-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-full);
+  font-weight: var(--font-weight-medium);
+}
+
+/* METADATA Y FECHA */
+.notificacion-fecha {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.notificacion-fecha .material-symbols-outlined {
+  font-size: var(--font-size-base);
+}
+
+/* FILTROS */
+.form-group.flex-fill {
+  min-width: 200px;
+}
+
+.form-group.flex-fill:last-child {
+  min-width: 240px;
+}
+
+/* ESTADO VACÍO */
+.estado-vacio-icon {
+  font-size: var(--font-size-h1);
+  color: var(--color-info);
+  display: block;
+}
+
+/* LOADING */
+.loading-icon {
+  font-size: var(--font-size-h2);
+  color: var(--color-accent);
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

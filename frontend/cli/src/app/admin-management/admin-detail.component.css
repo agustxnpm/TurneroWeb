@@ -1,0 +1,102 @@
+/* ===================================
+   ADMIN DETAIL COMPONENT
+   Estilos ESPECÍFICOS del componente
+   (Los estilos globales como .btn, .form-control, .card están en styles.css)
+   =================================== */
+
+/* ===================================
+   1. HEADER DEL COMPONENTE
+   =================================== */
+.admin-detail-header {
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-detail-header .header-icon {
+  font-size: 3rem;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.admin-detail-header h2 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+}
+
+.admin-detail-header .text-muted {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* ===================================
+   2. BADGE INFORMATIVO
+   =================================== */
+.info-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: var(--border-radius-md);
+  color: #0d47a1;
+}
+
+.info-badge .material-symbols-outlined {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.info-badge strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ===================================
+   3. SOBRESCRITURAS ESPECÍFICAS DE FORMULARIO
+   =================================== */
+/* Override solo para los iconos en labels de ESTE componente */
+.admin-detail-card .form-label .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+  margin: 0 !important;
+  margin-right: var(--space-xs) !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* Override solo para los iconos en mensajes de error de ESTE componente */
+.admin-detail-card .text-danger .material-symbols-outlined {
+  font-size: 1rem !important;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+/* Override para mensajes informativos */
+.admin-detail-card .text-muted .material-symbols-outlined {
+  font-size: 1rem !important;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* ===================================
+   4. RESPONSIVE
+   =================================== */
+@media (max-width: 768px) {
+  .admin-detail-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: var(--space-md);
+  }
+
+  .admin-detail-header h2 {
+    font-size: var(--font-size-xl);
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-detail-header .header-icon {
+    font-size: 2.5rem;
+  }
+}

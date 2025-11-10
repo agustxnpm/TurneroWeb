@@ -12,6 +12,7 @@ export interface UserContext {
   primaryRole: Role;
   allRoles: Role[];
   isAuthenticated: boolean;
+  profileCompleted?: boolean; // Indica si el perfil está completo (para usuarios de Google)
 }
 
 /**
@@ -29,21 +30,22 @@ export interface UserContext {
   providedIn: 'root'
 })
 export class UserContextService {
-  
+
   private readonly STORAGE_KEY = 'user_context';
-  
+
   // Estado inicial vacío
   private readonly initialContext: UserContext = {
     email: '',
     nombre: '',
     primaryRole: Role.PACIENTE,
     allRoles: [],
-    isAuthenticated: false
+    isAuthenticated: false,
+    profileCompleted: true // Por defecto true para usuarios normales
   };
 
   // BehaviorSubject para estado reactivo
   private userContextSubject = new BehaviorSubject<UserContext>(this.initialContext);
-  
+
   // Observable público para componentes
   public userContext$ = this.userContextSubject.asObservable();
 
@@ -61,10 +63,11 @@ export class UserContextService {
     nombre: string;
     primaryRole: string;
     allRoles?: string[];
+    profileCompleted?: boolean;
   }): void {
-    
+
     const primaryRole = this.parseRole(userData.primaryRole);
-    const allRoles = userData.allRoles 
+    const allRoles = userData.allRoles
       ? userData.allRoles.map(role => this.parseRole(role)).filter(role => role !== null) as Role[]
       : this.calculateInheritedRoles(primaryRole);
 
@@ -73,15 +76,16 @@ export class UserContextService {
       nombre: userData.nombre,
       primaryRole,
       allRoles,
-      isAuthenticated: true
+      isAuthenticated: true,
+      profileCompleted: userData.profileCompleted ?? true // Default true para usuarios normales
     };
 
     // Actualizar estado reactivo
     this.userContextSubject.next(newContext);
-    
+
     // Persistir en localStorage para sincronización entre pestañas
     this.saveToStorage(newContext);
-    
+
     console.log('🔄 UserContext actualizado:', newContext);
   }
 
@@ -108,6 +112,14 @@ export class UserContextService {
    */
   isAuthenticated(): boolean {
     return this.userContextSubject.value.isAuthenticated;
+  }
+
+  /**
+   * Verifica si el perfil del usuario está completo
+   * @returns true si el perfil está completo, false si no
+   */
+  isProfileCompleted(): boolean {
+    return this.userContextSubject.value.profileCompleted ?? true;
   }
 
   /**
@@ -161,7 +173,7 @@ export class UserContextService {
   getUserInfo(): { email: string; nombre: string } | null {
     const context = this.userContextSubject.value;
     if (!context.isAuthenticated) return null;
-    
+
     return {
       email: context.email,
       nombre: context.nombre
@@ -233,12 +245,12 @@ export class UserContextService {
    * Valida que el contexto tenga estructura correcta
    */
   private isValidContext(context: any): context is UserContext {
-    return context && 
-           typeof context.email === 'string' &&
-           typeof context.nombre === 'string' &&
-           typeof context.isAuthenticated === 'boolean' &&
-           Array.isArray(context.allRoles) &&
-           context.primaryRole in Role;
+    return context &&
+      typeof context.email === 'string' &&
+      typeof context.nombre === 'string' &&
+      typeof context.isAuthenticated === 'boolean' &&
+      Array.isArray(context.allRoles) &&
+      context.primaryRole in Role;
   }
 
   /**

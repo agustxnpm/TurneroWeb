@@ -71,6 +71,18 @@ INSERT INTO users (
 )
 ON CONFLICT (email) DO NOTHING;
 
+INSERT INTO users (
+    nombre, apellido, dni, email, telefono,
+    hashed_password, role, enabled, account_non_expired,
+    account_non_locked, credentials_non_expired, email_verified
+) VALUES (
+    'Agustin', 'Palma', 43808170, 'aguspalqui@hotmail.com', '+5492804432030',
+    '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- password
+    'PACIENTE',
+    true, true, true, true, true
+)
+ON CONFLICT (email) DO NOTHING;
+
 -- =====================================
 -- 5. INSERTAR EN TABLAS ESPECÍFICAS
 -- =====================================
@@ -81,12 +93,19 @@ ON CONFLICT (email) DO NOTHING;
 -- ON CONFLICT (email) DO NOTHING;
 
 -- Tabla Paciente
-INSERT INTO paciente (id, nombre, apellido, dni, email, telefono, fecha_nacimiento, obra_social_id) 
+INSERT INTO paciente (id, nombre, apellido, dni, email, telefono, fecha_nacimiento, profile_completed, obra_social_id) 
 SELECT 99997, 'María', 'González', 22222222, 'paciente@turnero.com', '+5492804222222', 
-       '1990-05-15', os.id
+       '1990-05-15', true, os.id
 FROM obra_social os 
 WHERE os.codigo = 'OSDE001'
 AND NOT EXISTS (SELECT 1 FROM paciente WHERE dni = 22222222);
+
+INSERT INTO paciente (id, nombre, apellido, dni, email, telefono, fecha_nacimiento, profile_completed, obra_social_id) 
+SELECT 89999, 'Agustin', 'Palma', 43808170, 'aguspalqui@hotmail.com', '+5492804432030', 
+       '1990-05-15', true, os.id
+FROM obra_social os 
+WHERE os.codigo = 'OSDE001'
+AND NOT EXISTS (SELECT 1 FROM paciente WHERE dni = 43808170);
 
 -- Tabla Medico
 INSERT INTO medico (id, nombre, apellido, dni, email, telefono, matricula) VALUES

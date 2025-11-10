@@ -1,0 +1,344 @@
+<div class="staff-medicos-container">
+  <div class="card p-xl mb-xl mx-auto">
+    <!-- HEADER LVE NORMALIZADO -->
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-md">
+        <span class="material-symbols-outlined header-icon">medical_information</span>
+        <div>
+          <h2 class="mb-0">Staff Médico</h2>
+          <p class="text-muted mb-0 mt-sm">Gestión de médicos asociados a centros de atención</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="router.navigate(['/staffMedico/new'])">
+        <span class="material-symbols-outlined">add_circle</span>
+        <span class="d-none d-sm-inline">Nuevo Staff</span>
+      </button>
+    </div>
+
+    <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+    <div class="filters-section mb-lg">
+      <h5 class="filters-title mb-md">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtros de búsqueda
+      </h5>
+
+      <div class="row g-3">
+        <!-- Búsqueda por médico -->
+        <div class="col-md-3">
+          <label for="medicoFilter" class="form-label">
+            <span class="material-symbols-outlined">medical_services</span>
+            Médico
+          </label>
+          <input
+            type="text"
+            id="medicoFilter"
+            class="form-control"
+            placeholder="Buscar por nombre, apellido o DNI..."
+            [(ngModel)]="filtros.medico"
+            (input)="onFilterInput()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Búsqueda por especialidad -->
+        <div class="col-md-3">
+          <label for="especialidadFilter" class="form-label">
+            <span class="material-symbols-outlined">stethoscope</span>
+            Especialidad
+          </label>
+          <input
+            type="text"
+            id="especialidadFilter"
+            class="form-control"
+            placeholder="Buscar por especialidad..."
+            [(ngModel)]="filtros.especialidad"
+            (input)="onFilterInput()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Búsqueda por centro -->
+        <div class="col-md-3">
+          <label for="centroFilter" class="form-label">
+            <span class="material-symbols-outlined">apartment</span>
+            Centro
+          </label>
+          <input
+            type="text"
+            id="centroFilter"
+            class="form-control"
+            placeholder="Buscar por centro..."
+            [(ngModel)]="filtros.centro"
+            (input)="onFilterInput()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Búsqueda por consultorio -->
+        <div class="col-md-3">
+          <label for="consultorioFilter" class="form-label">
+            <span class="material-symbols-outlined">door_open</span>
+            Consultorio
+          </label>
+          <input
+            type="text"
+            id="consultorioFilter"
+            class="form-control"
+            placeholder="Buscar por consultorio..."
+            [(ngModel)]="filtros.consultorio"
+            (input)="onFilterInput()"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+
+      <!-- Fila de controles -->
+      <div class="row g-3 mt-sm">
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="d-flex gap-sm w-100">
+            <button
+              class="btn btn-secondary flex-fill"
+              (click)="clearFilters()"
+              [disabled]="!filtros.medico && !filtros.especialidad && !filtros.centro && !filtros.consultorio"
+            >
+              <span class="material-symbols-outlined">close</span>
+              Limpiar filtros
+            </button>
+            <button
+              class="btn btn-primary flex-fill"
+              (click)="onFilterInput()"
+              [disabled]="isLoading"
+            >
+              <span class="material-symbols-outlined" [class.spinning]="isLoading">sync</span>
+              Actualizar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de resultados -->
+      <div class="row mt-md" *ngIf="resultsPage.totalElements > 0">
+        <div class="col-12">
+          <div class="info-badge">
+            <span class="material-symbols-outlined">info</span>
+            Mostrando {{ resultsPage.numberOfElements }} de {{ resultsPage.totalElements }} registros
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA LVE NORMALIZADA -->
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>
+              <button
+                class="header-button"
+                (click)="onSortChange('centro.nombre')"
+                [class.active]="sortConfig.sortBy === 'centro.nombre'"
+                aria-label="Ordenar por centro"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">apartment</span>
+                  Centro de Atención
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="sortConfig.sortBy === 'centro.nombre'"
+                    aria-hidden="true"
+                  >
+                    {{ sortConfig.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="sortConfig.sortBy !== 'centro.nombre'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <button
+                class="header-button"
+                (click)="onSortChange('medico.apellido')"
+                [class.active]="sortConfig.sortBy === 'medico.apellido'"
+                aria-label="Ordenar por médico"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">medical_services</span>
+                  Médico
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="sortConfig.sortBy === 'medico.apellido'"
+                    aria-hidden="true"
+                  >
+                    {{ sortConfig.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="sortConfig.sortBy !== 'medico.apellido'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <button
+                class="header-button"
+                (click)="onSortChange('especialidad.nombre')"
+                [class.active]="sortConfig.sortBy === 'especialidad.nombre'"
+                aria-label="Ordenar por especialidad"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">stethoscope</span>
+                  Especialidad
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="sortConfig.sortBy === 'especialidad.nombre'"
+                    aria-hidden="true"
+                  >
+                    {{ sortConfig.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="sortConfig.sortBy !== 'especialidad.nombre'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">settings</span>
+                Acciones
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading state -->
+          <tr *ngIf="isLoading">
+            <td colspan="4" class="loading-state">
+              <div class="loading-content">
+                <span class="material-symbols-outlined spinning">sync</span>
+                <h6>Cargando staff médico...</h6>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data rows -->
+          <tr
+            *ngFor="let staff of resultsPage.content || []; let i = index"
+            (click)="goToDetail(staff.id)"
+            class="table-row cursor-pointer"
+            [class.selected]="selectedId === staff.id"
+            (mouseenter)="onRowHover(staff.id)"
+            (mouseleave)="onRowLeave()"
+          >
+            <td>
+              <div class="entity-info-full">
+                <div class="entity-avatar-centro">
+                  <span class="material-symbols-outlined" aria-hidden="true">apartment</span>
+                </div>
+                <div class="entity-details">
+                  <div class="entity-name">{{ getCentroNombre(staff) }}</div>
+                  <div class="entity-subtitle">{{ getCentroUbicacion(staff) }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="entity-info-full">
+                <div class="entity-avatar-medico">
+                  <span class="material-symbols-outlined" aria-hidden="true">medical_services</span>
+                </div>
+                <div class="entity-details">
+                  <div class="entity-name">{{ getMedicoNombre(staff) }}</div>
+                  <div class="entity-subtitle">DNI: {{ staff.medico?.dni }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-especialidad">
+                <span class="material-symbols-outlined" aria-hidden="true">stethoscope</span>
+                {{ getEspecialidadNombre(staff) }}
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  (click)="goToEdit(staff.id); $event.stopPropagation()"
+                  class="btn-action btn-action-edit"
+                  title="Editar staff"
+                  aria-label="Editar staff"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                </button>
+                <button
+                  (click)="confirmDelete(staff.id); $event.stopPropagation()"
+                  class="btn-action btn-action-delete"
+                  title="Eliminar staff"
+                  aria-label="Eliminar staff"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                </button>
+                <button
+                  (click)="goToDisponibilidad(staff); $event.stopPropagation()"
+                  class="btn-action btn-action-calendar"
+                  title="Gestionar Disponibilidad"
+                  aria-label="Gestionar disponibilidad"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty state -->
+          <tr
+            *ngIf="!isLoading && (!resultsPage.content || resultsPage.content.length === 0)"
+          >
+            <td colspan="4" class="empty-state">
+              <div class="empty-state-content">
+                <span class="material-symbols-outlined empty-icon">medical_information_off</span>
+                <h3>No hay staff médico registrado</h3>
+                <p>
+                  {{
+                    filtros.medico || filtros.especialidad || filtros.centro || filtros.consultorio
+                      ? "No se encontraron resultados con los filtros aplicados"
+                      : "Comience agregando un nuevo staff médico al sistema"
+                  }}
+                </p>
+                <button
+                  *ngIf="filtros.medico || filtros.especialidad || filtros.centro || filtros.consultorio"
+                  class="btn btn-primary"
+                  (click)="clearFilters()"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                  Limpiar filtros
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINADOR -->
+    <div class="pagination-container mt-lg" *ngIf="!isLoading && resultsPage.totalPages > 1">
+      <app-pagination
+        [totalPages]="resultsPage.totalPages"
+        [currentPage]="currentPage"
+        (pageChangeRequested)="onPageChangeRequested($event)"
+        [number]="resultsPage.number"
+        [hidden]="resultsPage.numberOfElements < 1"
+      ></app-pagination>
+    </div>
+  </div>
+</div>
+

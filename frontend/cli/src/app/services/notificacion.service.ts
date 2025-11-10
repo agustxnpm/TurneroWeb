@@ -101,6 +101,20 @@ export class NotificacionService {
   }
 
   /**
+   * Eliminar una notificación
+   */
+  eliminarNotificacion(notificacionId: number, pacienteId: number): Observable<void> {
+    const params = new HttpParams().set('pacienteId', pacienteId.toString());
+    return this.http.delete<void>(`${this.baseUrl}/${notificacionId}`, { params })
+      .pipe(
+        tap(() => {
+          // Actualizar contador después de eliminar
+          this.actualizarContador(pacienteId);
+        })
+      );
+  }
+
+  /**
    * Actualizar el contador de notificaciones no leídas
    */
   actualizarContador(pacienteId: number): void {

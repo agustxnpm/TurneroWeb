@@ -1,0 +1,144 @@
+<!-- BOTÓN TOGGLE FLOTANTE (siempre visible) -->
+<button
+  class="sidebar-toggle-floating"
+  (click)="onToggleSidebar()"
+  [attr.aria-label]="'Alternar menú lateral'"
+  [title]="'Alternar menú lateral'"
+>
+  <span class="material-symbols-outlined">menu</span>
+</button>
+
+<!-- MINI SIDEBAR (visible cuando está cerrado) -->
+<aside class="mini-sidebar">
+  <button
+    class="mini-sidebar__logout"
+    (click)="logout()"
+    title="Cerrar sesión"
+  >
+    <span class="material-symbols-outlined">logout</span>
+  </button>
+</aside>
+
+<!-- SIDEBAR PRINCIPAL -->
+<aside
+  class="sidebar"
+  [class.sidebar--open]="(menuService.sidebarState$ | async)?.isOpen"
+  [class.sidebar--mobile]="(menuService.sidebarState$ | async)?.isMobile"
+>
+  <!-- Header del Sidebar -->
+  <div class="sidebar__header">
+    <div class="sidebar__brand">
+      <span class="material-symbols-outlined sidebar__brand-icon">event_available</span>
+      <span class="sidebar__brand-text">CheTurno</span>
+    </div>
+  </div>
+
+  <!-- Navigation Menu -->
+  <nav class="sidebar__nav">
+    <!-- Items Compartidos -->
+    <div
+      class="sidebar__section"
+      *ngIf="(menuService.sharedItems$ | async)?.length"
+    >
+      <div class="sidebar__section-header">
+        <span class="material-symbols-outlined sidebar__section-icon">home</span>
+        <span class="sidebar__section-title">General</span>
+      </div>
+      <ul class="sidebar__menu">
+        <li
+          *ngFor="let item of menuService.sharedItems$ | async"
+          class="sidebar__menu-item"
+          [class.sidebar__menu-item--active]="isActiveRoute(item.route)"
+        >
+          <a
+            [routerLink]="item.route"
+            class="sidebar__menu-link"
+            [attr.title]="item.description"
+          >
+            <span class="material-symbols-outlined sidebar__menu-icon">{{ item.icon }}</span>
+            <span class="sidebar__menu-label">{{ item.label }}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Secciones por Rol -->
+    <div
+      *ngFor="let section of menuSectionsWithBadges$ | async"
+      class="sidebar__section"
+    >
+      <!-- Header de Sección -->
+      <div class="sidebar__section-header">
+        <span class="material-symbols-outlined sidebar__section-icon">{{ section.icon }}</span>
+        <span class="sidebar__section-title">{{ section.label }}</span>
+      </div>
+
+      <!-- Items de la Sección (siempre visibles) -->
+      <ul class="sidebar__menu">
+        <ng-container *ngFor="let item of section.items">
+          <!-- Divider -->
+          <li *ngIf="item.divider" class="sidebar__divider"></li>
+
+          <!-- Menu Item Normal -->
+          <li
+            *ngIf="!item.divider"
+            class="sidebar__menu-item"
+            [class.sidebar__menu-item--active]="isActiveRoute(item.route)"
+          >
+            <a
+              *ngIf="item.route"
+              [routerLink]="item.route"
+              class="sidebar__menu-link"
+              [attr.title]="item.description"
+              (click)="onItemClick()"
+            >
+              <span class="material-symbols-outlined sidebar__menu-icon">{{ item.icon }}</span>
+              <span class="sidebar__menu-label">{{ item.label }}</span>
+
+              <!-- Badge de Notificaciones -->
+              <span
+                *ngIf="item.badge && item.badge.value"
+                class="sidebar__badge sidebar__badge--{{ item.badge.color }}"
+              >
+                {{ item.badge.value }}
+              </span>
+            </a>
+
+            <!-- Item con Acción (no navegación) -->
+            <button
+              *ngIf="item.action && !item.route"
+              class="sidebar__menu-link sidebar__menu-link--button"
+              (click)="item.action(); onItemClick()"
+              [attr.title]="item.description"
+            >
+              <span class="material-symbols-outlined sidebar__menu-icon">{{ item.icon }}</span>
+              <span class="sidebar__menu-label">{{ item.label }}</span>
+            </button>
+          </li>
+        </ng-container>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Footer del Sidebar -->
+  <div class="sidebar__footer">
+    <button
+      class="sidebar__footer-btn"
+      (click)="logout()"
+      title="Cerrar sesión"
+    >
+      <span class="material-symbols-outlined">logout</span>
+      <span>Cerrar Sesión</span>
+    </button>
+  </div>
+
+  <!-- Overlay para Mobile -->
+  <div
+    class="sidebar__overlay"
+    *ngIf="
+      (menuService.sidebarState$ | async)?.isMobile &&
+      (menuService.sidebarState$ | async)?.isOpen
+    "
+    (click)="menuService.closeSidebar()"
+  ></div>
+</aside>

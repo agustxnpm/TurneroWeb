@@ -1,82 +1,80 @@
-<div class="activation-container" [@fadeIn]>
-  <div class="activation-card" [@slideUp]>
-    
-    <!-- Header con logo -->
-    <div class="header-section">
-      <div class="logo-container">
-        <i class="fas fa-user-check logo-icon"></i>
-        <h1 class="app-title">CheTurno</h1>
-      </div>
+<div class="activation-page-wrapper" [@fadeIn]>
+  
+  <!-- Header con marca -->
+  <div class="activation-page-header">
+    <div class="brand-logo">
+      <span class="material-symbols-outlined brand-icon">how_to_reg</span>
+      <h1>CheTurno</h1>
     </div>
+  </div>
 
-    <!-- Loading State -->
-    <div *ngIf="isLoading" class="loading-section">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Activando cuenta...</span>
+  <!-- Card de Activación centrado -->
+  <div class="activation-page-content">
+    <div class="card activation-card" [@slideUp]>
+
+      <!-- Estado: Procesando activación -->
+      <div *ngIf="isLoading" class="loading-section">
+        <span class="material-symbols-outlined icon-loading">sync</span>
+        <h3>Activando tu cuenta</h3>
+        <p>Por favor espera un momento mientras verificamos tu información...</p>
       </div>
-      <p class="loading-text">Activando tu cuenta, por favor espera...</p>
-    </div>
 
-    <!-- Success State -->
-    <div *ngIf="!isLoading && isActivated" class="success-section">
-      <div class="success-icon">
-        <i class="fas fa-check-circle"></i>
-      </div>
-      <h3 class="success-title">Tu cuenta ha sido activada correctamente.</h3>
-
-      
-      <div class="action-buttons">
+      <!-- Estado: Activación exitosa -->
+      <div *ngIf="!isLoading && isActivated" class="success-section">
+        <span class="material-symbols-outlined icon-status icon-success">check_circle</span>
+        <h3 class="status-title">¡Cuenta activada exitosamente!</h3>
+        <p class="status-message">{{ successMessage || 'Tu cuenta ha sido activada correctamente. Ya puedes iniciar sesión y disfrutar de todos nuestros servicios.' }}</p>
+        
         <button 
           type="button" 
-          class="btn btn-primary btn-lg"
+          class="btn btn-primary btn-full-width"
           (click)="navigateToLogin()">
-          <i class="fas fa-sign-in-alt me-2"></i>
+          <span class="material-symbols-outlined">login</span>
           Iniciar Sesión
         </button>
       </div>
-    </div>
 
-    <!-- Error State -->
-    <div *ngIf="!isLoading && !isActivated && errorMessage" class="error-section">
-      <div class="error-icon">
-        <i class="fas fa-exclamation-triangle"></i>
+      <!-- Estado: Error en activación -->
+      <div *ngIf="!isLoading && !isActivated && errorMessage" class="error-section">
+        <span class="material-symbols-outlined icon-status icon-danger">error</span>
+        <h3 class="status-title">Error al activar la cuenta</h3>
+        <p class="status-message">{{ errorMessage }}</p>
+        
+        <div class="error-suggestions">
+          <p class="suggestions-title">¿Qué puedes hacer?</p>
+          <ul class="suggestions-list">
+            <li>Verifica que el enlace esté completo y no se haya cortado</li>
+            <li>Intenta copiar y pegar el enlace directamente desde tu email</li>
+            <li>Asegúrate de que no haya pasado más tiempo del permitido desde el registro</li>
+          </ul>
+        </div>
+        
+        <div class="action-buttons">
+          <button 
+            type="button" 
+            class="btn btn-secondary btn-full-width"
+            (click)="resendActivationEmail()">
+            <span class="material-symbols-outlined">mail</span>
+            Solicitar Nuevo Enlace
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-link btn-full-width"
+            (click)="navigateToLogin()">
+            <span class="material-symbols-outlined">login</span>
+            Ir a Iniciar Sesión
+          </button>
+        </div>
       </div>
-      <h3 class="error-title">Error de Activación</h3>
-      <p class="error-message">{{ errorMessage }}</p>
-      
-      <div class="error-suggestions">
-        <p class="suggestion-text">¿Qué puedes hacer?</p>
-        <ul class="suggestion-list">
-          <li>Verifica que el enlace esté completo y no se haya cortado</li>
-          <li>Intenta copiar y pegar el enlace directamente desde tu email</li>
-          <li>Asegúrate de que no haya pasado más tiempo del permitido desde el registro</li>
-        </ul>
-      </div>
-      
-      <div class="action-buttons">
-        <button 
-          type="button" 
-          class="btn btn-outline-primary"
-          (click)="resendActivationEmail()">
-          <i class="fas fa-envelope me-2"></i>
-          Solicitar Nuevo Enlace
-        </button>
-        <button 
-          type="button" 
-          class="btn btn-secondary ms-2"
-          (click)="navigateToLogin()">
-          <i class="fas fa-sign-in-alt me-2"></i>
-          Ir a Iniciar Sesión
-        </button>
-      </div>
-    </div>
 
-    <!-- Footer -->
-    <div class="footer-section">
-      <p class="footer-text">
-        ¿Necesitas ayuda? <a href="mailto:soporte.cheturno@gmail.com" class="support-link">Contacta soporte</a>
-      </p>
-    </div>
+      <!-- Footer informativo -->
+      <div class="activation-footer">
+        <p>
+          ¿Necesitas ayuda? 
+          <a href="mailto:soporte.cheturno@gmail.com">Contacta soporte</a>
+        </p>
+      </div>
 
+    </div>
   </div>
 </div>

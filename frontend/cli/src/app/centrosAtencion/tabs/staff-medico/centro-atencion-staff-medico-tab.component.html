@@ -2,16 +2,19 @@
   <div class="modern-card-header">
     <div class="d-flex align-items-center justify-content-between">
       <div class="d-flex align-items-center">
-        <div class="header-icon me-3">
-          👩‍⚕️
-        </div>
+        <div class="header-icon me-3">👩‍⚕️</div>
         <div>
           <h4 class="mb-0 fw-bold">Gestión de Staff Médico</h4>
-          <small class="opacity-75">Administrar médicos del centro de atención</small>
+          <small class="opacity-75"
+            >Administrar médicos del centro de atención</small
+          >
         </div>
       </div>
       <div *ngIf="!modoAsociarMedico" class="d-flex gap-2">
-        <button class="btn-modern btn-success-modern" (click)="onModoAsociarMedico()">
+        <button
+          class="btn-modern btn-success-modern"
+          (click)="onModoAsociarMedico()"
+        >
           <i class="fa fa-plus me-2"></i> Nuevo Médico
         </button>
       </div>
@@ -20,63 +23,121 @@
 
   <div class="modern-card-body">
     <!-- Alert Messages -->
-    <div *ngIf="mensajeStaff" class="modern-alert" [class.alert-success]="tipoMensajeStaff === 'success'"
-      [class.alert-danger]="tipoMensajeStaff === 'danger'" [class.alert-info]="tipoMensajeStaff === 'info'">
-      <i class="fa" [class.fa-check-circle]="tipoMensajeStaff === 'success'"
+    <div
+      *ngIf="mensajeStaff"
+      class="modern-alert"
+      [class.alert-success]="tipoMensajeStaff === 'success'"
+      [class.alert-danger]="tipoMensajeStaff === 'danger'"
+      [class.alert-info]="tipoMensajeStaff === 'info'"
+    >
+      <i
+        class="fa"
+        [class.fa-check-circle]="tipoMensajeStaff === 'success'"
         [class.fa-exclamation-triangle]="tipoMensajeStaff === 'danger'"
-        [class.fa-info-circle]="tipoMensajeStaff === 'info'"></i>
+        [class.fa-info-circle]="tipoMensajeStaff === 'info'"
+      ></i>
       {{ mensajeStaff }}
     </div>
 
     <!-- Add Médico Form -->
-    <div *ngIf="modoAsociarMedico" class="mb-4 p-4" style="  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(52, 211, 153, 0.05) 100%) !important;
- border-radius: 15px; border: 2px solid rgba(54, 185, 204, 0.2);">
+    <div
+      *ngIf="modoAsociarMedico"
+      class="mb-4 p-4"
+      style="
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.08) 0%,
+          rgba(52, 211, 153, 0.05) 100%
+        ) !important;
+        border-radius: 15px;
+        border: 2px solid rgba(54, 185, 204, 0.2);
+      "
+    >
       <h5 class="mb-3 text-primary">
         <i class="fa fa-user-plus me-2"></i>Asociar Médico
       </h5>
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label fw-semibold">Seleccionar Médico:</label>
-          <select [(ngModel)]="medicoSeleccionado" (ngModelChange)="onMedicoSeleccionado()"
-            class="modern-select form-control">
+          <select
+            [(ngModel)]="medicoSeleccionado"
+            (ngModelChange)="onMedicoSeleccionado()"
+            class="modern-select form-control"
+          >
             <option [ngValue]="null">Seleccione un médico...</option>
-            <option *ngFor="let medico of medicosDisponiblesParaAsociar" [ngValue]="medico">
+            <option
+              *ngFor="let medico of medicosDisponiblesParaAsociar"
+              [ngValue]="medico"
+            >
               Dr. {{ medico.nombre }} {{ medico.apellido }}
             </option>
           </select>
         </div>
         <div class="col-md-6">
           <label class="form-label fw-semibold">Especialidad:</label>
-          <select [(ngModel)]="especialidadSeleccionada" (ngModelChange)="onEspecialidadSeleccionada()"
-            class="modern-select form-control" [disabled]="!medicoSeleccionado || especialidadesMedico.length === 0">
+          <select
+            [(ngModel)]="especialidadSeleccionada"
+            (ngModelChange)="onEspecialidadSeleccionada()"
+            class="modern-select form-control"
+            [disabled]="
+              !medicoSeleccionado || especialidadesMedico.length === 0
+            "
+          >
             <option [ngValue]="null">Seleccione especialidad...</option>
             <option *ngFor="let esp of especialidadesMedico" [ngValue]="esp">
               {{ esp.nombre }}
             </option>
           </select>
-          <small *ngIf="medicoSeleccionado && especialidadesMedico.length === 0 && !medicoParcialmenteAsociado()"
-            class="text-muted">
+          <small
+            *ngIf="
+              medicoSeleccionado &&
+              especialidadesMedico.length === 0 &&
+              !medicoParcialmenteAsociado()
+            "
+            class="text-muted"
+          >
             Este médico no tiene especialidades disponibles para asignar
           </small>
-          <small *ngIf="medicoSeleccionado && medicoParcialmenteAsociado()" class="text-info">
+          <small
+            *ngIf="medicoSeleccionado && medicoParcialmenteAsociado()"
+            class="text-info"
+          >
             <i class="fa fa-info-circle me-1"></i>
             Este médico ya tiene algunas especialidades asignadas al centro
           </small>
         </div>
       </div>
       <div class="d-flex gap-2 mt-3">
-        <button class="btn-modern btn-success-modern" (click)="onAsociarMedico()"
-          [disabled]="!medicoSeleccionado || !especialidadSeleccionada || medicoYaAsociado()">
+        <button
+          class="btn-modern btn-success-modern"
+          (click)="onAsociarMedico()"
+          [disabled]="
+            !medicoSeleccionado ||
+            !especialidadSeleccionada ||
+            medicoYaAsociado()
+          "
+        >
           <i class="fa fa-save me-2"></i> Asociar
         </button>
-        <button class="btn-modern btn-secondary-modern" (click)="onCancelarAsociarMedico()">
+        <button
+          class="btn-modern btn-secondary-modern"
+          (click)="onCancelarAsociarMedico()"
+        >
           <i class="fa fa-times me-2"></i> Cancelar
         </button>
       </div>
-      <div *ngIf="especialidadFaltanteParaAsociar" class="modern-alert alert-warning mt-3">
+      <div
+        *ngIf="especialidadFaltanteParaAsociar"
+        class="modern-alert alert-warning mt-3"
+      >
         <i class="fa fa-exclamation-triangle me-2"></i>
-        <strong>Especialidad faltante:</strong> "{{ especialidadFaltanteParaAsociar.nombre }}" no está asociada al centro.
-        <button class="btn btn-sm btn-warning ms-2" (click)="onAsociarEspecialidadFaltante()">
+        <strong>Especialidad faltante:</strong> "{{
+          especialidadFaltanteParaAsociar.nombre
+        }}" no está asociada al centro.
+        <button
+          class="btn btn-sm btn-warning ms-2"
+          (click)="onAsociarEspecialidadFaltante()"
+        >
           <i class="fa fa-plus me-1"></i> Asociar Especialidad y Médico
         </button>
       </div>
@@ -87,11 +148,19 @@
     </div>
 
     <!-- Advertencia de especialidad faltante -->
-    <div *ngIf="especialidadFaltanteParaAsociar" class="modern-alert alert-warning mt-3">
+    <div
+      *ngIf="especialidadFaltanteParaAsociar"
+      class="modern-alert alert-warning mt-3"
+    >
       <i class="fa fa-exclamation-triangle me-2"></i>
-      <strong>Especialidad requerida:</strong> La especialidad "{{ especialidadFaltanteParaAsociar.nombre }}" no está asociada al centro.
+      <strong>Especialidad requerida:</strong> La especialidad "{{
+        especialidadFaltanteParaAsociar.nombre
+      }}" no está asociada al centro.
       <div class="mt-2">
-        <button class="btn btn-sm btn-primary" (click)="onAsociarEspecialidadFaltanteDesdeStaff()">
+        <button
+          class="btn btn-sm btn-primary"
+          (click)="onAsociarEspecialidadFaltanteDesdeStaff()"
+        >
           <i class="fa fa-plus me-1"></i> Asociar especialidad al centro
         </button>
       </div>
@@ -100,14 +169,14 @@
     <!-- Staff Médico Cards -->
     <div *ngIf="staffMedicoCentro.length > 0; else noStaff">
       <div class="medicos-cards-container">
-        <div *ngFor="let medico of getMedicosAgrupados(); let i = index" class="medico-card">
-
+        <div
+          *ngFor="let medico of medicosAgrupados; let i = index"
+          class="medico-card"
+        >
           <!-- Header del Médico -->
           <div class="medico-header">
             <div class="medico-info">
-              <div class="medico-avatar-circle">
-                Dr
-              </div>
+              <div class="medico-avatar-circle">Dr</div>
               <div class="medico-details">
                 <h5 class="medico-nombre">
                   Dr. {{ medico.medico?.nombre }} {{ medico.medico?.apellido }}
@@ -118,7 +187,10 @@
 
                 <!-- Badges de especialidades -->
                 <div class="medico-especialidades-badges">
-                  <span *ngFor="let especialidad of medico.especialidades" class="badge-especialidad">
+                  <span
+                    *ngFor="let especialidad of medico.especialidades"
+                    class="badge-especialidad"
+                  >
                     <i class="fa fa-stethoscope me-1"></i>
                     {{ especialidad?.nombre }}
                   </span>
@@ -127,8 +199,11 @@
             </div>
 
             <div class="medico-actions">
-              <button class="btn btn-outline-danger btn-desasociar"
-                (click)="onDesasociarMedico(getPrimerStaffDelMedico(medico))" title="Desasociar médico del centro">
+              <button
+                class="btn btn-outline-danger btn-desasociar"
+                (click)="onDesasociarMedico(getPrimerStaffDelMedico(medico))"
+                title="Desasociar médico del centro"
+              >
                 <i class="fa fa-unlink me-1"></i> Desasociar
               </button>
             </div>
@@ -138,81 +213,206 @@
           <div class="disponibilidades-semanales-section">
             <div class="disponibilidades-section-header">
               <h6 class="disponibilidades-title">
-                <i class="fa fa-calendar me-2"></i>Disponibilidades por Especialidad
+                <i class="fa fa-calendar me-2"></i>Disponibilidades por
+                Especialidad
               </h6>
             </div>
 
             <!-- Especialidades con sus disponibilidades -->
-            <div class="especialidades-container" *ngIf="medico.especialidades.length > 0">
-              <div class="especialidad-section" *ngFor="let especialidad of medico.especialidades; let i = index">
+            <div
+              class="especialidades-container"
+              *ngIf="medico.especialidades.length > 0"
+            >
+              <div
+                class="especialidad-section"
+                *ngFor="
+                  let especialidad of medico.especialidades;
+                  let i = index
+                "
+              >
                 <div class="especialidad-card">
-
                   <div class="especialidad-header">
                     <div class="especialidad-info">
-                      <div class="especialidad-icon" [class]="'icon-variant-' + (i % 4 + 1)">
+                      <div
+                        class="especialidad-icon"
+                        [class]="'icon-variant-' + ((i % 4) + 1)"
+                      >
                         <i class="fas fa-stethoscope"></i>
                       </div>
                       <div class="especialidad-details">
                         <h6>{{ especialidad.nombre }}</h6>
-                        <div class="status-badge"
-                          [class.status-configured]="especialidadTieneDisponibilidades(medico, especialidad)"
-                          [class.status-pending]="!especialidadTieneDisponibilidades(medico, especialidad)">
-                          <i class="fas fa-check-circle"
-                            *ngIf="especialidadTieneDisponibilidades(medico, especialidad)"></i>
-                          <i class="fas fa-clock" *ngIf="!especialidadTieneDisponibilidades(medico, especialidad)"></i>
-                          <span>{{ especialidadTieneDisponibilidades(medico, especialidad) ? 'Configurado' : 'Pendiente'
-                            }}</span>
+                        <div
+                          class="status-badge"
+                          [class.status-configured]="
+                            especialidadTieneDisponibilidades(
+                              medico,
+                              especialidad
+                            )
+                          "
+                          [class.status-pending]="
+                            !especialidadTieneDisponibilidades(
+                              medico,
+                              especialidad
+                            )
+                          "
+                        >
+                          <i
+                            class="fas fa-check-circle"
+                            *ngIf="
+                              especialidadTieneDisponibilidades(
+                                medico,
+                                especialidad
+                              )
+                            "
+                          ></i>
+                          <i
+                            class="fas fa-clock"
+                            *ngIf="
+                              !especialidadTieneDisponibilidades(
+                                medico,
+                                especialidad
+                              )
+                            "
+                          ></i>
+                          <span>{{
+                            especialidadTieneDisponibilidades(
+                              medico,
+                              especialidad
+                            )
+                              ? "Configurado"
+                              : "Pendiente"
+                          }}</span>
                         </div>
                       </div>
                     </div>
 
                     <!-- Botones de gestión por especialidad -->
                     <div class="especialidad-actions">
-                      <button class="btn btn-outline-primary btn-sm"
-                        (click)="abrirModalDisponibilidadEspecialidad(medico, especialidad)"
-                        [attr.title]="'Gestionar disponibilidades para ' + especialidad.nombre">
+                      <button
+                        class="btn btn-outline-primary btn-sm"
+                        (click)="
+                          abrirModalDisponibilidadEspecialidad(
+                            medico,
+                            especialidad
+                          )
+                        "
+                        [attr.title]="
+                          'Gestionar disponibilidades para ' +
+                          especialidad.nombre
+                        "
+                      >
                         <i class="fas fa-calendar-plus me-1"></i>
                         <span class="d-none d-md-inline">Gestionar</span>
                       </button>
 
-                      <button class="btn btn-outline-danger btn-sm"
-                        *ngIf="especialidadTieneDisponibilidades(medico, especialidad)"
-                        (click)="eliminarDisponibilidadEspecialidad(medico, especialidad)"
-                        [attr.title]="'Eliminar disponibilidades de ' + especialidad.nombre">
+                      <button
+                        class="btn btn-outline-danger btn-sm"
+                        *ngIf="
+                          especialidadTieneDisponibilidades(
+                            medico,
+                            especialidad
+                          )
+                        "
+                        (click)="
+                          eliminarDisponibilidadEspecialidad(
+                            medico,
+                            especialidad
+                          )
+                        "
+                        [attr.title]="
+                          'Eliminar disponibilidades de ' + especialidad.nombre
+                        "
+                      >
                         <i class="fas fa-trash me-1"></i>
-                        <span class="d-none d-md-inline">Eliminar disponibilidad</span>
+                        <span class="d-none d-md-inline"
+                          >Eliminar disponibilidad</span
+                        >
                       </button>
 
-                      <button class="btn btn-outline-success btn-sm"
+                      <button
+                        class="btn btn-outline-success btn-sm"
                         (click)="onDesasociarEspecialidad(medico, especialidad)"
-                        [attr.title]="'Desasociar especialidad ' + especialidad.nombre + ' del médico'">
+                        [attr.title]="
+                          'Desasociar especialidad ' +
+                          especialidad.nombre +
+                          ' del médico'
+                        "
+                      >
                         <i class="fas fa-unlink me-1"></i>
-                        <span class="d-none d-md-inline">Desasociar especialidad</span>
+                        <span class="d-none d-md-inline"
+                          >Desasociar especialidad</span
+                        >
                       </button>
                     </div>
                   </div>
 
                   <!-- Calendario Semanal para esta especialidad -->
-                  <div class="horarios-content" *ngIf="especialidadTieneDisponibilidades(medico, especialidad)">
+                  <div
+                    class="horarios-content"
+                    *ngIf="
+                      especialidadTieneDisponibilidades(medico, especialidad)
+                    "
+                  >
                     <div class="calendario-semanal-simple">
                       <div class="dias-header">
-                        <div *ngFor="let dia of ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM']" class="dia-header">
+                        <div
+                          *ngFor="
+                            let dia of [
+                              'LUN',
+                              'MAR',
+                              'MIÉ',
+                              'JUE',
+                              'VIE',
+                              'SÁB',
+                              'DOM'
+                            ]
+                          "
+                          class="dia-header"
+                        >
                           {{ dia }}
                         </div>
                       </div>
 
                       <div class="dias-content">
                         <div
-                          *ngFor="let dia of ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO']; let i = index"
-                          class="dia-column" [attr.data-dia]="['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'][i]">
-
+                          *ngFor="
+                            let dia of [
+                              'LUNES',
+                              'MARTES',
+                              'MIERCOLES',
+                              'JUEVES',
+                              'VIERNES',
+                              'SABADO',
+                              'DOMINGO'
+                            ];
+                            let i = index
+                          "
+                          class="dia-column"
+                          [attr.data-dia]="
+                            ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'][i]
+                          "
+                        >
                           <!-- Disponibilidades del día para esta especialidad -->
                           <div
-                            *ngFor="let disponibilidad of getDisponibilidadesPorEspecialidadYDia(medico, especialidad, dia)"
-                            class="disponibilidad-dia-card">
+                            *ngFor="
+                              let disponibilidad of getDisponibilidadesPorEspecialidadYDia(
+                                medico,
+                                especialidad,
+                                dia
+                              )
+                            "
+                            class="disponibilidad-dia-card"
+                          >
                             <div class="disponibilidad-horarios">
-                              <div *ngFor="let horario of getHorariosPorDia(disponibilidad, dia)"
-                                class="horario-disponibilidad-item">
+                              <div
+                                *ngFor="
+                                  let horario of getHorariosPorDia(
+                                    disponibilidad,
+                                    dia
+                                  )
+                                "
+                                class="horario-disponibilidad-item"
+                              >
                                 {{ getHorarioStringDisponibilidad(horario) }}
                               </div>
                             </div>
@@ -222,8 +422,16 @@
                           </div>
 
                           <!-- Día sin disponibilidades -->
-                          <div *ngIf="getDisponibilidadesPorEspecialidadYDia(medico, especialidad, dia).length === 0"
-                            class="dia-vacio">
+                          <div
+                            *ngIf="
+                              getDisponibilidadesPorEspecialidadYDia(
+                                medico,
+                                especialidad,
+                                dia
+                              ).length === 0
+                            "
+                            class="dia-vacio"
+                          >
                             —
                           </div>
                         </div>
@@ -232,74 +440,104 @@
                   </div>
 
                   <!-- Mensaje cuando no hay disponibilidades para esta especialidad -->
-                  <div class="sin-disponibilidades-especialidad"
-                    *ngIf="!especialidadTieneDisponibilidades(medico, especialidad)">
+                  <div
+                    class="sin-disponibilidades-especialidad"
+                    *ngIf="
+                      !especialidadTieneDisponibilidades(medico, especialidad)
+                    "
+                  >
                     <div class="alert alert-info d-flex align-items-center">
                       <i class="fa fa-info-circle me-2"></i>
-                      <span>Sin disponibilidades configuradas para {{ especialidad.nombre }}. Use el botón "Gestionar"
-                        para agregar horarios.</span>
+                      <span
+                        >Sin disponibilidades configuradas para
+                        {{ especialidad.nombre }}. Use el botón "Gestionar" para
+                        agregar horarios.</span
+                      >
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>
 
             <!-- Estado general de disponibilidades -->
             <div class="disponibilidades-estado">
-              <div class="disponibilidades-contador" *ngIf="medicoTieneDisponibilidades(medico)">
+              <div
+                class="disponibilidades-contador"
+                *ngIf="medicoTieneDisponibilidades(medico)"
+              >
                 <i class="fa fa-check-circle text-success me-1"></i>
-                {{ getDisponibilidadesTotalesMedico(medico).length }} disponibilidad(es) configurada(s) en total
+                {{
+                  getDisponibilidadesTotalesMedico(medico).length
+                }}
+                disponibilidad(es) configurada(s) en total
               </div>
 
-              <div class="disponibilidades-sin-configurar" *ngIf="!medicoTieneDisponibilidades(medico)">
+              <div
+                class="disponibilidades-sin-configurar"
+                *ngIf="!medicoTieneDisponibilidades(medico)"
+              >
                 <div class="alert alert-warning d-flex align-items-center">
                   <i class="fa fa-exclamation-triangle me-2"></i>
-                  Sin disponibilidades configuradas. Use los botones "Gestionar" de cada especialidad para agregar
-                  horarios de atención.
+                  Sin disponibilidades configuradas. Use los botones "Gestionar"
+                  de cada especialidad para agregar horarios de atención.
                 </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
 
     <!-- Información sobre Gestión de Disponibilidades -->
-    <div *ngIf="staffMedicoCentro.length > 0" class="mt-4 p-3"
-      style="background: rgba(40, 167, 69, 0.05); border-radius: 15px; border: 2px solid rgba(40, 167, 69, 0.2);">
+    <div
+      *ngIf="staffMedicoCentro.length > 0"
+      class="mt-4 p-3"
+      style="
+        background: rgba(40, 167, 69, 0.05);
+        border-radius: 15px;
+        border: 2px solid rgba(40, 167, 69, 0.2);
+      "
+    >
       <h6 class="mb-2 text-success">
-        <i class="fa fa-info-circle me-2"></i>Gestión de Disponibilidades Médicas
+        <i class="fa fa-info-circle me-2"></i>Gestión de Disponibilidades
+        Médicas
       </h6>
       <div class="small text-muted mb-2">
         <p class="mb-1"><strong>Opciones disponibles:</strong></p>
         <p class="mb-1">
-          <i class="fa fa-chevron-right text-primary me-2"></i><strong>Expandir médico:</strong> Ver disponibilidades
-          configuradas
+          <i class="fa fa-chevron-right text-primary me-2"></i
+          ><strong>Expandir médico:</strong> Ver disponibilidades configuradas
         </p>
         <p class="mb-1">
-          <i class="fa fa-calendar-plus text-success me-2"></i><strong>Nueva disponibilidad:</strong> Configurar
-          horarios de atención
+          <i class="fa fa-calendar-plus text-success me-2"></i
+          ><strong>Nueva disponibilidad:</strong> Configurar horarios de
+          atención
         </p>
         <p class="mb-1">
-          <i class="fa fa-cogs text-warning me-2"></i><strong>Gestión avanzada:</strong> Editor completo con opciones
+          <i class="fa fa-cogs text-warning me-2"></i
+          ><strong>Gestión avanzada:</strong> Editor completo con opciones
           detalladas
         </p>
         <p class="mb-0">
           <small class="text-info">
             <i class="fa fa-lightbulb me-1"></i>
-            Las disponibilidades médicas son necesarias para crear esquemas de turno en los consultorios.
+            Las disponibilidades médicas son necesarias para crear esquemas de
+            turno en los consultorios.
           </small>
         </p>
       </div>
     </div>
 
     <ng-template #noStaff>
-      <div class="text-center py-5" style="opacity: 0.7;">
-        <i class="fa fa-users" style="font-size: 3rem; color: #36b9cc; margin-bottom: 1rem;"></i>
+      <div class="text-center py-5" style="opacity: 0.7">
+        <i
+          class="fa fa-users"
+          style="font-size: 3rem; color: #36b9cc; margin-bottom: 1rem"
+        ></i>
         <h5>No hay médicos asociados</h5>
-        <p class="text-muted">Asocie médicos para que puedan atender en este centro</p>
+        <p class="text-muted">
+          Asocie médicos para que puedan atender en este centro
+        </p>
       </div>
     </ng-template>
   </div>

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Consultorio } from '../../../consultorios/consultorio';
 import { EsquemaTurno } from '../../../esquemaTurno/esquemaTurno';
+import { EsquemaTurnoService } from '../../../esquemaTurno/esquemaTurno.service';
 import { StaffMedico } from '../../../staffMedicos/staffMedico';
 import { EsquemaTurnoModalComponent } from './esquema-turno-modal.component';
 import { HorariosConsultorioModalComponent } from './horarios-consultorio-modal.component';
@@ -40,10 +41,13 @@ export class CentroAtencionConsultoriosTabComponent implements OnInit {
   @Output() eliminarConsultorio = new EventEmitter<Consultorio>();
   @Output() crearNuevoEsquema = new EventEmitter<Consultorio>();
   @Output() verDetalleEsquema = new EventEmitter<EsquemaTurno>();
-  @Output() editarEsquema = new EventEmitter<EsquemaTurno>();
+  @Output() esquemaEditado = new EventEmitter<EsquemaTurno>();
   @Output() esquemaCreado = new EventEmitter<EsquemaTurno>();
 
-  constructor(private modalService: NgbModal) {}
+  constructor(
+    private modalService: NgbModal,
+    private esquemaTurnoService: EsquemaTurnoService
+  ) {}
 
   ngOnInit(): void {
     // Inicialización si es necesaria
@@ -131,10 +135,11 @@ export class CentroAtencionConsultoriosTabComponent implements OnInit {
   /**
    * Abre el modal para crear un nuevo esquema de turno
    */
-  abrirModalEsquema(consultorio: Consultorio): void {
+  abrirModalEsquema(consultorio: Consultorio, esquemaEditar?: EsquemaTurno): void {
     console.log('🚀 Abriendo modal de esquema para consultorio:', consultorio);
     console.log('📍 Centro ID:', this.centroId);
     console.log('👥 Staff médicos del centro:', this.staffMedicoCentro);
+    console.log('✏️ Esquema a editar:', esquemaEditar);
 
     const modalRef = this.modalService.open(EsquemaTurnoModalComponent, {
       size: 'xl',
@@ -146,18 +151,20 @@ export class CentroAtencionConsultoriosTabComponent implements OnInit {
     modalRef.componentInstance.consultorio = consultorio;
     modalRef.componentInstance.centroId = this.centroId;
     modalRef.componentInstance.staffMedicos = this.staffMedicoCentro;
+    modalRef.componentInstance.esquemaEditar = esquemaEditar; // Pasar esquema a editar si existe
 
     console.log('✅ Datos enviados al modal:', {
       consultorio: consultorio,
       centroId: this.centroId,
-      staffMedicos: this.staffMedicoCentro
+      staffMedicos: this.staffMedicoCentro,
+      esquemaEditar: esquemaEditar
     });
 
     // Manejar el resultado del modal
     modalRef.result.then(
       (nuevoEsquema: EsquemaTurno) => {
         if (nuevoEsquema) {
-          console.log('✅ Esquema creado exitosamente:', nuevoEsquema);
+          console.log('✅ Esquema guardado exitosamente:', nuevoEsquema);
           // Emitir evento para que el componente padre actualice los esquemas
           this.esquemaCreado.emit(nuevoEsquema);
         }
@@ -167,6 +174,37 @@ export class CentroAtencionConsultoriosTabComponent implements OnInit {
         console.log('❌ Modal de esquema cerrado sin guardar');
       }
     );
+  }
+
+  /**
+   * Edita un esquema existente
+   */
+  onEditarEsquema(esquema: EsquemaTurno): void {
+    console.log('✏️ Editando esquema:', esquema);
+    // Encontrar el consultorio del esquema
+    const consultorio = this.consultorios.find(c => c.id === esquema.consultorioId);
+    if (consultorio) {
+      this.abrirModalEsquema(consultorio, esquema);
+    }
+  }
+
+  /**
+   * Elimina un esquema de turno
+   */
+  onEliminarEsquema(esquema: EsquemaTurno): void {
+    if (confirm(`¿Está seguro que desea eliminar el esquema de ${esquema.nombreStaffMedico}?`)) {
+      this.esquemaTurnoService.remove(esquema.id!).subscribe({
+        next: () => {
+          console.log('✅ Esquema eliminado exitosamente');
+          // Emitir evento para actualizar la lista
+          this.esquemaCreado.emit({} as EsquemaTurno); // Trigger reload
+        },
+        error: (error) => {
+          console.error('❌ Error al eliminar esquema:', error);
+          alert('Error al eliminar el esquema de turno');
+        }
+      });
+    }
   }
 
   getEsquemasDelConsultorio(consultorioId: number): EsquemaTurno[] {
@@ -210,10 +248,6 @@ export class CentroAtencionConsultoriosTabComponent implements OnInit {
 
   onVerDetalleEsquema(esquema: EsquemaTurno): void {
     this.verDetalleEsquema.emit(esquema);
-  }
-
-  onEditarEsquema(esquema: EsquemaTurno): void {
-    this.editarEsquema.emit(esquema);
   }
 
   /**

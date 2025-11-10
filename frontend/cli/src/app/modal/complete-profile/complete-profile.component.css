@@ -1,0 +1,192 @@
+/* ===================================
+   COMPLETE PROFILE MODAL COMPONENT
+   Estilos ESPECÍFICOS del componente
+   =================================== */
+
+/* ===================================
+   1. HEADER DEL MODAL
+   =================================== */
+.modal-header-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.modal-icon {
+  font-size: 3rem;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.modal-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  margin: 0;
+}
+
+.modal-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: var(--space-xs) 0 0 0;
+}
+
+/* ===================================
+   2. ALERTAS PERSONALIZADAS
+   =================================== */
+.alert-message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.alert-info {
+  background-color: rgba(13, 202, 240, 0.1);
+  border-left: 4px solid var(--color-info);
+  color: var(--text-main);
+}
+
+.alert-error {
+  background-color: rgba(220, 53, 69, 0.1);
+  border-left: 4px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.alert-message .material-symbols-outlined {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+.alert-info .material-symbols-outlined {
+  color: var(--color-info);
+}
+
+.alert-error .material-symbols-outlined {
+  color: var(--color-danger);
+}
+
+/* ===================================
+   3. SOBRESCRITURAS DE FORMULARIO
+   =================================== */
+/* Override iconos en labels */
+.modal-card .form-label .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+  margin: 0 !important;
+  margin-right: var(--space-xs) !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* Label opcional */
+.optional-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Override iconos en mensajes de error */
+.modal-card .invalid-feedback {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.modal-card .invalid-feedback .material-symbols-outlined {
+  font-size: 1rem !important;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+/* ===================================
+   4. NOTA DE SEGURIDAD
+   =================================== */
+.security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  background-color: var(--color-background);
+  border-radius: var(--border-radius-md);
+  margin: var(--space-lg) 0;
+  text-align: center;
+}
+
+.security-note .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.security-note small {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+}
+
+/* ===================================
+   5. SOBRESCRITURAS DE BOTONES
+   =================================== */
+/* Override iconos en botones */
+.modal-card .btn .material-symbols-outlined {
+  font-size: 1.25rem;
+  margin: 0 !important;
+  font-variation-settings: 'FILL' 0, 'wght' 400;
+}
+
+/* Spinner animado */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===================================
+   6. RESPONSIVE
+   =================================== */
+@media (max-width: 768px) {
+  .modal-header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+
+  .modal-icon {
+    font-size: 2.5rem;
+  }
+
+  .modal-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .alert-message {
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+}
+
+@media (max-width: 576px) {
+  .modal-icon {
+    font-size: 2rem;
+  }
+
+  .modal-title {
+    font-size: var(--font-size-lg);
+  }
+
+  .modal-subtitle {
+    font-size: var(--font-size-xs);
+  }
+}

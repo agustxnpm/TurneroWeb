@@ -1,0 +1,360 @@
+<div class="container-fluid mt-4">
+  <!-- HEADER -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="banner-reagendar-turno">
+        <div class="header-content">
+          <div class="header-actions">
+            <button class="btn btn-secondary btn-header-glass" (click)="goBack()">
+              <span class="material-symbols-outlined">arrow_back</span>
+              Volver
+            </button>
+          </div>
+          <div class="header-icon">
+            <span class="material-symbols-outlined">event_repeat</span>
+          </div>
+          <div class="header-text">
+            <h1>Reagendar Turno</h1>
+            <p>Selecciona un nuevo horario disponible con el mismo médico</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Appointment Info -->
+  <div class="row mb-4" *ngIf="currentTurno">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header-custom">
+          <span class="material-symbols-outlined">info</span>
+          <h2>Turno Actual</h2>
+        </div>
+        <div class="card-body">
+          <div class="appointment-info">
+            <!-- Fecha actual -->
+            <div class="info-item">
+              <span class="material-symbols-outlined info-icon">calendar_today</span>
+              <div class="info-content">
+                <span class="info-label">Fecha actual:</span>
+                <span class="info-value">{{ formatDate(currentTurno.fecha) }}</span>
+              </div>
+            </div>
+
+            <!-- Hora -->
+            <div class="info-item">
+              <span class="material-symbols-outlined info-icon">schedule</span>
+              <div class="info-content">
+                <span class="info-label">Hora:</span>
+                <span class="info-value">{{ currentTurno.horaInicio }} - {{ currentTurno.horaFin }}</span>
+              </div>
+            </div>
+
+            <!-- Médico -->
+            <div class="info-item">
+              <span class="material-symbols-outlined info-icon">person</span>
+              <div class="info-content">
+                <span class="info-label">Médico:</span>
+                <span class="info-value">{{ currentTurno.staffMedicoNombre }} {{ currentTurno.staffMedicoApellido }}</span>
+              </div>
+            </div>
+
+            <!-- Especialidad -->
+            <div class="info-item">
+              <span class="material-symbols-outlined info-icon">medical_services</span>
+              <div class="info-content">
+                <span class="info-label">Especialidad:</span>
+                <span class="info-value">{{ currentTurno.especialidadStaffMedico }}</span>
+              </div>
+            </div>
+
+            <!-- Consultorio -->
+            <div class="info-item">
+              <span class="material-symbols-outlined info-icon">door_front</span>
+              <div class="info-content">
+                <span class="info-label">Consultorio:</span>
+                <span class="info-value">{{ currentTurno.consultorioNombre }}</span>
+              </div>
+            </div>
+
+            <!-- Centro -->
+            <div class="info-item">
+              <span class="material-symbols-outlined info-icon">business</span>
+              <div class="info-content">
+                <span class="info-label">Centro:</span>
+                <span class="info-value">{{ currentTurno.nombreCentro }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Available Slots Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header-custom">
+          <span class="material-symbols-outlined">calendar_month</span>
+          <h2>Horarios Disponibles</h2>
+        </div>
+        <div class="card-body">
+          <p class="slots-subtitle">Selecciona un nuevo horario disponible del mismo médico:</p>
+
+          <!-- Loading State -->
+          <div class="loading-slots text-center py-4" *ngIf="isLoadingSlots">
+            <span class="material-symbols-outlined spinning" style="font-size: 3rem; color: var(--color-accent);">progress_activity</span>
+            <p class="mt-3 text-muted">Cargando horarios disponibles...</p>
+          </div>
+
+          <!-- No Slots Available -->
+          <div
+            class="no-slots text-center py-5"
+            *ngIf="!isLoadingSlots && slotsDisponibles.length === 0 && currentTurno"
+          >
+            <span class="material-symbols-outlined mb-3" style="font-size: 4rem; color: var(--text-secondary);">event_busy</span>
+            <h3 class="mb-3">No hay horarios disponibles</h3>
+            <p class="text-muted mb-2">
+              No se encontraron horarios disponibles para este médico en las próximas 4 semanas.
+            </p>
+            <p class="text-secondary">
+              <span class="material-symbols-outlined" style="font-size: 1.2rem; vertical-align: middle;">info</span>
+              Puedes intentar contactar directamente con el centro médico para más opciones.
+            </p>
+          </div>
+
+          <!-- Slots Agrupados por Fecha (Acordeón) -->
+          <div
+            class="slots-por-fecha"
+            *ngIf="!isLoadingSlots && slotsDisponibles.length > 0"
+          >
+            <div *ngFor="let fecha of fechasOrdenadas; let i = index" class="fecha-section mb-3">
+              <!-- Header de fecha - Botón Desplegable -->
+              <button
+                class="fecha-header-reagendar-btn"
+                type="button"
+                [class.expanded]="fechaExpandida === fecha"
+                (click)="toggleFecha(fecha)"
+              >
+                <div class="fecha-info-reagendar">
+                  <!-- Icono de expansión -->
+                  <span class="material-symbols-outlined expand-icon">
+                    {{ fechaExpandida === fecha ? 'expand_more' : 'chevron_right' }}
+                  </span>
+                  
+                  <!-- Icono de calendario -->
+                  <span class="material-symbols-outlined me-2" style="font-size: 1.5rem;">calendar_today</span>
+                  
+                  <!-- Título de fecha -->
+                  <h3 class="fecha-title-reagendar mb-0">
+                    {{ formatearFecha(fecha) }}
+                  </h3>
+                  
+                  <!-- Badge de feriado -->
+                  <span
+                    class="badge bg-warning text-dark ms-3"
+                    *ngIf="getTipoExcepcion(fecha) === 'FERIADO'"
+                  >
+                    🏖️ Feriado
+                    <span *ngIf="getDescripcionExcepcion(fecha)">
+                      - {{ getDescripcionExcepcion(fecha) }}
+                    </span>
+                  </span>
+
+                  <!-- Contador de turnos disponibles -->
+                  <span class="badge bg-primary ms-auto">
+                    {{ slotsPorFecha[fecha]?.length || 0 }} 
+                    {{ (slotsPorFecha[fecha]?.length || 0) === 1 ? 'turno' : 'turnos' }}
+                  </span>
+                </div>
+              </button>
+
+              <!-- Grid de slots (colapsable) -->
+              <div 
+                class="slots-collapse"
+                [class.show]="fechaExpandida === fecha"
+                [@slideDown]="fechaExpandida === fecha ? 'expanded' : 'collapsed'"
+              >
+                <div class="slots-grid-reagendar">
+                  <button
+                    *ngFor="let slot of slotsPorFecha[fecha]"
+                    type="button"
+                    class="slot-btn"
+                    [class.slot-disabled]="slotAfectadoPorExcepcion(slot)"
+                    [disabled]="slotAfectadoPorExcepcion(slot)"
+                    (click)="abrirModalConfirmacion(slot)"
+                  >
+                    <!-- Hora -->
+                    <div class="slot-time-info">
+                      <span class="material-symbols-outlined">schedule</span>
+                      <span class="time-text">{{ slot.horaInicio }} - {{ slot.horaFin }}</span>
+                    </div>
+
+                    <!-- Ubicación -->
+                    <div class="slot-location-info">
+                      <div class="location-item">
+                        <span class="material-symbols-outlined">door_open</span>
+                        <span class="location-text">{{ slot.consultorioNombre }}</span>
+                      </div>
+                      <div class="location-item">
+                        <span class="material-symbols-outlined">location_on</span>
+                        <span class="location-text">{{ slot.nombreCentro }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="slot-status-badge" *ngIf="slotAfectadoPorExcepcion(slot)">
+                      <span class="material-symbols-outlined">lock</span>
+                      <span>No Disponible</span>
+                    </div>
+                    <div class="slot-status-badge disponible" *ngIf="!slotAfectadoPorExcepcion(slot)">
+                      <span class="material-symbols-outlined">check_circle</span>
+                      <span>Disponible</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Processing and Error States -->
+  <div class="row mb-4" *ngIf="isProcessing">
+    <div class="col-12">
+      <div class="alert alert-info text-center">
+        <span class="material-symbols-outlined spinning">progress_activity</span>
+        Procesando reagendamiento...
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-4" *ngIf="errorMessage">
+    <div class="col-12">
+      <div class="alert alert-danger">
+        <span class="material-symbols-outlined">error</span>
+        {{ errorMessage }}
+        <button class="btn btn-sm btn-outline-danger ms-3" (click)="reintentar()" *ngIf="currentTurno">
+          <span class="material-symbols-outlined">refresh</span>
+          Reintentar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN -->
+<div class="modal-overlay" *ngIf="mostrarModal" [@fadeIn] (click)="cerrarModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()" [@slideUp]>
+    <!-- Header del Modal -->
+    <div class="modal-header-custom">
+      <div class="modal-title">
+        <span class="material-symbols-outlined">event_repeat</span>
+        <h2>Confirmar Reagendamiento</h2>
+      </div>
+      <button class="btn-close-modal" (click)="cerrarModal()" type="button">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <!-- Body del Modal -->
+    <div class="modal-body-custom">
+      <!-- Resumen del cambio -->
+      <div class="change-summary-modal">
+        <div class="change-from-modal">
+          <h4>
+            <span class="material-symbols-outlined">event_busy</span>
+            Turno Actual
+          </h4>
+          <div class="appointment-summary-modal old">
+            <div class="appointment-date">
+              {{ formatDate(currentTurno?.fecha || "") }}
+            </div>
+            <div class="appointment-time">
+              <span class="material-symbols-outlined">schedule</span>
+              {{ currentTurno?.horaInicio }} - {{ currentTurno?.horaFin }}
+            </div>
+          </div>
+        </div>
+
+        <div class="change-arrow-modal">
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </div>
+
+        <div class="change-to-modal">
+          <h4>
+            <span class="material-symbols-outlined">event_available</span>
+            Nuevo Turno
+          </h4>
+          <div class="appointment-summary-modal new">
+            <div class="appointment-date">
+              {{ formatDate(slotSeleccionado?.fecha || "") }}
+            </div>
+            <div class="appointment-time">
+              <span class="material-symbols-outlined">schedule</span>
+              {{ slotSeleccionado?.horaInicio }} - {{ slotSeleccionado?.horaFin }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Separador -->
+      <div class="modal-divider"></div>
+
+      <!-- Formulario de Motivo -->
+      <div class="motivo-form-modal">
+        <label for="motivoReagendamientoModal" class="form-label-modal">
+          <span class="material-symbols-outlined">comment</span>
+          Motivo del Reagendamiento
+          <span class="required">*</span>
+        </label>
+        <textarea
+          id="motivoReagendamientoModal"
+          class="form-control-modal"
+          [(ngModel)]="motivoReagendamiento"
+          name="motivoReagendamiento"
+          rows="4"
+          placeholder="Ej: Cambio en mi horario de trabajo, emergencia familiar, conflicto con otra cita..."
+          maxlength="500"
+          required
+        ></textarea>
+        <div class="char-counter-modal">
+          {{ motivoReagendamiento.length || 0 }}/500 caracteres
+        </div>
+        <div
+          class="validation-message-modal"
+          *ngIf="motivoReagendamiento && motivoReagendamiento.length < 5"
+        >
+          <span class="material-symbols-outlined">error</span>
+          El motivo debe tener al menos 5 caracteres
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer del Modal -->
+    <div class="modal-footer-custom">
+      <button
+        type="button"
+        class="btn btn-secondary btn-modal"
+        (click)="cerrarModal()"
+        [disabled]="isProcessing"
+      >
+        <span class="material-symbols-outlined">close</span>
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary btn-modal"
+        [disabled]="isProcessing || !motivoReagendamiento || motivoReagendamiento.length < 5"
+        (click)="confirmarReagendamiento()"
+      >
+        <span class="material-symbols-outlined" *ngIf="!isProcessing">check</span>
+        <span class="material-symbols-outlined spinning" *ngIf="isProcessing">progress_activity</span>
+        {{ isProcessing ? 'Procesando...' : 'Confirmar Reagendamiento' }}
+      </button>
+    </div>
+  </div>
+</div>

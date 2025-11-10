@@ -1,43 +1,47 @@
-<div class="home-container" [@fadeIn]>
-  <!-- Hero Section -->
-  <div class="hero-section" [@slideUp]>
+<div class="login-page-wrapper" [@fadeIn]>
+  <!-- Header con marca -->
+  <div class="login-page-header" [@slideUp]>
     <div class="brand-logo" [@logoWave]>
-      <i class="fas fa-calendar-check"></i>
-      <h1 class="brand-title">CheTurno</h1>
+      <span class="material-symbols-outlined brand-icon">event_available</span>
+      <h1>CheTurno</h1>
     </div>
   </div>
 
-  <!-- Login Section -->
-  <div class="login-section">
-    <div class="login-card" [@slideUp]>
-      <!-- Register Link -->
-      <div class="register-link">
-        <p>
+  <!-- Card de Login centrado -->
+  <div class="login-page-content">
+    <div class="card login-card" [@slideUp]>
+      
+      <!-- Link de registro -->
+      <div class="register-prompt">
+        <p class="text-small">
           ¿Nuevo en CheTurno?
-          <a class="register-redirect" 
-             [@pulse]="pulseState" 
-             (click)="navigateToRegister()">Crear cuenta</a>
+          <a [@pulse]="pulseState" (click)="navigateToRegister()">Crear cuenta</a>
         </p>
       </div>
       
-      <form class="login-form" #loginForm="ngForm" (ngSubmit)="handleSubmit(loginForm)" autocomplete="off" novalidate>
+      <form #loginForm="ngForm" (ngSubmit)="handleSubmit(loginForm)" novalidate>
         
         <!-- PASO 1: Ingreso de Email -->
         <div *ngIf="currentStep === 'email'" class="login-step">
-          <div class="form-title">Inicia sesión en tu cuenta</div>
+          <h3>Inicia sesión en tu cuenta</h3>
           
           <!-- Mensaje de error general -->
-          <div class="error-message" [class.show]="showEmailError">
-            No encontramos una cuenta con ese email.
+          <div class="alert-error" *ngIf="showEmailError">
+            <span class="material-symbols-outlined">error</span>
+            <span>No encontramos una cuenta con ese email.</span>
           </div>
 
           <div class="form-group">
-            <label for="email">E-Mail</label>
+            <label for="email" class="form-label">
+              <span class="material-symbols-outlined">email</span>
+              E-Mail
+            </label>
             <input
               type="email"
               id="email"
               name="email"
               class="form-control"
+              [class.is-invalid]="email.invalid && email.touched"
               [(ngModel)]="loginData.email"
               required
               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
@@ -45,78 +49,100 @@
               title="Ingresa un email válido"
               #email="ngModel"
               (input)="clearEmailErrors()"
+              autocomplete="username"
             />
-            <small class="form-text text-danger" *ngIf="email.invalid && email.touched">
+            <small class="invalid-feedback" *ngIf="email.invalid && email.touched">
               Ingresa un email válido
             </small>
           </div>
 
-          <div class="remember-me-section">
-            <div class="remember-me">
-              <input 
-                type="checkbox" 
-                id="rememberMe" 
-                name="rememberMe" 
-                [(ngModel)]="loginData.rememberMe"
-              />
-              <label for="rememberMe">Mantener sesión iniciada</label>
-            </div>
+          <div class="checkbox-group">
+            <input 
+              type="checkbox" 
+              id="rememberMe" 
+              name="rememberMe" 
+              [(ngModel)]="loginData.rememberMe"
+            />
+            <label for="rememberMe">Mantener sesión iniciada</label>
           </div>
 
-          <div class="forgot-email-link">
-            <a class="forgot-password" (click)="forgotEmail()">
+          <div class="form-link-center">
+            <button type="button" class="btn-link" (click)="forgotEmail()">
               ¿Olvidaste tu email?
-            </a>
-          </div>
-
-          <div class="form-actions">
-            <button 
-              type="submit" 
-              class="btn btn-login"
-              [disabled]="isLoading || email.invalid"
-            >
-              <i [class]="isLoading ? 'fas fa-spinner fa-spin' : 'fas fa-arrow-right'"></i>
-              {{ isLoading ? 'Verificando...' : 'Continuar' }}
             </button>
           </div>
+
+          <button 
+            type="submit" 
+            class="btn btn-primary btn-full-width"
+            [disabled]="isLoading || email.invalid"
+          >
+            <span class="material-symbols-outlined" *ngIf="!isLoading">arrow_forward</span>
+            <span class="material-symbols-outlined spinner" *ngIf="isLoading">sync</span>
+            {{ isLoading ? 'Verificando...' : 'Continuar' }}
+          </button>
+
+          <div class="divider">
+            <span>o</span>
+          </div>
+
+          <asl-google-signin-button 
+            type='standard' 
+            size='large' 
+            theme='outline' 
+            shape='rectangular' 
+            text='signin_with'>
+          </asl-google-signin-button>
         </div>
 
         <!-- PASO 2: Ingreso de Contraseña -->
         <div *ngIf="currentStep === 'password'" class="login-step">
-          <div class="form-title">Ingresa tu contraseña</div>
+          <h3>Ingresa tu contraseña</h3>
+          
+          <!-- Campo oculto de email para autocompletado de Firefox/Chrome -->
+          <input
+            type="email"
+            name="username"
+            [(ngModel)]="loginData.email"
+            autocomplete="username"
+            style="display: none;"
+            tabindex="-1"
+            aria-hidden="true"
+          />
           
           <!-- Información de la cuenta encontrada -->
-          <div class="account-info" *ngIf="userAccount">
-            <div class="account-content">
-              <div class="account-avatar">
-                <i class="fas fa-user-circle"></i>
-              </div>
-              <div class="account-details">
+          <div class="account-card" *ngIf="userAccount">
+            <div class="account-card-content">
+              <span class="material-symbols-outlined account-avatar">account_circle</span>
+              <div class="account-info">
                 <div class="account-name">{{ userAccount.name }}</div>
-                <div class="account-email">{{ userAccount.email }}</div>
+                <div class="account-email text-small">{{ userAccount.email }}</div>
               </div>
             </div>
-            <div class="change-account">
-              <a (click)="changeAccount()" class="change-account-link">
-                <i class="fas fa-exchange-alt"></i>
-                Cambiar cuenta
-              </a>
-            </div>
+            <button type="button" class="btn-link btn-link-small" (click)="changeAccount()">
+              <span class="material-symbols-outlined">swap_horiz</span>
+              Cambiar cuenta
+            </button>
           </div>
 
           <!-- Mensaje de error de contraseña -->
-          <div class="error-message" [class.show]="showPasswordError">
-            {{ errorMessage || "Error al iniciar sesión. Por favor, intenta nuevamente." }}
+          <div class="alert-error" *ngIf="showPasswordError">
+            <span class="material-symbols-outlined">error</span>
+            <span>{{ errorMessage || "Error al iniciar sesión. Por favor, intenta nuevamente." }}</span>
           </div>
 
           <div class="form-group">
-            <label for="password">Contraseña</label>
-            <div class="password-input-container">
+            <label for="password" class="form-label">
+              <span class="material-symbols-outlined">lock</span>
+              Contraseña
+            </label>
+            <div class="input-with-icon">
               <input
                 [type]="showPassword ? 'text' : 'password'"
                 id="password"
                 name="password"
-                class="form-control password-input"
+                class="form-control"
+                [class.is-invalid]="password.invalid && password.touched"
                 [(ngModel)]="loginData.password"
                 required
                 minlength="8"
@@ -124,33 +150,35 @@
                 title="Ingresa tu contraseña"
                 #password="ngModel"
                 (input)="clearPasswordErrors()"
+                autocomplete="current-password"
               />
-              <button type="button" class="password-toggle" (click)="togglePassword()">
-                <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+              <button type="button" class="icon-button" (click)="togglePassword()">
+                <span class="material-symbols-outlined">
+                  {{ showPassword ? 'visibility_off' : 'visibility' }}
+                </span>
               </button>
             </div>
-            <small class="form-text text-danger" *ngIf="password.invalid && password.touched">
+            <small class="invalid-feedback" *ngIf="password.invalid && password.touched">
               <span *ngIf="password.errors?.['required']">La contraseña es requerida</span>
               <span *ngIf="password.errors?.['minlength']">La contraseña debe tener al menos 8 caracteres</span>
             </small>
           </div>
 
-          <div class="remember-forgot">
-            <a class="forgot-password" (click)="forgotPassword()">
+          <div class="form-link-center">
+            <button type="button" class="btn-link" (click)="forgotPassword()">
               ¿Olvidaste tu contraseña?
-            </a>
-          </div>
-
-          <div class="form-actions">
-            <button 
-              type="submit" 
-              class="btn btn-login"
-              [disabled]="isLoading || password.invalid"
-            >
-              <i [class]="isLoading ? 'fas fa-spinner fa-spin' : 'fas fa-sign-in-alt'"></i>
-              {{ isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
             </button>
           </div>
+
+          <button 
+            type="submit" 
+            class="btn btn-primary btn-full-width"
+            [disabled]="isLoading || password.invalid"
+          >
+            <span class="material-symbols-outlined" *ngIf="!isLoading">login</span>
+            <span class="material-symbols-outlined spinner" *ngIf="isLoading">sync</span>
+            {{ isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
+          </button>
         </div>
       </form>
     </div>

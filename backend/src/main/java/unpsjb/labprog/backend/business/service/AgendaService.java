@@ -8,20 +8,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import unpsjb.labprog.backend.business.repository.EsquemaTurnoRepository;
+import unpsjb.labprog.backend.business.repository.MedicoRepository;
 import unpsjb.labprog.backend.business.repository.TurnoRepository;
 import unpsjb.labprog.backend.dto.ConsultorioDTO;
 import unpsjb.labprog.backend.dto.TurnoDTO;
+import unpsjb.labprog.backend.dto.TurnoPublicoDTO;
 import unpsjb.labprog.backend.model.ConfiguracionExcepcional;
 import unpsjb.labprog.backend.model.Consultorio;
+import unpsjb.labprog.backend.model.DiaDeLaSemana;
 import unpsjb.labprog.backend.model.EsquemaTurno;
 import unpsjb.labprog.backend.model.EstadoTurno;
+import unpsjb.labprog.backend.model.Medico;
+import unpsjb.labprog.backend.model.Paciente;
+import unpsjb.labprog.backend.model.PreferenciaHoraria;
+import unpsjb.labprog.backend.model.Role;
 import unpsjb.labprog.backend.model.Turno;
+import unpsjb.labprog.backend.model.User;
 
 /**
  * Servicio refactorizado para Agenda aplicando principios SOLID.
@@ -36,6 +45,8 @@ public class AgendaService {
     private final ConsultorioService consultorioService;
     private final ConsultorioDistribucionService consultorioDistribucionService;
     private final ConfiguracionExcepcionalService configuracionExcepcionalService;
+    private final MedicoRepository medicoRepository;
+    private final PacienteService pacienteService;
 
     // === COMPONENTES ESPECIALIZADOS (SRP) ===
     private final SlotGenerator slotGenerator;
@@ -50,13 +61,17 @@ public class AgendaService {
             EsquemaTurnoRepository esquemaTurnoRepository,
             ConsultorioService consultorioService,
             ConsultorioDistribucionService consultorioDistribucionService,
-            ConfiguracionExcepcionalService configuracionExcepcionalService) {
+            ConfiguracionExcepcionalService configuracionExcepcionalService,
+            MedicoRepository medicoRepository,
+            PacienteService pacienteService) {
         
         this.turnoRepository = turnoRepository;
         this.esquemaTurnoRepository = esquemaTurnoRepository;
         this.consultorioService = consultorioService;
         this.consultorioDistribucionService = consultorioDistribucionService;
         this.configuracionExcepcionalService = configuracionExcepcionalService;
+        this.medicoRepository = medicoRepository;
+        this.pacienteService = pacienteService;
         
         // Inicializar componentes especializados
         this.slotGenerator = new SlotGenerator();
@@ -605,11 +620,7 @@ public class AgendaService {
             DayOfWeek dayOfWeek = parseDiaSemana(horario.getDia());
             LocalDate fecha = hoy.with(TemporalAdjusters.nextOrSame(dayOfWeek));
             
-            // System.out.println("=== PROCESANDO HORARIO ===");
-            // System.out.println("Dia de horario: " + horario.getDia() + " (" + horario.getHoraInicio() + "-" + horario.getHoraFin() + ")");
-            // System.out.println("DayOfWeek calculado: " + dayOfWeek);
-            // System.out.println("Primera fecha para este dia: " + fecha);
-            
+      
             for (int i = 0; i < semanas; i++) {
                 LocalDate fechaEvento = fecha.plusWeeks(i);
                 
@@ -617,30 +628,18 @@ public class AgendaService {
 
                 // Verificar si existe una configuración excepcional para esta fecha
                 List<ConfiguracionExcepcional> configuracionesDelDia = configuracionExcepcionalService.obtenerConfiguraciones(fechaEvento);
-                // System.out.println("Configuraciones excepcionales encontradas: " + configuracionesDelDia.size());
-                
-                // DEBUG: Mostrar detalles de las configuraciones
-                for (ConfiguracionExcepcional config : configuracionesDelDia) {
-                    // System.out.println("  Config ID: " + config.getId() + 
-                    //                   ", Tipo: " + config.getTipo() + 
-                    //                   ", Consultorio: " + (config.getConsultorio() != null ? config.getConsultorio().getId() : "NULL") +
-                    //                   ", Horario: " + config.getHoraInicio() + "-" + config.getHoraFin() +
-                    //                   ", Descripcion: " + config.getDescripcion());
-                }
+
                 
                 // Verificar si es feriado (afecta todo el día)
                 boolean esFeriado = configuracionesDelDia.stream()
                     .anyMatch(c -> c.getTipo() == ConfiguracionExcepcional.TipoExcepcion.FERIADO);
                 
-                // System.out.println("Es feriado: " + esFeriado);
                 
                 if (esFeriado) {
-                    // System.out.println("Generando slots excepcionales para feriado");
                     // Para feriados, generar slots especiales para todo el día
                     List<TurnoDTO> slotsFeriado = exceptionalHandler.generarSlotsParaDiaExcepcional(fechaEvento, horario.getHoraInicio(), horario.getHoraFin(), 
                         esquemaTurnoFinal, configuracionesDelDia, eventoIdCounter);
                     eventos.addAll(slotsFeriado);
-                    // System.out.println(">>> Se generaron " + slotsFeriado.size() + " slots para feriado en " + fechaEvento);
                     eventoIdCounter += 50;
                     continue;
                 }
@@ -650,21 +649,12 @@ public class AgendaService {
                 
                 // Verificar si hay atención especial específica para este esquema
                 Optional<ConfiguracionExcepcional> atencionEspecial = configuracionExcepcionalService.obtenerAtencionEspecial(fechaEvento, esquemaTurnoFinal.getId());
-                // System.out.println("🔍 DEBUG ATENCIÓN ESPECIAL para Esquema ID: " + esquemaTurnoFinal.getId() + 
-                //                   " (Médico: " + esquemaTurnoFinal.getStaffMedico().getMedico().getNombre() + " " + 
-                //                   esquemaTurnoFinal.getStaffMedico().getMedico().getApellido() + ")");
-                // System.out.println("Atencion especial presente: " + atencionEspecial.isPresent());
-                if (atencionEspecial.isPresent()) {
-                    ConfiguracionExcepcional config = atencionEspecial.get();
-                    // System.out.println("  ✅ Config encontrada - ID: " + config.getId() + 
-                    //                   ", EsquemaTurno asociado: " + (config.getEsquemaTurno() != null ? config.getEsquemaTurno().getId() : "NULL"));
-                }
+                
+
                 
                 if (atencionEspecial.isPresent()) {
                     ConfiguracionExcepcional config = atencionEspecial.get();
-                    // System.out.println("Config atencion especial - Hora inicio: " + config.getHoraInicio() + ", Hora fin: " + config.getHoraFin());
                     if (config.getHoraInicio() != null && config.getHoraFin() != null) {
-                        // System.out.println("Generando slots excepcionales para atencion especial");
                         // CORRECCIÓN: Solo pasar la configuración específica del esquema actual
                         List<ConfiguracionExcepcional> configuracionesEspecificas = configuracionesDelDia.stream()
                             .filter(c -> {
@@ -698,7 +688,6 @@ public class AgendaService {
                 
                 // NUEVA VALIDACIÓN: Verificar horarios del consultorio y ajustar ventana temporal
                 String diaSemana = convertirDiaInglesToEspanol(fechaEvento.getDayOfWeek().name());
-                // System.out.println("Verificando disponibilidad consultorio " + consultorio.getId() + " para dia " + diaSemana + " (" + diaSemanaEspanol + ")");
                 
                 // Obtener información del consultorio
                 Optional<ConsultorioDTO> consultorioOpt = consultorioService.findById(consultorio.getId());
@@ -730,13 +719,8 @@ public class AgendaService {
                             slotEnd = hc.getHoraCierre();
                         }
                     } else {
-                        // Si no hay horario específico para este día, usar el horario del esquema sin restricciones
-                        // System.out.println(">>> No hay horario específico para " + diaSemana + " en consultorio " + consultorio.getId() + 
-                        //                   ", usando horario del esquema sin restricciones del consultorio");
                     }
                 } else {
-                    // Si no hay horarios específicos configurados, usar el horario del esquema sin restricciones
-                    // System.out.println(">>> Consultorio " + consultorio.getId() + " no tiene horarios específicos configurados, usando horario del esquema");
                 }
                 
                 // Si no hay intersección válida, continuar con el siguiente horario
@@ -747,19 +731,13 @@ public class AgendaService {
                 }
                 
                 // Generar slots usando el método estándar que maneja mantenimiento correctamente
-                // System.out.println(">>> Generando slots para " + diaSemana + " (" + fechaEvento + ") de " + slotStart + " a " + slotEnd);
                 List<TurnoDTO> slotsGenerados = generarSlotsParaHorario(fechaEvento, slotStart, slotEnd, 
                     esquemaTurnoFinal, duracion, eventoIdCounter);
-                // System.out.println(">>> Se generaron " + slotsGenerados.size() + " slots para " + fechaEvento);
                 eventos.addAll(slotsGenerados);
                 eventoIdCounter += 50;
             }
         }
 
-        // System.out.println("=== RESUMEN GENERACIÓN DE EVENTOS ===");
-        // System.out.println("Total de eventos generados: " + eventos.size());
-        // System.out.println("Esquema ID: " + esquemaTurnoFinal.getId() + ", Staff Médico: " + esquemaTurnoFinal.getStaffMedico().getId());
-        
         return eventos;
     }
 
@@ -846,5 +824,268 @@ public class AgendaService {
         });
         
         return slotsDisponibles;
+    }
+
+    /**
+     * Obtiene una lista de turnos disponibles para consulta pública.
+     * Este método NO expone información sensible del paciente.
+     * Genera slots dinámicamente desde los esquemas de turno (igual que /eventos/todos)
+     * pero solo retorna los slots DISPONIBLES (no ocupados).
+     * 
+     * @param centroId ID del centro de atención (opcional). Si es null, busca en todos los centros.
+     * @param especialidad Nombre de la especialidad (opcional).
+     * @param staffMedicoId ID del staff médico (opcional).
+     * @param semanas Número de semanas a futuro para generar slots (por defecto 4)
+     * @param filtrarPorPreferencia Si es true, filtra turnos según las preferencias horarias del paciente
+     * @param currentUser Usuario autenticado que realiza la petición (puede ser null si es anónimo)
+     * @return Lista de turnos públicos disponibles (TurnoPublicoDTO)
+     */
+    public List<TurnoPublicoDTO> findTurnosPublicosDisponibles(
+            Integer centroId, 
+            String especialidad, 
+            Integer staffMedicoId, 
+            Integer semanas,
+            boolean filtrarPorPreferencia,
+            User currentUser) {
+        
+        // === INICIO: CONCIENCIA DEL USUARIO (TAREA 1) ===
+        // Usamos un array de un elemento para permitir modificación dentro del lambda
+        final Integer[] medicoIdToExcludeWrapper = {null}; // Por defecto, no excluimos a nadie.
+
+        if (currentUser != null) {
+            // === TAREA 2: Verificar si el usuario es un MÉDICO ===
+            
+            // Verificamos si el usuario tiene el rol de MEDICO
+            if (currentUser.getRole() == Role.MEDICO) {
+                // Buscar la entidad Medico asociada mediante el email
+                medicoRepository.findByEmail(currentUser.getEmail())
+                    .ifPresent(medico -> {
+                        // Si encontramos el médico, almacenamos su ID para exclusión
+                        medicoIdToExcludeWrapper[0] = medico.getId();
+                        System.out.println("👨‍⚕️ [AgendaService] Petición de un MÉDICO (ID: " + medicoIdToExcludeWrapper[0] + 
+                                         "). Se excluirán sus propios turnos de la agenda.");
+                    });
+                
+                if (medicoIdToExcludeWrapper[0] == null) {
+                    System.out.println("⚠️ [AgendaService] Usuario con rol MEDICO pero sin entidad Medico asociada: " + 
+                                     currentUser.getEmail());
+                }
+            } else {
+                System.out.println("✅ [AgendaService] Petición de agenda realizada por el usuario: " + 
+                                 currentUser.getEmail() + " (Rol: " + currentUser.getRole().getName() + ")");
+            }
+        } else {
+            System.out.println("🔓 [AgendaService] Petición de agenda anónima (sin autenticación)");
+        }
+        
+        // Extraer el valor del wrapper para usar en el resto del método
+        Integer medicoIdToExclude = medicoIdToExcludeWrapper[0];
+        // === FIN: CONCIENCIA DEL USUARIO (TAREA 2) ===
+        
+        System.out.println("🔍 [AgendaService] Filtros recibidos:");
+        System.out.println("   - centroId: " + centroId);
+        System.out.println("   - especialidad: " + especialidad);
+        System.out.println("   - staffMedicoId: " + staffMedicoId);
+        System.out.println("   - semanas: " + semanas);
+        System.out.println("   - medicoIdToExclude: " + medicoIdToExclude);
+        
+        // Generar todos los eventos desde los esquemas de turno (misma lógica que /eventos/todos)
+        List<EsquemaTurno> esquemas;
+        int semanasAGenerar = semanas != null ? semanas : 4;
+        
+        // === TAREA 3: Filtrar esquemas excluyendo al médico autenticado ===
+        esquemas = esquemaTurnoRepository.findAll().stream()
+            .filter(e -> {
+                // Validar que tenga consultorio
+                if (e.getConsultorio() == null) {
+                    return false;
+                }
+                
+                // === NUEVO: EXCLUIR TURNOS DEL MÉDICO AUTENTICADO ===
+                // Si medicoIdToExclude tiene valor, excluir esquemas de ese médico
+                if (medicoIdToExclude != null && e.getStaffMedico() != null && 
+                    e.getStaffMedico().getMedico() != null) {
+                    
+                    Integer medicoIdDelEsquema = e.getStaffMedico().getMedico().getId();
+                    if (medicoIdDelEsquema != null && medicoIdDelEsquema.equals(medicoIdToExclude)) {
+                        // Este esquema pertenece al médico autenticado, excluirlo
+                        return false;
+                    }
+                }
+                // === FIN: EXCLUSIÓN DE MÉDICO ===
+                
+                //  FILTRAR POR CENTRO DE ATENCIÓN
+                if (centroId != null && e.getConsultorio().getCentroAtencion() != null) {
+                    if (!e.getConsultorio().getCentroAtencion().getId().equals(centroId)) {
+                        return false;
+                    }
+                }
+                
+                //  FILTRAR POR STAFF MÉDICO
+                if (staffMedicoId != null && e.getStaffMedico() != null) {
+                    if (!e.getStaffMedico().getId().equals(staffMedicoId)) {
+                        return false;
+                    }
+                }
+                
+                //  FILTRAR POR ESPECIALIDAD
+                if (especialidad != null && !especialidad.isEmpty() && 
+                    e.getStaffMedico() != null && 
+                    e.getStaffMedico().getEspecialidad() != null) {
+                    
+                    String especialidadEsquema = e.getStaffMedico().getEspecialidad().getNombre();
+                    if (!especialidadEsquema.equalsIgnoreCase(especialidad.trim())) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            })
+            .collect(Collectors.toList());
+        
+        System.out.println("✅ [AgendaService] Esquemas después de filtros: " + esquemas.size());
+        
+        List<TurnoDTO> todosLosSlots = new ArrayList<>();
+        
+        // Generar eventos desde cada esquema (lógica idéntica a obtenerTodosLosEventos)
+        for (EsquemaTurno esquema : esquemas) {
+            try {
+                List<TurnoDTO> eventos = generarEventosDesdeEsquemaTurno(esquema, semanasAGenerar);
+                todosLosSlots.addAll(eventos);
+            } catch (Exception e) {
+                System.err.println("❌ [Público] Error processing EsquemaTurno ID " + esquema.getId() + 
+                                 ": " + e.getMessage());
+                continue;
+            }
+        }
+        
+        System.out.println("✅ [AgendaService] Total slots generados: " + todosLosSlots.size());
+        
+        // === FILTRADO POR PREFERENCIAS HORARIAS (TAREA 7) ===
+        Set<PreferenciaHoraria> preferenciasDelPaciente = null;
+        
+        if (filtrarPorPreferencia && currentUser != null) {
+            System.out.println("🔍 [AgendaService] Filtrado por preferencias activado para usuario: " + currentUser.getEmail());
+            
+            // Obtener el paciente asociado al usuario autenticado
+            Paciente paciente = pacienteService.findByUser(currentUser);
+            
+            if (paciente != null) {
+                preferenciasDelPaciente = paciente.getPreferenciasHorarias();
+                
+                if (preferenciasDelPaciente != null && !preferenciasDelPaciente.isEmpty()) {
+                    System.out.println("✅ [AgendaService] Paciente encontrado con " + preferenciasDelPaciente.size() + " preferencias horarias");
+                } else {
+                    System.out.println("⚠️ [AgendaService] Paciente encontrado pero sin preferencias horarias configuradas");
+                }
+            } else {
+                System.out.println("⚠️ [AgendaService] No se encontró entidad Paciente para el usuario: " + currentUser.getEmail());
+            }
+        }
+        
+        // Crear una copia final de la variable para usar en el lambda
+        final Set<PreferenciaHoraria> preferenciasFinales = preferenciasDelPaciente;
+        // === FIN: FILTRADO POR PREFERENCIAS ===
+        
+        // Filtrar solo slots disponibles (no ocupados) y mapear a DTO público
+        LocalDate fechaActual = LocalDate.now();
+        
+        List<TurnoPublicoDTO> resultado = todosLosSlots.stream()
+            .filter(slot -> slot.getEsSlot() != null && slot.getEsSlot()) // Solo slots generados
+            .filter(slot -> slot.getOcupado() == null || !slot.getOcupado()) // Solo disponibles
+            .filter(slot -> slot.getEnMantenimiento() == null || !slot.getEnMantenimiento()) // Sin mantenimiento
+            .filter(slot -> !slot.getFecha().isBefore(fechaActual)) // Solo fechas futuras
+            .filter(slot -> {
+                // === APLICAR FILTRO DE PREFERENCIAS SI ESTÁ ACTIVADO ===
+                if (preferenciasFinales == null || preferenciasFinales.isEmpty()) {
+                    return true; // Sin preferencias, mostrar todos los turnos
+                }
+                
+                // Obtener el día de la semana del turno
+                DayOfWeek dayOfWeek = slot.getFecha().getDayOfWeek();
+                DiaDeLaSemana diaDelTurno = convertirDayOfWeekADiaDeLaSemana(dayOfWeek);
+                
+                // Verificar si alguna preferencia coincide con el turno
+                boolean coincideConPreferencia = preferenciasFinales.stream()
+                    .anyMatch(pref -> {
+                        // Verificar si el día coincide
+                        if (!pref.getDiaDeLaSemana().equals(diaDelTurno)) {
+                            return false;
+                        }
+                        
+                        // Verificar si la hora del turno está dentro del rango de la preferencia
+                        LocalTime horaInicioTurno = slot.getHoraInicio();
+                        LocalTime horaDesdePreferencia = pref.getHoraDesde();
+                        LocalTime horaHastaPreferencia = pref.getHoraHasta();
+                        
+                        // El turno debe empezar en o después de horaDesde y antes de horaHasta
+                        return !horaInicioTurno.isBefore(horaDesdePreferencia) && 
+                               horaInicioTurno.isBefore(horaHastaPreferencia);
+                    });
+                
+                return coincideConPreferencia;
+            })
+            .map(this::mapearSlotATurnoPublico)
+            .sorted((t1, t2) -> {
+                // Ordenar por fecha y luego por hora
+                int fechaComp = t1.getFecha().compareTo(t2.getFecha());
+                if (fechaComp != 0) return fechaComp;
+                return t1.getHoraInicio().compareTo(t2.getHoraInicio());
+            })
+            .collect(Collectors.toList());
+        
+        if (filtrarPorPreferencia && preferenciasFinales != null && !preferenciasFinales.isEmpty()) {
+            System.out.println("✅ [AgendaService] Turnos después de filtrar por preferencias: " + resultado.size());
+        }
+                
+        return resultado;
+    }
+    
+    /**
+     * Convierte un DayOfWeek de Java a DiaDeLaSemana de nuestro modelo
+     */
+    private DiaDeLaSemana convertirDayOfWeekADiaDeLaSemana(DayOfWeek dayOfWeek) {
+        switch (dayOfWeek) {
+            case MONDAY: return DiaDeLaSemana.LUNES;
+            case TUESDAY: return DiaDeLaSemana.MARTES;
+            case WEDNESDAY: return DiaDeLaSemana.MIERCOLES;
+            case THURSDAY: return DiaDeLaSemana.JUEVES;
+            case FRIDAY: return DiaDeLaSemana.VIERNES;
+            case SATURDAY: return DiaDeLaSemana.SABADO;
+            case SUNDAY: return DiaDeLaSemana.DOMINGO;
+            default: throw new IllegalArgumentException("Día de la semana no válido: " + dayOfWeek);
+        }
+    }
+    
+    /**
+     * Método auxiliar privado para mapear un TurnoDTO (slot) a TurnoPublicoDTO
+     * Extrae solo la información pública y segura, sin datos del paciente.
+     */
+    private TurnoPublicoDTO mapearSlotATurnoPublico(TurnoDTO slot) {
+        TurnoPublicoDTO dto = new TurnoPublicoDTO();
+        
+        // Identificadores y metadata
+        dto.setId(slot.getId());
+        dto.setFecha(slot.getFecha());
+        dto.setHoraInicio(slot.getHoraInicio());
+        dto.setHoraFin(slot.getHoraFin());
+        dto.setEsSlot(slot.getEsSlot());
+        dto.setOcupado(slot.getOcupado());
+        
+        // Datos del staff médico
+        dto.setStaffMedicoId(slot.getStaffMedicoId());
+        dto.setStaffMedicoNombre(slot.getStaffMedicoNombre());
+        dto.setStaffMedicoApellido(slot.getStaffMedicoApellido());
+        dto.setEspecialidadStaffMedico(slot.getEspecialidadStaffMedico());
+        
+        // Datos del consultorio
+        dto.setConsultorioId(slot.getConsultorioId());
+        dto.setConsultorioNombre(slot.getConsultorioNombre());
+        
+        // Datos del centro de atención
+        dto.setCentroId(slot.getCentroId());
+        dto.setNombreCentro(slot.getNombreCentro());
+        
+        return dto;
     }
 }

@@ -1,0 +1,325 @@
+<div class="medicos-container">
+  <div class="card p-xl mb-xl mx-auto">
+    <!-- HEADER LVE NORMALIZADO -->
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-md">
+        <span class="material-symbols-outlined header-icon">medical_services</span>
+        <div>
+          <h2 class="mb-0">Médicos</h2>
+          <p class="text-muted mb-0 mt-sm">Gestión de profesionales médicos del sistema</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="router.navigate(['/medicos/new'])">
+        <span class="material-symbols-outlined">add_circle</span>
+        <span class="d-none d-sm-inline">Nuevo Médico</span>
+      </button>
+    </div>
+
+    <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+    <div class="filters-section mb-lg">
+      <h5 class="filters-title mb-md">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtros de búsqueda
+      </h5>
+
+      <div class="row g-3">
+        <!-- Búsqueda por nombre -->
+        <div class="col-md-4">
+          <label for="nombreFilter" class="form-label">
+            <span class="material-symbols-outlined">person</span>
+            Nombre o Apellido
+          </label>
+          <input
+            type="text"
+            id="nombreFilter"
+            class="form-control"
+            placeholder="Buscar por nombre..."
+            [(ngModel)]="filtros.nombre"
+            (input)="onSearchChange()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Búsqueda por especialidad -->
+        <div class="col-md-4">
+          <label for="especialidadFilter" class="form-label">
+            <span class="material-symbols-outlined">stethoscope</span>
+            Especialidad
+          </label>
+          <input
+            type="text"
+            id="especialidadFilter"
+            class="form-control"
+            placeholder="Buscar por especialidad..."
+            [(ngModel)]="filtros.especialidad"
+            (input)="onSearchChange()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Estado -->
+        <div class="col-md-4">
+          <label for="estadoFilter" class="form-label">
+            <span class="material-symbols-outlined">toggle_on</span>
+            Estado
+          </label>
+          <select
+            id="estadoFilter"
+            class="form-select"
+            [(ngModel)]="filtros.estado"
+            (change)="onSearchChange()"
+          >
+            <option value="">Todos los estados</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fila de controles -->
+      <div class="row g-3 mt-sm">
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="d-flex gap-sm w-100">
+            <button
+              class="btn btn-secondary flex-fill"
+              (click)="clearFilters()"
+              [disabled]="!hasActiveFilters()"
+            >
+              <span class="material-symbols-outlined">close</span>
+              Limpiar filtros
+            </button>
+            <button
+              class="btn btn-primary flex-fill"
+              (click)="loadMedicos()"
+              [disabled]="isLoading"
+            >
+              <span class="material-symbols-outlined" [class.spinning]="isLoading">sync</span>
+              Actualizar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de resultados -->
+      <div class="row mt-md" *ngIf="resultsPage.totalElements > 0">
+        <div class="col-12">
+          <div class="info-badge">
+            <span class="material-symbols-outlined">info</span>
+            Mostrando {{ resultsPage.numberOfElements }} de {{ resultsPage.totalElements }} médicos
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA LVE NORMALIZADA -->
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>
+              <button
+                class="header-button"
+                (click)="onSortChange('apellido')"
+                [class.active]="sortConfig.field === 'apellido'"
+                aria-label="Ordenar por apellido"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">medical_services</span>
+                  Médico
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="sortConfig.field === 'apellido'"
+                    aria-hidden="true"
+                  >
+                    {{ sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="sortConfig.field !== 'apellido'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">badge</span>
+                DNI
+              </div>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">verified</span>
+                Matrícula
+              </div>
+            </th>
+            <th>
+              <button
+                class="header-button"
+                (click)="onSortChange('especialidad')"
+                [class.active]="sortConfig.field === 'especialidad'"
+                aria-label="Ordenar por especialidad"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">stethoscope</span>
+                  Especialidades
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="sortConfig.field === 'especialidad'"
+                    aria-hidden="true"
+                  >
+                    {{ sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="sortConfig.field !== 'especialidad'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">settings</span>
+                Acciones
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading state -->
+          <tr *ngIf="isLoading">
+            <td colspan="6" class="loading-state">
+              <div class="loading-content">
+                <span class="material-symbols-outlined spinning">sync</span>
+                <h6>Cargando médicos...</h6>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data rows -->
+          <tr
+            *ngFor="let medico of resultsPage.content || []; let i = index"
+            (click)="goToDetail(medico.id)"
+            class="table-row cursor-pointer"
+            [class.selected]="selectedId === medico.id"
+            (mouseenter)="onRowHover(medico.id)"
+            (mouseleave)="onRowLeave()"
+          >
+            <td>
+              <div class="entity-info-full">
+                <div class="entity-avatar-medico">
+                  <span class="material-symbols-outlined" aria-hidden="true">medical_services</span>
+                </div>
+                <div class="entity-details">
+                  <div class="entity-name">{{ medico.nombre }} {{ medico.apellido }}</div>
+                  <div class="entity-subtitle">Profesional médico</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-secondary">{{ medico.dni }}</span>
+            </td>
+            <td>
+              <span class="badge badge-secondary">{{ medico.matricula }}</span>
+            </td>
+            <td>
+              <div
+                class="especialidades-list"
+                *ngIf="medico.especialidades && medico.especialidades.length > 0; else sinEsp"
+              >
+                <span
+                  *ngFor="let esp of medico.especialidades"
+                  class="badge badge-especialidad"
+                  [title]="esp.nombre"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">stethoscope</span>
+                  {{ esp.nombre }}
+                </span>
+              </div>
+              <!-- Fallback para compatibilidad con especialidad única -->
+              <div
+                *ngIf="(!medico.especialidades || medico.especialidades.length === 0) && medico.especialidad"
+                class="especialidades-list"
+              >
+                <span class="badge badge-especialidad" [title]="medico.especialidad.nombre">
+                  <span class="material-symbols-outlined" aria-hidden="true">stethoscope</span>
+                  {{ medico.especialidad.nombre }}
+                </span>
+              </div>
+              <ng-template #sinEsp>
+                <span class="badge badge-muted">
+                  <span class="material-symbols-outlined" aria-hidden="true">block</span>
+                  Sin especialidades
+                </span>
+              </ng-template>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  (click)="goToEdit(medico.id); $event.stopPropagation()"
+                  class="btn-action btn-action-edit"
+                  title="Editar médico"
+                  aria-label="Editar médico"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                </button>
+                <button
+                  (click)="confirmDelete(medico.id); $event.stopPropagation()"
+                  class="btn-action btn-action-delete"
+                  title="Eliminar médico"
+                  aria-label="Eliminar médico"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty state -->
+          <tr
+            *ngIf="!isLoading && (!resultsPage.content || resultsPage.content.length === 0)"
+          >
+            <td colspan="6" class="empty-state">
+              <div class="empty-state-content">
+                <span class="material-symbols-outlined empty-icon">medical_services_off</span>
+                <h3>No hay médicos registrados</h3>
+                <p>
+                  {{
+                    hasActiveFilters()
+                      ? "No se encontraron médicos con los filtros aplicados"
+                      : "Comience agregando un nuevo médico al sistema"
+                  }}
+                </p>
+                <button
+                  *ngIf="hasActiveFilters()"
+                  class="btn btn-primary"
+                  (click)="clearFilters()"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                  Limpiar filtros
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINADOR -->
+    <div class="pagination-container mt-lg" *ngIf="!isLoading && resultsPage.totalPages > 1">
+      <app-pagination
+        [totalPages]="resultsPage.totalPages"
+        [currentPage]="currentPage"
+        (pageChangeRequested)="onPageChangeRequested($event)"
+        [number]="resultsPage.number"
+        [hidden]="resultsPage.numberOfElements < 1"
+      ></app-pagination>
+    </div>
+  </div>
+</div>
+

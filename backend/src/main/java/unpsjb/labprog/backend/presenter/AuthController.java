@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import jakarta.servlet.http.HttpServletRequest;
 import unpsjb.labprog.backend.Response;
 import unpsjb.labprog.backend.business.service.AccountActivationService;
@@ -22,12 +23,14 @@ import unpsjb.labprog.backend.business.service.PasswordResetService;
 import unpsjb.labprog.backend.business.service.PasswordService;
 import unpsjb.labprog.backend.business.service.RegistrationService;
 import unpsjb.labprog.backend.business.service.UserService;
+import unpsjb.labprog.backend.business.service.GoogleAuthService;
 import unpsjb.labprog.backend.config.JwtTokenProvider;
 import unpsjb.labprog.backend.dto.AccountActivationRequestDTO;
 import unpsjb.labprog.backend.dto.ActivationTokenValidationDTO;
 import unpsjb.labprog.backend.dto.ChangePasswordRequestDTO;
 import unpsjb.labprog.backend.dto.CheckEmailRequest;
 import unpsjb.labprog.backend.dto.CheckEmailResponse;
+import unpsjb.labprog.backend.dto.GoogleLoginRequest;
 import unpsjb.labprog.backend.dto.LoginRequest;
 import unpsjb.labprog.backend.dto.LoginResponse;
 import unpsjb.labprog.backend.dto.PasswordResetConfirmDTO;
@@ -76,6 +79,9 @@ public class AuthController {
 
     @Autowired
     private PacienteService pacienteService;
+
+    @Autowired
+    private GoogleAuthService googleAuthService;
 
 
     /**
@@ -756,6 +762,49 @@ public class AuthController {
         } catch (Exception e) {
             logger.error("Error actualizando perfil: {}", e.getMessage(), e);
             return Response.error(null, "Error interno del servidor al actualizar el perfil");
+        }
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> authenticateWithGoogle(@RequestBody GoogleLoginRequest googleLoginRequest) {
+        GoogleIdToken.Payload payload = googleAuthService.verifyTokenAndGetPayload(googleLoginRequest.getIdToken());
+
+        if (payload != null) {
+            // El token de Google es válido, procesamos el usuario.
+            User user = userService.processGoogleUser(payload);
+
+            // Generamos los tokens JWT de nuestra aplicación para el usuario encontrado o creado.
+            String accessToken = jwtTokenProvider.generateAccessToken(user);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+            // Obtener lista completa de roles incluyendo heredados
+            java.util.List<String> allRoles = new java.util.ArrayList<>();
+            if (user.getRole() != null) {
+                // Agregar el rol principal
+                allRoles.add(user.getRole().getName());
+                // Agregar todos los roles heredados
+                user.getRole().getAllInheritedRoles().forEach(inheritedRole -> 
+                    allRoles.add(inheritedRole.getName())
+                );
+            }
+
+            // Creamos la respuesta que espera el frontend.
+            LoginResponse loginResponse = new LoginResponse(
+                accessToken, 
+                refreshToken, 
+                user.getEmail(), 
+                user.getNombre() + " " + user.getApellido(),
+                user.getRole() != null ? user.getRole().getName() : "PACIENTE",
+                allRoles
+            );
+            
+            logger.info("Login exitoso con Google para usuario: {}", user.getEmail());
+            return Response.response(HttpStatus.OK, "Login con Google exitoso", loginResponse);
+        } else {
+            // El token de Google es inválido.
+            logger.warn("Intento de login con Google con token inválido");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Response.error(null, "Token de Google inválido."));
         }
     }
 

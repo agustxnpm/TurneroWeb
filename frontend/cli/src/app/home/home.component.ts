@@ -1,16 +1,21 @@
 import { Component } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { Router } from "@angular/router";
+import { Router, RouterModule } from "@angular/router";
 import { PacienteService } from "../pacientes/paciente.service";
 import { Paciente } from "../pacientes/paciente";
 import { MedicoService } from "../medicos/medico.service";
 import { OperadorService } from "../operador/operador.service";
 import { AuthService } from "../inicio-sesion/auth.service";
+import { CentrosMapaModalComponent } from "../modal/centros-mapa-modal.component";
+import { CentroAtencionService } from "../centrosAtencion/centroAtencion.service";
+import { EspecialidadService } from "../especialidades/especialidad.service";
+import { CentroAtencion } from "../centrosAtencion/centroAtencion";
+import { Especialidad } from "../especialidades/especialidad";
 
 @Component({
   selector: "app-home",
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule, CentrosMapaModalComponent],
   templateUrl: "./home.html",
   styleUrl: "./home.css",
 })
@@ -55,14 +60,23 @@ export class HomeComponent {
     sintomas: ""
   };
 
+  // Variables para el mapa modal
+  showMapaModal = false;
+  centrosAtencionCompletos: CentroAtencion[] = [];
+  especialidadesCompletas: Especialidad[] = [];
+  slotsOriginales: any[] = [];
+
   constructor(
     private router: Router,
     private pacienteService: PacienteService,
     private medicoService: MedicoService,
     private operadorService: OperadorService,
-    private authService: AuthService
+    private authService: AuthService,
+    private centroAtencionService: CentroAtencionService,
+    private especialidadService: EspecialidadService
   ) {
     this.loadObrasSociales();
+    this.cargarDatosParaMapa();
   }
 
   selectRole(role: "admin" | "medico" | "patient" | "operador") {
@@ -392,16 +406,59 @@ export class HomeComponent {
     };
   }
 
-  // Método para buscar CAPs
+  // Método para cargar datos necesarios para el mapa
+  cargarDatosParaMapa() {
+    // Cargar centros de atención
+    this.centroAtencionService.all().subscribe({
+      next: (response: any) => {
+        if (response && response.data) {
+          this.centrosAtencionCompletos = response.data;
+        }
+      },
+      error: (error: any) => {
+        console.error('Error al cargar centros de atención:', error);
+      },
+    });
+
+    // Cargar especialidades
+    this.especialidadService.all().subscribe({
+      next: (response: any) => {
+        if (response && response.data) {
+          this.especialidadesCompletas = response.data;
+        }
+      },
+      error: (error: any) => {
+        console.error('Error al cargar especialidades:', error);
+      },
+    });
+
+    // Por ahora inicializar slots vacío - esto podría cargarse desde un servicio de agenda
+    this.slotsOriginales = [];
+  }
+
+  // Método para buscar CAPs - ahora muestra el mapa
   buscarCAPS() {
     console.log('Búsqueda de CAP:', this.capSearchData);
     
-    // Mostrar mensaje temporal mientras se implementa la funcionalidad completa
-    alert(`Buscando centros de atención para:
-Tipo: ${this.getTipoAtencionLabel(this.capSearchData.tipoAtencion)}
-Síntomas/Observaciones: ${this.capSearchData.sintomas || 'No especificado'}
+    // Mostrar el modal del mapa
+    this.showMapaModal = true;
+  }
 
-Esta funcionalidad será completamente implementada próximamente.`);
+  // Métodos para manejar el modal del mapa
+  cerrarMapaModal() {
+    this.showMapaModal = false;
+  }
+
+  onCentroSeleccionadoDelMapa(centro: CentroAtencion) {
+    console.log('Centro seleccionado:', centro);
+    
+    // Aquí podrías agregar lógica adicional cuando se selecciona un centro
+    // Por ejemplo, navegar a la agenda de paciente con ese centro preseleccionado
+    
+    this.cerrarMapaModal();
+    
+    // Opcional: mostrar mensaje de confirmación
+    alert(`Has seleccionado el centro: ${centro.nombre}\n${centro.direccion}\n\n¡Próximamente podrás ver los turnos disponibles!`);
   }
 
   // Método auxiliar para mostrar las etiquetas amigables

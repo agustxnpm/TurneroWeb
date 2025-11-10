@@ -1,0 +1,194 @@
+<div class="container-fluid mt-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-8">
+      <div class="card shadow-sm mb-4">
+        <!-- Header del componente -->
+        <div class="card-header bg-primary text-white">
+          <div class="d-flex align-items-center gap-3">
+            <span class="material-symbols-outlined" style="font-size: 2rem;">schedule</span>
+            <div>
+              <h2 class="mb-0 h4">Mis Preferencias Horarias</h2>
+              <p class="mb-0 small opacity-90">
+                Configura tus horarios preferidos para la asignación de turnos
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body p-4">
+          <!-- Mensajes de éxito/error -->
+          <div *ngIf="mensaje" class="mb-4">
+            <div class="alert" 
+                 [ngClass]="{
+                   'alert-success': tipoMensaje === 'success',
+                   'alert-danger': tipoMensaje === 'error'
+                 }"
+                 role="alert">
+              <span class="material-symbols-outlined me-2" style="vertical-align: middle;">
+                {{ tipoMensaje === 'success' ? 'check_circle' : 'error' }}
+              </span>
+              {{ mensaje }}
+            </div>
+          </div>
+
+          <!-- Formulario de Alta -->
+          <div class="mb-5">
+            <h3 class="h5 mb-3 d-flex align-items-center gap-2">
+              <span class="material-symbols-outlined">add_circle</span>
+              Agregar Nueva Preferencia
+            </h3>
+            
+            <form #preferenciaForm="ngForm" (ngSubmit)="agregarPreferencia()" class="form-section">
+              <!-- Día de la semana -->
+              <div class="form-group mb-4">
+                <label for="diaDeLaSemana" class="form-label mb-2">
+                  Día de la Semana <span class="text-danger">*</span>
+                </label>
+                <select 
+                  id="diaDeLaSemana"
+                  name="diaDeLaSemana"
+                  class="form-select"
+                  [(ngModel)]="nuevaPreferencia.diaDeLaSemana"
+                  required>
+                  <option value="">-- Selecciona un día --</option>
+                  <option *ngFor="let dia of diasSemana" [value]="dia.valor">
+                    {{ dia.etiqueta }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Franjas horarias -->
+              <div class="form-group mb-4">
+                <label class="form-label mb-3">
+                  Rango Horario <span class="text-danger">*</span>
+                </label>
+                
+                <div class="row g-3">
+                  <!-- Hora Desde -->
+                  <div class="col-md-6">
+                    <label for="horaDesde" class="form-label small text-muted">
+                      Hora Desde
+                    </label>
+                    <input 
+                      type="time"
+                      id="horaDesde"
+                      name="horaDesde"
+                      class="form-control"
+                      [(ngModel)]="nuevaPreferencia.horaDesde"
+                      required>
+                    <small class="form-text text-muted d-block mt-1">Ejemplo: 09:00</small>
+                  </div>
+
+                  <!-- Hora Hasta -->
+                  <div class="col-md-6">
+                    <label for="horaHasta" class="form-label small text-muted">
+                      Hora Hasta
+                    </label>
+                    <input 
+                      type="time"
+                      id="horaHasta"
+                      name="horaHasta"
+                      class="form-control"
+                      [(ngModel)]="nuevaPreferencia.horaHasta"
+                      required>
+                    <small class="form-text text-muted d-block mt-1">Ejemplo: 12:00</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botón de envío -->
+              <div class="form-group mt-4">
+                <button 
+                  type="submit"
+                  class="btn btn-primary w-100"
+                  [disabled]="!preferenciaForm.form.valid || isLoading"
+                  aria-label="Guardar preferencia horaria">
+                  <span *ngIf="!isLoading">
+                    <span class="material-symbols-outlined me-2" style="vertical-align: middle;">save</span>
+                    Guardar Preferencia
+                  </span>
+                  <span *ngIf="isLoading">
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Guardando...
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Listado de Preferencias -->
+          <div>
+            <h3 class="h5 mb-3 d-flex align-items-center gap-2">
+              <span class="material-symbols-outlined">list</span>
+              Horarios Guardados
+            </h3>
+
+            <!-- Sin preferencias -->
+            <div *ngIf="preferencias.length === 0" class="text-center text-muted py-5">
+              <span class="material-symbols-outlined mb-3" style="font-size: 4rem; opacity: 0.5;">event_busy</span>
+              <p class="lead">No tienes horarios guardados</p>
+              <p>Agrega tu primera preferencia horaria usando el formulario de arriba.</p>
+            </div>
+
+            <!-- Con preferencias -->
+            <div *ngIf="preferencias.length > 0">
+              <div class="list-group">
+                <div 
+                  *ngFor="let pref of preferencias; let i = index"
+                  class="list-group-item d-flex justify-content-between align-items-center">
+                  
+                  <!-- Información de la preferencia -->
+                  <div class="d-flex align-items-center flex-grow-1 gap-3">
+                    <span class="material-symbols-outlined text-primary" style="font-size: 2rem;">calendar_today</span>
+                    <div>
+                      <h6 class="mb-1">
+                        <strong>{{ formatearDia(pref.diaDeLaSemana) }}</strong>
+                      </h6>
+                      <p class="mb-0 text-muted small">
+                        <span class="material-symbols-outlined me-1" style="font-size: 1rem; vertical-align: middle;">schedule</span>
+                        De <strong>{{ pref.horaDesde }}</strong> a <strong>{{ pref.horaHasta }}</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Botón de eliminar -->
+                  <button 
+                    type="button"
+                    class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2"
+                    (click)="eliminarPreferencia(pref.id!, pref.diaDeLaSemana)"
+                    [disabled]="isLoading"
+                    title="Eliminar preferencia">
+                    <span class="material-symbols-outlined" style="font-size: 1.2rem;">delete</span>
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Contador de preferencias -->
+              <div class="mt-3 text-muted text-center">
+                <small>
+                  <span class="material-symbols-outlined me-1" style="font-size: 1rem; vertical-align: middle;">info</span>
+                  Total de preferencias: <strong>{{ preferencias.length }}</strong>
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Información adicional -->
+          <div class="alert alert-info mt-4" role="alert">
+            <h6 class="alert-heading d-flex align-items-center gap-2">
+              <span class="material-symbols-outlined">info</span>
+              ¿Cómo funcionan las preferencias horarias?
+            </h6>
+            <ul class="mb-0 small">
+              <li>Define los días y horarios en los que prefieres tener turnos médicos.</li>
+              <li>Cuando busques turnos, activa la opción "Filtrar por mis preferencias".</li>
+              <li>El sistema mostrará solo los turnos que coincidan con tus horarios configurados.</li>
+              <li>Puedes tener múltiples preferencias para diferentes días y horarios.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

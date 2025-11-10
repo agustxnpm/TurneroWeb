@@ -566,6 +566,32 @@
   font-weight: 500;
 }
 
+.esquema-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.esquema-dia-card:hover .esquema-actions {
+  opacity: 1;
+}
+
+.esquema-actions .btn {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.esquema-actions .btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-color: white;
+}
+
 /* Día vacío */
 .dia-vacio {
   display: flex;

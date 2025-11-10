@@ -1,0 +1,273 @@
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i
+      class="fa"
+      [class.fa-calendar-plus]="!modoEdicion"
+      [class.fa-edit]="modoEdicion"
+      me-2
+    ></i>
+    {{ modoEdicion ? "Editar" : "Nueva" }} Disponibilidad - Dr.
+    {{ staffMedico.medico?.nombre }} {{ staffMedico.medico?.apellido }}
+    <span
+      *ngIf="especialidadNombre"
+      class="badge ms-2"
+      style="
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+      "
+    >
+      {{ especialidadNombre }}
+    </span>
+  </h4>
+  <button type="button" class="btn-close" (click)="activeModal.dismiss()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+<div class="modal-body">
+  <!-- Alert Messages -->
+  <div *ngIf="mensajeError" class="alert alert-danger">
+    <i class="fa fa-exclamation-triangle me-2"></i>
+    {{ mensajeError }}
+  </div>
+
+  <div *ngIf="mensajeExito" class="alert alert-success">
+    <i class="fa fa-check-circle me-2"></i>
+    {{ mensajeExito }}
+  </div>
+
+  <form #disponibilidadForm="ngForm">
+    <!-- Información del Staff Médico -->
+    <div
+      class="mb-4 p-3"
+      style="
+        background: rgba(54, 185, 204, 0.05);
+        border-radius: 10px;
+        border: 1px solid rgba(54, 185, 204, 0.2);
+      "
+    >
+      <div class="d-flex align-items-center">
+        <div class="avatar-medicos me-3">Dr</div>
+        <div>
+          <h6 class="mb-1">
+            Dr. {{ staffMedico.medico?.nombre }}
+            {{ staffMedico.medico?.apellido }}
+          </h6>
+          <small class="text-muted">
+            <i class="fa fa-stethoscope me-1"></i>
+            <span *ngIf="especialidadNombre">{{ especialidadNombre }}</span>
+            <span *ngIf="!especialidadNombre">{{
+              staffMedico.especialidad?.nombre
+            }}</span>
+            <span class="ms-2">
+              <i class="fa fa-id-badge me-1"></i>Matrícula:
+              {{ staffMedico.medico?.matricula }}
+            </span>
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Horarios de Disponibilidad -->
+    <div class="form-group-modern mb-4">
+      <label class="form-label-modern">
+        <i class="fa fa-clock me-2"></i>
+        Horarios de Disponibilidad
+      </label>
+
+      <div
+        *ngFor="let horario of disponibilidad.horarios; let i = index"
+        class="horario-form-row mb-3"
+      >
+        <div class="row g-2">
+          <div class="col-4">
+            <label class="form-label-small">Día</label>
+            <select
+              [(ngModel)]="horario.dia"
+              [name]="'dia-' + i"
+              class="form-control form-control-sm"
+              required
+            >
+              <option value="">Seleccionar día...</option>
+              <option *ngFor="let dia of diasSemana" [value]="dia">
+                {{ getDiaNombre(dia) }}
+              </option>
+            </select>
+          </div>
+          <div class="col-3">
+            <label class="form-label-small">Hora Inicio</label>
+            <input
+              type="time"
+              class="form-control form-control-sm"
+              [(ngModel)]="horario.horaInicio"
+              [name]="'horaInicio-' + i"
+              required
+            />
+          </div>
+          <div class="col-3">
+            <label class="form-label-small">Hora Fin</label>
+            <input
+              type="time"
+              class="form-control form-control-sm"
+              [(ngModel)]="horario.horaFin"
+              [name]="'horaFin-' + i"
+              required
+            />
+          </div>
+          <div class="col-2 d-flex align-items-end">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              (click)="removeHorario(i)"
+              [disabled]="disponibilidad.horarios.length <= 1"
+              [title]="
+                disponibilidad.horarios.length <= 1
+                  ? 'Debe configurar al menos un horario'
+                  : 'Eliminar horario'
+              "
+            >
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-success"
+        (click)="addHorario()"
+      >
+        <i class="fa fa-plus me-2"></i>
+        Agregar Horario
+      </button>
+
+      <div class="form-help mt-2">
+        <small class="text-muted">
+          <i class="fa fa-info-circle me-1"></i>
+          Configure los días y horarios en los que el médico estará disponible
+          para atender pacientes en este centro.
+          {{
+            modoEdicion
+              ? "Modifique los horarios existentes según sea necesario."
+              : "Puede agregar múltiples horarios, incluso para el mismo día, siempre que no se superpongan."
+          }}
+        </small>
+      </div>
+    </div>
+
+    <!-- Tabla de Horarios Ocupados -->
+    <div class="form-group-modern mt-4" *ngIf="!cargandoDisponibilidades">
+      <label class="form-label-modern">
+        <i class="fa fa-calendar-alt me-2"></i>
+        Horarios Ocupados del Médico
+      </label>
+
+      <div class="alert alert-info">
+        <i class="fa fa-info-circle me-2"></i>
+        Los horarios que se muestran a continuación están ocupados por
+        disponibilidades del médico.
+        <span *ngIf="modoEdicion"
+          >Los horarios marcados como
+          <span class="badge bg-primary">Actual</span> son los que está editando
+          actualmente.</span
+        >
+        Asegúrese de no crear conflictos al configurar nuevos horarios.
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm table-bordered">
+          <thead>
+            <tr>
+              <th *ngFor="let dia of diasSemana">{{ getDiaNombre(dia) }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td *ngFor="let dia of diasSemana" class="horarios-dia-cell">
+                <div *ngIf="tieneHorariosOcupados(dia); else sinHorariosDia">
+                  <div
+                    *ngFor="let horario of getHorariosOcupadosPorDia(dia)"
+                    class="horario-item"
+                    [class.otro-centro]="horario.esOtroCentro"
+                    [class.mismo-centro-otra-especialidad]="
+                      horario.esMismoCentroOtraEspecialidad
+                    "
+                    [class.disponibilidad-actual]="
+                      horario.esDisponibilidadActual
+                    "
+                  >
+                    <strong
+                      >{{ formatearHora(horario.horaInicio) }} -
+                      {{ formatearHora(horario.horaFin) }}</strong
+                    >
+                    <div class="small">{{ horario.especialidad }}</div>
+                    <div class="small">
+                      {{ horario.centro }}
+                      <span
+                        *ngIf="horario.esOtroCentro"
+                        class="badge bg-danger ms-1"
+                        >Otro Centro</span
+                      >
+                      <span
+                        *ngIf="horario.esMismoCentroOtraEspecialidad"
+                        class="badge bg-warning ms-1"
+                        >Otra Especialidad</span
+                      >
+                      <span
+                        *ngIf="horario.esDisponibilidadActual"
+                        class="badge bg-primary ms-1"
+                        >Actual</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                <ng-template #sinHorariosDia>
+                  <span class="text-muted">-</span>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div *ngIf="cargandoDisponibilidades" class="text-center py-3">
+      <i class="fa fa-spinner fa-spin fa-2x text-primary"></i>
+      <p class="mt-2 text-muted">Cargando horarios ocupados...</p>
+    </div>
+  </form>
+</div>
+
+<div class="modal-footer">
+  <button
+    type="button"
+    class="btn btn-outline-secondary"
+    (click)="activeModal.dismiss()"
+    [disabled]="guardando"
+  >
+    <i class="fa fa-times me-2"></i>
+    Cancelar
+  </button>
+  <button
+    type="button"
+    class="btn btn-success"
+    (click)="guardarDisponibilidad()"
+    [disabled]="!puedeGuardar() || guardando"
+  >
+    <i
+      class="fa"
+      [class.fa-save]="!guardando"
+      [class.fa-spinner]="guardando"
+      [class.fa-spin]="guardando"
+    ></i>
+    {{
+      guardando
+        ? modoEdicion
+          ? "Actualizando..."
+          : "Guardando..."
+        : modoEdicion
+        ? "Actualizar Disponibilidad"
+        : "Guardar Disponibilidad"
+    }}
+  </button>
+</div>

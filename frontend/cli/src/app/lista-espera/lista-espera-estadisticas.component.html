@@ -1,0 +1,219 @@
+<div class="container-fluid mt-lg">
+  <!-- HEADER LVE NORMALIZADO -->
+  <div class="card p-xl mb-xl mx-auto">
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-md">
+        <span class="material-symbols-outlined header-icon">bar_chart</span>
+        <div>
+          <h2 class="mb-0">Estadísticas de Lista de Espera</h2>
+          <p class="text-white mb-0 mt-sm">Análisis y métricas del sistema de lista de espera</p>
+        </div>
+      </div>
+      <div class="header-actions-group">
+        <button class="btn btn-primary" (click)="cargarEstadisticas()" [disabled]="cargando">
+          <span class="material-symbols-outlined" [class.spinning]="cargando">sync</span>
+          Actualizar
+        </button>
+        <button class="btn btn-secondary" (click)="exportarCSV()">
+          <span class="material-symbols-outlined">download</span>
+          Exportar CSV
+        </button>
+        <button class="btn btn-secondary" (click)="imprimirReporte()">
+          <span class="material-symbols-outlined">print</span>
+          Imprimir
+        </button>
+      </div>
+    </div>
+
+    <!-- FILTROS DE BÚSQUEDA -->
+    <div class="filters-section mb-lg">
+      <h5 class="filters-title mb-md">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtros de análisis
+      </h5>
+
+      <form class="filters-form" [formGroup]="filtrosForm">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">
+              <span class="material-symbols-outlined">calendar_month</span>
+              Período de Análisis
+            </label>
+            <select class="form-select" id="periodo" formControlName="periodo">
+              <option *ngFor="let periodo of periodos" [value]="periodo.value">
+                {{ periodo.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">
+              <span class="material-symbols-outlined">medical_services</span>
+              Filtrar por Especialidad (opcional)
+            </label>
+            <select class="form-select" id="especialidadId" formControlName="especialidadId">
+              <option [value]="null">Todas las especialidades</option>
+              <option *ngFor="let esp of especialidades" [value]="esp.id">
+                {{ esp.nombre }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="cargando && !estadisticasGenerales">
+      <div class="loading-content">
+        <span class="material-symbols-outlined spinning">sync</span>
+        <h6>Cargando estadísticas...</h6>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div class="alert alert-danger" *ngIf="error">
+      <span class="material-symbols-outlined">error</span>
+      {{ error }}
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    <div *ngIf="estadisticasGenerales && !cargando">
+
+      <!-- MÉTRICAS PRINCIPALES -->
+      <div class="metrics-grid mb-lg">
+        <div class="metric-card metric-total">
+          <div class="metric-icon">
+            <span class="material-symbols-outlined">format_list_numbered</span>
+          </div>
+          <div class="metric-content">
+            <span class="metric-label">Total de Solicitudes</span>
+            <span class="metric-value">{{ formatearNumero(estadisticasGenerales.totalSolicitudes) }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card metric-pendientes">
+          <div class="metric-icon">
+            <span class="material-symbols-outlined">pending</span>
+          </div>
+          <div class="metric-content">
+            <span class="metric-label">Solicitudes Pendientes</span>
+            <span class="metric-value">{{ formatearNumero(estadisticasGenerales.pendientes) }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card metric-urgentes">
+          <div class="metric-icon">
+            <span class="material-symbols-outlined">emergency</span>
+          </div>
+          <div class="metric-content">
+            <span class="metric-label">Casos Urgentes</span>
+            <span class="metric-value">{{ formatearNumero(estadisticasGenerales.urgentes) }}</span>
+            <span class="badge-urgencia-alta" *ngIf="estadisticasGenerales.urgentes > 0">
+              <span class="material-symbols-outlined">warning</span>
+              Alta prioridad
+            </span>
+          </div>
+        </div>
+
+        <div class="metric-card metric-promedio">
+          <div class="metric-icon">
+            <span class="material-symbols-outlined">schedule</span>
+          </div>
+          <div class="metric-content">
+            <span class="metric-label">Tiempo Promedio de Espera</span>
+            <span class="metric-value">
+              {{ formatearDias(estadisticasGenerales.tiempoPromedioEsperaDias) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DISTRIBUCIÓN POR NIVEL DE URGENCIA -->
+      <div class="stats-section mb-lg">
+        <h5 class="section-title">
+          <span class="material-symbols-outlined">donut_small</span>
+          Distribución por Nivel de Urgencia
+        </h5>
+
+        <div class="urgencia-grid">
+          <div *ngFor="let nivel of nivelesUrgencia" class="urgencia-card"
+              [style.border-left-color]="nivel.color">
+
+            <div class="urgencia-header">
+              <div class="urgencia-icon" [style.color]="nivel.color">
+                <span class="material-symbols-outlined">{{ nivel.icon }}</span>
+              </div>
+              <span class="urgencia-label">{{ nivel.label }}</span>
+            </div>
+
+            <div class="urgencia-stats">
+              <span class="urgencia-cantidad">
+                {{ formatearNumero(getCantidadPorNivel(nivel.value)) }}
+              </span>
+              <span class="urgencia-porcentaje">
+                {{ getPorcentajeUrgencia(nivel.value).toFixed(1) }}%
+              </span>
+            </div>
+
+            <div class="urgencia-bar">
+              <div class="urgencia-bar-fill" 
+                   [style.width.%]="getPorcentajeUrgencia(nivel.value)"
+                   [style.background-color]="nivel.color">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RANKING DE ESPECIALIDADES -->
+      <div class="stats-section">
+        <h5 class="section-title">
+          <span class="material-symbols-outlined">emoji_events</span>
+          Ranking de Especialidades con Mayor Demanda
+        </h5>
+
+        <div class="ranking-container" *ngIf="rankingEspecialidades.length > 0">
+          <div *ngFor="let item of rankingEspecialidades; let i = index" 
+               class="ranking-item"
+               [class.ranking-top]="i < 3">
+
+            <div class="ranking-position">
+              <span class="position-number" [class.top-three]="i < 3">
+                {{ i + 1 }}
+              </span>
+              <span class="material-symbols-outlined medal-icon" *ngIf="i === 0" style="color: #ffd700;">
+                military_tech
+              </span>
+              <span class="material-symbols-outlined medal-icon" *ngIf="i === 1" style="color: #c0c0c0;">
+                military_tech
+              </span>
+              <span class="material-symbols-outlined medal-icon" *ngIf="i === 2" style="color: #cd7f32;">
+                military_tech
+              </span>
+            </div>
+
+            <div class="ranking-content">
+              <span class="ranking-especialidad">{{ item.especialidad }}</span>
+              <div class="ranking-bar-container">
+                <div class="ranking-bar" [style.width.%]="getAnchoBarraPorcentaje(item.cantidad)">
+                </div>
+              </div>
+            </div>
+
+            <div class="ranking-cantidad">
+              <span class="cantidad-badge">
+                {{ formatearNumero(item.cantidad) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-state-small" *ngIf="rankingEspecialidades.length === 0">
+          <span class="material-symbols-outlined">inbox</span>
+          <p>No hay datos de demanda para el período seleccionado</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

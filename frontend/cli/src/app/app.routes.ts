@@ -58,14 +58,23 @@ import { AdminPerfilComponent } from "./admin/admin-perfil.component";
 import { TokenStatusComponent } from "./components/token-status.component";
 import { AdminDashboardComponent } from "./admin/admin-dashboard.component";
 import { AdminConfigComponent } from "./admin/admin-config.component";
+import { AdminListComponent } from "./admin-management/admin-list.component";
+import { AdminDetailComponent } from "./admin-management/admin-detail.component";
+import { DashboardGestionComponent } from "./dashboard-gestion/dashboard-gestion.component";
+import { HistorialTurnosComponent } from "./turnos/historial-turnos.component";
+import { ListaEsperaComponent } from "./lista-espera/lista-espera.component";
+import { PreferenciasPacienteComponent } from "./pacientes/preferencias-paciente/preferencias-paciente.component";
+import { ListaEsperaFormComponent } from "./lista-espera/lista-espera-form.component";
+import { ListaEsperaEstadisticasComponent } from "./lista-espera/lista-espera-estadisticas.component";
 
 export const routes: Routes = [
   { path: "", component: HomeComponent },
-  
-  // Ruta puente para deep linking (enlaces desde email)
-  { 
-    path: "link-verificacion", 
-    component: DeepLinkBridgeComponent 
+
+  // Ruta puente para deep linking (enlimport { ListaEsperaFormComponent } from "./lista-espera/lista-espera-form.component";
+  //aces desde email)
+  {
+    path: "link-verificacion",
+    component: DeepLinkBridgeComponent
   },
 
   // Rutas de Operador (protegidas por OperadorGuard)
@@ -122,11 +131,21 @@ export const routes: Routes = [
   {
     path: "paciente-agenda",
     component: PacienteAgendaComponent,
-    canActivate: [PatientGuard],
+    // ruta desprotegida para poder usar el banner anonimo
   },
   {
     path: "paciente-notificaciones",
     component: PacienteNotificacionesComponent,
+    canActivate: [PatientGuard],
+  },
+  {
+    path: "paciente-historial",
+    component: HistorialTurnosComponent,
+    canActivate: [PatientGuard],
+  },
+  {
+    path: "paciente-preferencias",
+    component: PreferenciasPacienteComponent,
     canActivate: [PatientGuard],
   },
   {
@@ -161,8 +180,30 @@ export const routes: Routes = [
     component: MedicoPerfilComponent,
     canActivate: [MedicoGuard],
   },
+  {
+    path: "turnos/new",
+    component: TurnoDetailComponent,
+    canActivate: [MedicoGuard],
+  },
 
   { path: "debug/tokens", component: TokenStatusComponent }, // ruta para debug de tokens
+  // Lista de Espera Routes
+  {
+    path: "lista-espera",
+    component: ListaEsperaComponent,
+    canActivate: [AdminOperadorGuard],
+  },
+  {
+    path: "lista-espera-form",
+    component: ListaEsperaFormComponent,
+    canActivate: [PatientGuard],
+  },
+  {
+    path: "lista-espera-estadisticas",
+    component: ListaEsperaEstadisticasComponent,
+    canActivate: [AdminOperadorGuard],
+  },
+
   // Admin Routes (protected)
   {
     path: "turnos",
@@ -345,8 +386,29 @@ export const routes: Routes = [
     canActivate: [AdminGuard],
   },
   {
-  path: "config",  // O "admin-config" si prefieres algo más descriptivo
-  component: AdminConfigComponent,
-  canActivate: [AdminOperadorGuard],  // Protege para admins y operadores
-},
+    path: "dashboard-gestion",
+    component: DashboardGestionComponent,
+    canActivate: [AdminGuard],
+  },
+  // Admin management (admins list / create / edit)
+  {
+    path: "admin/users",
+    component: AdminListComponent,
+    canActivate: [AdminGuard]
+  },
+  {
+    path: "admin/users/new",
+    component: AdminDetailComponent,
+    canActivate: [AdminGuard]
+  },
+  {
+    path: "admin/users/:id",
+    component: AdminDetailComponent,
+    canActivate: [AdminGuard]
+  },
+  {
+    path: "config",  // O "admin-config" si prefieres algo más descriptivo
+    component: AdminConfigComponent,
+    canActivate: [AdminOperadorGuard],  // Protege para admins y operadores
+  },
 ];

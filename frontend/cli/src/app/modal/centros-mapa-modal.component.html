@@ -1,0 +1,487 @@
+<div class="centros-modal-backdrop" (click)="close()">
+  <div class="centros-modal-content" (click)="$event.stopPropagation()">
+    <!-- HEADER -->
+    <div class="centros-modal-header">
+      <div class="header-info">
+        <h3><i class="fas fa-map-marked-alt"></i> Centros de Atención</h3>
+        <p>Encuentra el centro más cercano a tu ubicación</p>
+      </div>
+      <button type="button" class="btn-close" (click)="close()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- FILTROS Y CONTROLES -->
+    <div class="centros-modal-filters">
+      <!-- BÚSQUEDA POR NOMBRE -->
+      <div class="filter-group search-group">
+        <label><i class="fas fa-search"></i> Buscar Centro:</label>
+        <div class="search-input-container">
+          <input
+            type="text"
+            name="busquedaTexto"
+            class="form-control search-input"
+            [(ngModel)]="busquedaTexto"
+            (input)="buscarCentros()"
+            placeholder="Nombre del centro o dirección..."
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            class="btn-clear-search"
+            *ngIf="busquedaTexto"
+            (click)="limpiarBusqueda()"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div
+          class="search-results"
+          *ngIf="resultadosBusqueda.length > 0 && busquedaTexto"
+        >
+          <div
+            *ngFor="let centro of resultadosBusqueda"
+            class="search-result-item"
+            (click)="seleccionarCentroEnMapa(centro)"
+          >
+            <div class="result-name">{{ centro.nombre }}</div>
+            <div class="result-address">
+              {{ centro.direccion }}, {{ centro.localidad }}
+            </div>
+            <div
+              class="result-distance"
+              *ngIf="centro.distanciaKm !== undefined"
+            >
+              {{ formatDistance(centro.distanciaKm) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FILTRO POR ESPECIALIDAD -->
+      <div class="filter-group" *ngIf="esOperador">
+        <label
+          ><i class="fas fa-stethoscope"></i> Filtrar por Especialidad:</label
+        >
+        <select
+          class="form-control"
+          name="especialidadFiltro"
+          [(ngModel)]="especialidadFiltro"
+          (change)="aplicarFiltros()"
+        >
+          <option value="">
+            Todas las especialidades ({{ centrosFiltrados.length }})
+          </option>
+          <option
+            *ngFor="let esp of especialidadesDisponibles"
+            [value]="esp.nombre"
+          >
+            {{ esp.nombre }} ({{ contarCentrosPorEspecialidad(esp.nombre) }})
+          </option>
+        </select>
+      </div>
+
+      <!-- CONTROLES DE UBICACIÓN -->
+      <div class="location-controls">
+        <div class="location-group">
+          <button
+            class="btn btn-location"
+            [class.active]="userLocation"
+            (click)="obtenerUbicacionUsuario()"
+            [disabled]="isLoadingLocation"
+            [title]="
+              userLocation
+                ? 'Click para actualizar ubicación'
+                : 'Obtener mi ubicación'
+            "
+          >
+            <i class="fas fa-map-marker-alt"></i>
+            {{
+              isLoadingLocation
+                ? "Ubicando..."
+                : userLocation
+                ? "Ubicado (Refrescar)"
+                : "Mi Ubicación"
+            }}
+            <i class="fas fa-spinner fa-spin" *ngIf="isLoadingLocation"></i>
+          </button>
+
+          <button
+            class="btn btn-location-manual"
+            (click)="showManualLocationForm = !showManualLocationForm"
+          >
+            <i class="fas fa-edit"></i>
+            Ubicación Manual
+          </button>
+
+          <button
+            class="btn btn-drag-location"
+            [class.active]="modoArrastre"
+            (click)="toggleModoArrastre()"
+            title="Arrastra el mapa para ajustar tu ubicación"
+          >
+            <i class="fas fa-arrows-alt"></i>
+            {{ modoArrastre ? "✓ Modo Arrastre" : "Ubicación por Arrastre" }}
+          </button>
+        </div>
+
+        <!-- FORMULARIO DE UBICACIÓN MANUAL -->
+        <div class="manual-location-form" *ngIf="showManualLocationForm">
+          <div class="input-group">
+            <input
+              type="text"
+              name="direccionBusqueda"
+              class="form-control"
+              [(ngModel)]="direccionBusqueda"
+              placeholder="Ingresa tu dirección o ciudad"
+              (keyup.enter)="buscarDireccion()"
+            />
+            <button
+              class="btn btn-search"
+              (click)="buscarDireccion()"
+              [disabled]="!direccionBusqueda"
+            >
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+
+          <div class="coord-inputs">
+            <input
+              type="number"
+              name="latitudManual"
+              class="form-control"
+              [(ngModel)]="latitudManual"
+              placeholder="Latitud"
+              step="any"
+            />
+            <input
+              type="number"
+              name="longitudManual"
+              class="form-control"
+              [(ngModel)]="longitudManual"
+              placeholder="Longitud"
+              step="any"
+            />
+            <button
+              class="btn btn-set-coords"
+              (click)="establecerCoordenadas()"
+              [disabled]="!latitudManual || !longitudManual"
+            >
+              <i class="fas fa-map-pin"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- STATUS DE UBICACIÓN -->
+        <div class="location-status" *ngIf="userLocation">
+          <small class="location-info">
+            <i class="fas fa-check-circle"></i>
+            Ubicación establecida
+            <span *ngIf="userLocation.source === 'geolocation'">(GPS)</span>
+            <span *ngIf="userLocation.source === 'ip'">(aproximada)</span>
+            <span *ngIf="userLocation.source === 'manual'">(manual)</span>
+          </small>
+        </div>
+
+        <!-- MENSAJE MODO ARRASTRE 
+            <div class="drag-mode-info" *ngIf="modoArrastre">
+              <small class="drag-info-text">
+                <i class="fas fa-arrows-alt"></i>
+                🎯 Modo arrastre activo: Mueve el mapa para ajustar tu ubicación. El ícono verde marca tu posición.
+              </small>
+            </div>-->
+
+        <div class="location-error" *ngIf="locationError">
+          <small class="error-text">
+            <i class="fas fa-exclamation-triangle"></i>
+            {{ locationError }}
+          </small>
+        </div>
+      </div>
+
+      <!-- RADIO DE BÚSQUEDA -->
+      <div class="filter-group" *ngIf="userLocation">
+        <label><i class="fas fa-circle"></i> Radio de búsqueda:</label>
+        <select
+          class="form-control"
+          name="radioMaximo"
+          [(ngModel)]="radioMaximo"
+          (change)="aplicarFiltros()"
+        >
+          <option [value]="10">10 km</option>
+          <option [value]="25">25 km</option>
+          <option [value]="50">50 km</option>
+          <option [value]="100">100 km</option>
+          <option [value]="0">Sin límite</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- MAPA -->
+    <div
+      class="centros-modal-body"
+      [class.modo-exploracion]="modoExploracion"
+      [class.modo-compacto]="!modoExploracion"
+    >
+      <div #mapContainer class="map-container">
+        <!-- Ícono verde fijo en el centro para modo arrastre -->
+        <div
+          class="center-crosshair"
+          *ngIf="modoArrastre"
+          [style.display]="modoArrastre ? 'block' : 'none'"
+        >
+          <i class="fas fa-map-marker-alt"></i>
+        </div>
+      </div>
+
+      <!-- Botón para confirmar ubicación (solo en modo exploración) -->
+      <div
+        class="confirm-location-section"
+        *ngIf="modoExploracion && userLocation && !ubicacionConfirmada"
+      >
+        <button class="btn btn-confirm-location" (click)="confirmarUbicacion()">
+          <i class="fas fa-check-circle"></i>
+          Confirmar mi ubicación y ver centros cercanos
+        </button>
+      </div>
+    </div>
+
+    <!-- LISTA DE CENTROS -->
+    <div class="centros-modal-footer">
+      <div class="centros-list-header">
+        <h4>
+          <i class="fas fa-hospital"></i>
+          Centros Encontrados ({{ centrosFiltrados.length }})
+        </h4>
+
+        <!-- Botón para volver a modo exploración (solo visible en modo compacto) -->
+        <button
+          class="btn btn-expand-map"
+          *ngIf="!modoExploracion"
+          (click)="volverModoExploracion()"
+          title="Expandir mapa"
+        >
+          <i class="fas fa-expand"></i>
+          Ver mapa completo
+        </button>
+        <div class="sort-controls" *ngIf="userLocation">
+          <button
+            class="btn btn-sort"
+            [class.active]="ordenadoPorDistancia"
+            (click)="toggleOrdenarPorDistancia()"
+          >
+            <i class="fas fa-sort-amount-down"></i>
+            {{
+              ordenadoPorDistancia ? "Por distancia" : "Ordenar por distancia"
+            }}
+          </button>
+        </div>
+      </div>
+
+      <!-- MENSAJE SI NO HAY CENTROS -->
+      <div class="no-centros-message" *ngIf="centrosFiltrados.length === 0">
+        <div class="no-centros-content">
+          <i class="fas fa-map-marker-alt"></i>
+          <h5>No se encontraron centros</h5>
+          <p *ngIf="radioMaximo > 0 && userLocation">
+            No hay centros dentro de {{ radioMaximo }}km de tu ubicación.
+          </p>
+          <p *ngIf="especialidadFiltro">
+            No hay centros con la especialidad "{{ especialidadFiltro }}"
+            disponible.
+          </p>
+          <div class="suggestions">
+            <button
+              class="btn btn-suggestion"
+              *ngIf="radioMaximo < 100"
+              (click)="ampliarRadio()"
+            >
+              <i class="fas fa-expand-arrows-alt"></i>
+              Ampliar radio de búsqueda
+            </button>
+            <button
+              class="btn btn-suggestion"
+              *ngIf="especialidadFiltro"
+              (click)="limpiarFiltros()"
+            >
+              <i class="fas fa-filter"></i>
+              Quitar filtros
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LISTA DE CENTROS -->
+      <div class="centros-list" *ngIf="centrosFiltrados.length > 0">
+        <div
+          class="centro-item"
+          *ngFor="let centro of centrosFiltrados; let i = index"
+          [class.highlighted]="centroActualSeleccionado?.id === centro.id"
+          (click)="seleccionarCentro(centro)"
+        >
+          <div class="centro-info">
+            <div class="centro-header">
+              <h5>{{ centro.nombre }}</h5>
+              <div class="centro-badges">
+                <span
+                  class="distance-badge"
+                  *ngIf="centro.distanciaKm !== undefined"
+                >
+                  <i class="fas fa-route"></i>
+                  {{ formatDistance(centro.distanciaKm) }}
+                </span>
+                <span class="index-badge">{{ i + 1 }}</span>
+              </div>
+            </div>
+
+            <div class="centro-details">
+              <div class="detail-row">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>{{ centro.direccion }}</span>
+              </div>
+              <div class="detail-row" *ngIf="centro.localidad">
+                <i class="fas fa-city"></i>
+                <span>{{ centro.localidad }}, {{ centro.provincia }}</span>
+              </div>
+              <div class="detail-row" *ngIf="centro.telefono">
+                <i class="fas fa-phone"></i>
+                <span>{{ centro.telefono }}</span>
+              </div>
+            </div>
+
+            <!-- ESPECIALIDADES DISPONIBLES -->
+            <!-- El operador/etc... puede ver las especialidades disponibles para eso es el  *ngIf="
+                    esOperador  -->
+            <div
+              class="especialidades-centro"
+              *ngIf="
+                esOperador &&
+                centro.especialidadesDisponibles &&
+                centro.especialidadesDisponibles.length > 0
+              "
+            >
+              <div class="especialidades-header">
+                <i class="fas fa-stethoscope"></i>
+                <span>Especialidades disponibles:</span>
+              </div>
+              <div class="especialidades-tags">
+                <span
+                  class="especialidad-tag"
+                  *ngFor="let esp of centro.especialidadesDisponibles"
+                  [class.highlighted]="esp === especialidadFiltro"
+                >
+                  {{ esp }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="centro-actions">
+            <button
+              class="btn btn-info btn-sm"
+              [routerLink]="['/paciente-agenda']"
+              [queryParams]="{ centroId: centro.id }"
+              (click)="close(); $event.stopPropagation()"
+              title="Ver turnos disponibles en este centro"
+            >
+              <i class="fas fa-calendar-check"></i>
+              Ver Turnos
+            </button>
+            <button
+              class="btn btn-center-on-map"
+              (click)="centrarEnMapa(centro, $event)"
+              title="Ver en mapa"
+            >
+              <i class="fas fa-crosshairs"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PEQUEÑO DE INFORMACIÓN DEL CENTRO -->
+<div 
+  class="centro-info-modal-backdrop" 
+  *ngIf="mostrarModalInfoCentro && centroInfoModal"
+  (click)="cerrarModalInfoCentro()"
+>
+  <div class="centro-info-modal-content" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="centro-info-modal-header">
+      <h4>
+        <i class="fas fa-hospital"></i>
+        {{ centroInfoModal.nombre }}
+      </h4>
+      <button 
+        type="button" 
+        class="btn-close-small" 
+        (click)="cerrarModalInfoCentro()"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="centro-info-modal-body">
+      <div class="info-row" *ngIf="centroInfoModal.direccion">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>{{ centroInfoModal.direccion }}</span>
+      </div>
+      
+      <div class="info-row" *ngIf="centroInfoModal.localidad">
+        <i class="fas fa-city"></i>
+        <span>{{ centroInfoModal.localidad }}, {{ centroInfoModal.provincia }}</span>
+      </div>
+      
+      <div class="info-row" *ngIf="centroInfoModal.telefono">
+        <i class="fas fa-phone"></i>
+        <span>{{ centroInfoModal.telefono }}</span>
+      </div>
+      
+      <div class="info-row" *ngIf="centroInfoModal.distanciaKm !== undefined">
+        <i class="fas fa-route"></i>
+        <span>{{ formatDistance(centroInfoModal.distanciaKm) }}</span>
+      </div>
+
+      <!-- Especialidades -->
+      <div 
+        class="info-especialidades" 
+        *ngIf="centroInfoModal.especialidadesDisponibles && centroInfoModal.especialidadesDisponibles.length > 0"
+      >
+        <div class="info-especialidades-header">
+          <i class="fas fa-stethoscope"></i>
+          <strong>Especialidades disponibles:</strong>
+        </div>
+        <div class="info-especialidades-tags">
+          <span 
+            class="especialidad-tag-small" 
+            *ngFor="let esp of centroInfoModal.especialidadesDisponibles.slice(0, 5)"
+          >
+            {{ esp }}
+          </span>
+          <span 
+            class="especialidad-tag-small more-tag" 
+            *ngIf="centroInfoModal.especialidadesDisponibles.length > 5"
+          >
+            +{{ centroInfoModal.especialidadesDisponibles.length - 5 }} más
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer con botón -->
+    <div class="centro-info-modal-footer">
+      <button
+        class="btn btn-primary btn-block"
+        [routerLink]="['/paciente-agenda']"
+        [queryParams]="{ centroId: centroInfoModal.id }"
+        (click)="verTurnosCentro(centroInfoModal.id!)"
+      >
+        <i class="fas fa-calendar-check"></i>
+        Ver Turnos Disponibles
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,649 @@
+/* ===================================================================
+   LISTA DE ESPERA FORM - ESTILOS GLOBALES
+   =================================================================== */
+
+/* ===================================================================
+   1. ESTRUCTURA PRINCIPAL
+   =================================================================== */
+
+.lista-espera-card {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow-soft);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ===================================================================
+   2. HEADER
+   =================================================================== */
+
+.lista-espera-header h2 {
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.lista-espera-header .header-icon {
+  font-size: 2rem;
+  color: var(--color-accent);
+}
+
+.lista-espera-header .material-symbols-outlined {
+  color: var(--color-accent);
+}
+
+.lista-espera-header .btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: var(--border-radius-full);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+}
+
+.lista-espera-header .btn-icon .material-symbols-outlined {
+  font-size: 1.75rem;
+  line-height: 1;
+  display: block;
+  margin: 0;
+}
+
+.lista-espera-header .btn-icon:hover {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+  transform: rotate(90deg);
+}
+
+/* ===================================================================
+   3. FORMULARIO - ESTRUCTURA GENERAL
+   =================================================================== */
+
+.lista-espera-body {
+  padding: 0;
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  margin-bottom: var(--space-sm);
+}
+
+.form-label .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
+/* ===================================================================
+   4. BÚSQUEDA DE PACIENTES - CONTENEDOR PRINCIPAL
+   =================================================================== */
+
+.patient-search-wrapper {
+  position: relative;
+}
+
+/* Input de búsqueda */
+.patient-search-wrapper .form-control {
+  padding-right: 3rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background: var(--color-background);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  transition: all 0.3s ease;
+}
+
+.patient-search-wrapper .form-control:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 15%, transparent);
+  outline: none;
+  background: var(--color-surface);
+}
+
+.patient-search-wrapper .form-control:disabled {
+  background: color-mix(in srgb, var(--color-surface) 50%, var(--color-border));
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Botón limpiar búsqueda */
+.btn-clear-search {
+  position: absolute;
+  right: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-full);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  line-height: 1 !important;
+}
+
+.btn-clear-search:hover {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+}
+
+.btn-clear-search .material-symbols-outlined {
+  font-size: 1.25rem !important;
+  line-height: 1 !important;
+  display: block !important;
+  margin: 0 !important;
+}
+
+/* Spinner de carga */
+.search-spinner {
+  position: absolute;
+  right: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-spinner .material-symbols-outlined {
+  font-size: 1.5rem;
+  color: var(--color-accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===================================================================
+   5. RESULTADOS DE BÚSQUEDA
+   =================================================================== */
+
+.search-results {
+  position: absolute;
+  top: calc(100% + var(--space-sm));
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--box-shadow-elevated);
+  z-index: 1000;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Item de resultado individual */
+.search-result-item {
+  padding: var(--space-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.search-result-item:focus {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.result-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.result-name .material-symbols-outlined {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+}
+
+.result-details {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-xs);
+}
+
+/* Badges en resultados */
+.result-details .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.result-details .badge .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.badge-secondary {
+  background: color-mix(in srgb, var(--text-secondary) 15%, transparent);
+  color: var(--text-secondary);
+}
+
+.badge-info {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  color: var(--color-accent);
+}
+
+/* Sin resultados */
+.no-results {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.no-results .material-symbols-outlined {
+  font-size: 3rem;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-md);
+  opacity: 0.5;
+}
+
+.no-results p {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  margin: var(--space-sm) 0;
+}
+
+.no-results small {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+}
+
+/* ===================================================================
+   6. PACIENTE SELECCIONADO (BADGE)
+   =================================================================== */
+
+.selected-patient-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--color-success) 15%, transparent) 0%, 
+    color-mix(in srgb, var(--color-success) 8%, transparent) 100%);
+  border: 2px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+  border-left: 4px solid var(--color-success);
+  border-radius: var(--border-radius-md);
+  margin-top: var(--space-sm);
+  animation: slideInUp 0.3s ease;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.selected-patient-badge .material-symbols-outlined:first-child {
+  font-size: 1.5rem;
+  color: var(--color-success);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.selected-patient-badge strong {
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+}
+
+.selected-patient-badge .text-muted {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.selected-patient-badge .text-muted .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+/* ===================================================================
+   7. INPUTS Y SELECTS GENERALES
+   =================================================================== */
+
+.form-control,
+.form-select {
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background: var(--color-background);
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 15%, transparent);
+  outline: none;
+  background: var(--color-surface);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  background: color-mix(in srgb, var(--color-surface) 50%, var(--color-border));
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Texto de ayuda */
+.form-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-xs);
+  display: flex;
+  align-items: center;
+}
+
+.form-text .material-symbols-outlined {
+  color: var(--color-accent);
+  opacity: 0.7;
+}
+
+.form-text .info-icon {
+  font-size: 1rem;
+  color: var(--color-accent);
+  opacity: 0.7;
+}
+
+.text-muted {
+  color: var(--text-secondary);
+}
+
+/* ===================================================================
+   8. VALIDACIÓN VISUAL
+   =================================================================== */
+
+.form-control.ng-invalid.ng-touched,
+.form-select.ng-invalid.ng-touched {
+  border-color: var(--color-danger);
+}
+
+.form-control.ng-valid.ng-touched,
+.form-select.ng-valid.ng-touched {
+  border-color: var(--color-success);
+}
+
+/* ===================================================================
+   9. BOTONES DEL FOOTER
+   =================================================================== */
+
+.lista-espera-footer .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  border-radius: var(--border-radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.lista-espera-footer .btn .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+  background: var(--text-secondary);
+  border-color: var(--text-secondary);
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-soft);
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 85%, black);
+  transform: translateY(-2px);
+  box-shadow: var(--box-shadow-elevated);
+}
+
+.btn-primary:disabled {
+  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ===================================================================
+   10. RESPONSIVE
+   =================================================================== */
+
+@media (max-width: 768px) {
+  .lista-espera-card {
+    padding: var(--space-lg) !important;
+  }
+
+  .lista-espera-header h2 {
+    font-size: var(--font-size-lg);
+  }
+
+  .lista-espera-header .material-symbols-outlined {
+    font-size: 1.5rem;
+  }
+
+  .form-row {
+    flex-direction: column !important;
+  }
+
+  .lista-espera-footer {
+    flex-direction: column-reverse !important;
+  }
+
+  .lista-espera-footer .btn {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .search-results {
+    max-height: 250px;
+  }
+
+  .selected-patient-badge {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+}
+
+/* ===================================================================
+   11. ANIMACIONES
+   =================================================================== */
+
+.lista-espera-body {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===================================================================
+   12. UTILIDADES ESPECÍFICAS
+   =================================================================== */
+
+/* Scrollbar personalizado en resultados */
+.search-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-results::-webkit-scrollbar-track {
+  background: var(--color-background);
+  border-radius: var(--border-radius-sm);
+}
+
+.search-results::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: var(--border-radius-sm);
+}
+
+.search-results::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-accent) 50%, transparent);
+}
+
+/* ===================================================================
+   13. ESTADOS ESPECIALES Y FEEDBACK
+   =================================================================== */
+
+/* Badge de información general */
+.info-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--border-radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.info-badge .material-symbols-outlined {
+  color: var(--color-accent);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* Mensaje de error de validación */
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  border-radius: var(--border-radius-sm);
+  margin-top: var(--space-xs);
+}
+
+.form-error .material-symbols-outlined {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Mensaje de advertencia */
+.form-warning {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--color-warning);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  border-radius: var(--border-radius-sm);
+  margin-top: var(--space-xs);
+}
+
+.form-warning .material-symbols-outlined {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Mensaje de éxito */
+.form-success {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border-radius: var(--border-radius-sm);
+  margin-top: var(--space-xs);
+}
+
+.form-success .material-symbols-outlined {
+  font-size: 1rem;
+  flex-shrink: 0;
+}

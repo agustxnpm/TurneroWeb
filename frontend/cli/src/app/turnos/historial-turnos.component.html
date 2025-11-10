@@ -1,0 +1,176 @@
+<div class="container-fluid mt-xl">
+    <!-- HEADER -->
+    <div class="row mb-lg">
+        <div class="col-12">
+            <div class="banner-historial card">
+                <div class="header-content">
+                    <span class="material-symbols-outlined header-icon">history</span>
+                    <div class="header-text">
+                        <h1>Historial de Turnos</h1>
+                        <p class="header-subtitle">Consulta tu historial de atenciones médicas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="row mb-lg">
+        <div class="col-12">
+            <div class="filtros-card card">
+                <div class="filtros-header">
+                    <span class="material-symbols-outlined">filter_alt</span>
+                    <h3>Filtros de Búsqueda</h3>
+                </div>
+                <div class="filtros-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" for="fechaDesde">Fecha Desde</label>
+                                <input type="date" class="form-control" id="fechaDesde" [(ngModel)]="filtro.fechaDesde"
+                                    (change)="aplicarFiltros()">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" for="fechaHasta">Fecha Hasta</label>
+                                <input type="date" class="form-control" id="fechaHasta" [(ngModel)]="filtro.fechaHasta"
+                                    (change)="aplicarFiltros()">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label" for="estadoTurno">Estado</label>
+                                <select class="form-control" id="estadoTurno" [(ngModel)]="filtro.estado"
+                                    (change)="aplicarFiltros()">
+                                    <option value="undefined">Todos</option>
+                                    <option value="PROGRAMADO">Programado</option>
+                                    <option value="CONFIRMADO">Confirmado</option>
+                                    <option value="CANCELADO">Cancelado</option>
+                                    <option value="COMPLETO">Completado</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LISTA DE TURNOS -->
+    <div class="row">
+        <div class="col-12">
+            <div class="turnos-card card">
+                <div class="turnos-header">
+                    <h3>
+                        <span class="material-symbols-outlined">event_available</span>
+                        Turnos Históricos
+                    </h3>
+                    <div class="turnos-info" *ngIf="totalElements > 0">
+                        {{ totalElements }} turnos encontrados
+                    </div>
+                </div>
+
+                <div class="turnos-body">
+                    <!-- Loading State -->
+                    <div class="loading-turnos" *ngIf="isLoading">
+                        <span class="material-symbols-outlined spinner">progress_activity</span>
+                        Cargando historial...
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="no-turnos-content" *ngIf="!isLoading && turnos.length === 0">
+                        <span class="material-symbols-outlined empty-icon">event_busy</span>
+                        <h4>No hay turnos para mostrar</h4>
+                        <p>No se encontraron turnos con los filtros seleccionados.</p>
+                    </div>
+
+                    <!-- Turnos List -->
+                    <div class="turnos-grid" *ngIf="!isLoading && turnos.length > 0">
+                        <div class="turno-card" *ngFor="let turno of turnos">
+                            <div class="turno-header" [ngClass]="getEstadoClass(turno.estado)">
+                                <div class="estado-badge">
+                                    {{ turno.estado }}
+                                </div>
+                                <div class="fecha-info">
+                                    <span class="material-symbols-outlined">schedule</span>
+                                    {{ turno.fecha | date:'dd/MM/yyyy' }} - {{ turno.horaInicio }}
+                                </div>
+                            </div>
+
+                            <div class="turno-body">
+                                <div class="turno-detail">
+                                    <span class="material-symbols-outlined">person</span>
+                                    <strong>Médico:</strong> {{ turno.staffMedicoNombre }}
+                                </div>
+                                <div class="turno-detail">
+                                    <span class="material-symbols-outlined">medical_services</span>
+                                    <strong>Especialidad:</strong> {{ turno.especialidadStaffMedico }}
+                                </div>
+                                <div class="turno-detail observaciones-detail" *ngIf="turno.observaciones">
+                                    <span class="material-symbols-outlined">description</span>
+                                    <div>
+                                        <strong>Observaciones:</strong>
+                                        <div class="observaciones-text">{{ turno.observaciones }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="turno-footer">
+                                    <!-- Asistencia Badge -->
+                                    <span class="asistencia-badge" [ngClass]="{
+                                        'asistio': turno.asistio !== false,
+                                        'no-asistio': turno.asistio === false
+                                    }">
+                                        <span class="material-symbols-outlined">
+                                            {{ turno.asistio === false ? 'cancel' : 'check_circle' }}
+                                        </span>
+                                        {{ turno.asistio === false ? 'No asistió' : 'Asistió' }}
+                                    </span>
+                                    
+                                    <!-- Botón Ver Detalle -->
+                                    <button 
+                                        class="btn btn-link btn-sm" 
+                                        (click)="abrirDetalle(turno); $event.stopPropagation()" 
+                                        type="button"
+                                        aria-label="Ver detalle del turno">
+                                        <span class="material-symbols-outlined me-xs">visibility</span>
+                                        Ver Detalle
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paginación -->
+                    <div class="paginacion-controles mt-lg" *ngIf="!isLoading && totalPages > 1">
+                        <button class="btn btn-secondary btn-paginacion" 
+                                [disabled]="currentPage === 0"
+                                (click)="cambiarPagina(currentPage - 1)"
+                                type="button">
+                            <span class="material-symbols-outlined">chevron_left</span>
+                            Anterior
+                        </button>
+
+                        <div class="numeros-pagina">
+                            <button *ngFor="let num of getPaginasArray()" 
+                                    class="btn btn-numero-pagina"
+                                    [class.active]="currentPage === num" 
+                                    (click)="cambiarPagina(num)"
+                                    type="button">
+                                {{ num + 1 }}
+                            </button>
+                        </div>
+
+                        <button class="btn btn-secondary btn-paginacion" 
+                                [disabled]="currentPage === totalPages - 1"
+                                (click)="cambiarPagina(currentPage + 1)"
+                                type="button">
+                            Siguiente
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

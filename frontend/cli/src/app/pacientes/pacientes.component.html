@@ -1,0 +1,391 @@
+<div class="card p-xl mb-xl mx-auto">
+  <!-- HEADER LVE NORMALIZADO -->
+  <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">group</span>
+      <div>
+        <h2 class="mb-0">Pacientes</h2>
+        <p class="text-muted mb-0 mt-sm">Gestión de pacientes registrados</p>
+      </div>
+    </div>
+    <button class="btn btn-primary" (click)="router.navigate(['/pacientes/new'])">
+      <span class="material-symbols-outlined">add_circle</span>
+      <span class="d-none d-sm-inline">Nuevo Paciente</span>
+    </button>
+  </div>
+
+  <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+  <div class="filters-section mb-lg">
+    <h5 class="filters-title mb-md">
+      <span class="material-symbols-outlined">filter_list</span>
+      Filtros de búsqueda
+    </h5>
+
+    <div class="row g-3">
+      <!-- Búsqueda unificada por nombre o apellido -->
+      <div class="col-md-4">
+        <label for="nombreApellidoFilter" class="form-label">
+          <span class="material-symbols-outlined">person</span>
+          Nombre o Apellido
+        </label>
+        <input
+          type="text"
+          id="nombreApellidoFilter"
+          class="form-control"
+          placeholder="Buscar por nombre o apellido..."
+          [(ngModel)]="filters.nombreApellido"
+          (input)="onFilterChange()"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Búsqueda por documento -->
+      <div class="col-md-4">
+        <label for="documentoFilter" class="form-label">
+          <span class="material-symbols-outlined">badge</span>
+          DNI/Documento
+        </label>
+        <input
+          type="text"
+          id="documentoFilter"
+          class="form-control"
+          placeholder="Buscar por documento..."
+          [(ngModel)]="filters.documento"
+          (input)="onFilterChange()"
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- Búsqueda por email -->
+      <div class="col-md-4">
+        <label for="emailFilter" class="form-label">
+          <span class="material-symbols-outlined">email</span>
+          Email
+        </label>
+        <input
+          type="email"
+          id="emailFilter"
+          class="form-control"
+          placeholder="Buscar por email..."
+          [(ngModel)]="filters.email"
+          (input)="onFilterChange()"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+
+    <!-- Fila adicional para controles -->
+    <div class="row g-3 mt-sm">
+      <div class="col-md-3">
+        <label class="form-label">
+          <span class="material-symbols-outlined">view_list</span>
+          Registros por página
+        </label>
+        <select
+          class="form-select"
+          [(ngModel)]="pageSize"
+          (change)="onPageSizeChange()"
+        >
+          <option [value]="10">10 registros</option>
+          <option [value]="25">25 registros</option>
+          <option [value]="50">50 registros</option>
+          <option [value]="100">100 registros</option>
+        </select>
+      </div>
+
+      <div class="col-md-6 d-flex align-items-end">
+        <div class="d-flex gap-sm w-100">
+          <button
+            class="btn btn-secondary flex-fill"
+            (click)="clearFilters()"
+            [disabled]="!hasActiveFilters()"
+          >
+            <span class="material-symbols-outlined">close</span>
+            Limpiar filtros
+          </button>
+          <button
+            class="btn btn-primary flex-fill"
+            (click)="refreshData()"
+            [disabled]="isLoading"
+          >
+            <span class="material-symbols-outlined" [class.spinning]="isLoading">sync</span>
+            Actualizar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Información de resultados -->
+    <div class="row mt-md" *ngIf="resultsPage.totalElements > 0">
+      <div class="col-12">
+        <div class="info-badge">
+          <span class="material-symbols-outlined">info</span>
+          Mostrando {{ resultsPage.numberOfElements }} de {{ resultsPage.totalElements }} pacientes
+          <span *ngIf="hasActiveFilters()" class="ms-sm">
+            (filtrados de {{ totalUnfiltered }} totales)
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA LVE NORMALIZADA -->
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>
+            <button
+              class="header-button"
+              (click)="sortBy('nombre')"
+              [class.active]="sortConfig.field === 'nombre'"
+            >
+              <div class="header-cell">
+                <span class="material-symbols-outlined">person</span>
+                Nombre
+                <span
+                  class="material-symbols-outlined sort-icon"
+                  *ngIf="sortConfig.field === 'nombre'"
+                >
+                  {{ sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                <span
+                  class="material-symbols-outlined sort-icon inactive"
+                  *ngIf="sortConfig.field !== 'nombre'"
+                >
+                  unfold_more
+                </span>
+              </div>
+            </button>
+          </th>
+          <th>
+            <button
+              class="header-button"
+              (click)="sortBy('apellido')"
+              [class.active]="sortConfig.field === 'apellido'"
+            >
+              <div class="header-cell">
+                <span class="material-symbols-outlined">person_outline</span>
+                Apellido
+                <span
+                  class="material-symbols-outlined sort-icon"
+                  *ngIf="sortConfig.field === 'apellido'"
+                >
+                  {{ sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                <span
+                  class="material-symbols-outlined sort-icon inactive"
+                  *ngIf="sortConfig.field !== 'apellido'"
+                >
+                  unfold_more
+                </span>
+              </div>
+            </button>
+          </th>
+          <th>
+            <button
+              class="header-button"
+              (click)="sortBy('email')"
+              [class.active]="sortConfig.field === 'email'"
+            >
+              <div class="header-cell">
+                <span class="material-symbols-outlined">email</span>
+                Email
+                <span
+                  class="material-symbols-outlined sort-icon"
+                  *ngIf="sortConfig.field === 'email'"
+                >
+                  {{ sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                <span
+                  class="material-symbols-outlined sort-icon inactive"
+                  *ngIf="sortConfig.field !== 'email'"
+                >
+                  unfold_more
+                </span>
+              </div>
+            </button>
+          </th>
+          <th>
+            <div class="header-cell">
+              <span class="material-symbols-outlined">phone</span>
+              Teléfono
+            </div>
+          </th>
+          <th>
+            <button
+              class="header-button"
+              (click)="sortBy('dni')"
+              [class.active]="sortConfig.field === 'dni'"
+            >
+              <div class="header-cell">
+                <span class="material-symbols-outlined">badge</span>
+                DNI
+                <span
+                  class="material-symbols-outlined sort-icon"
+                  *ngIf="sortConfig.field === 'dni'"
+                >
+                  {{ sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                <span
+                  class="material-symbols-outlined sort-icon inactive"
+                  *ngIf="sortConfig.field !== 'dni'"
+                >
+                  unfold_more
+                </span>
+              </div>
+            </button>
+          </th>
+          <th>
+            <button
+              class="header-button"
+              (click)="sortBy('fechaNacimiento')"
+              [class.active]="sortConfig.field === 'fechaNacimiento'"
+            >
+              <div class="header-cell">
+                <span class="material-symbols-outlined">calendar_today</span>
+                Fecha Nac.
+                <span
+                  class="material-symbols-outlined sort-icon"
+                  *ngIf="sortConfig.field === 'fechaNacimiento'"
+                >
+                  {{ sortConfig.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                <span
+                  class="material-symbols-outlined sort-icon inactive"
+                  *ngIf="sortConfig.field !== 'fechaNacimiento'"
+                >
+                  unfold_more
+                </span>
+              </div>
+            </button>
+          </th>
+          <th>
+            <div class="header-cell">
+              <span class="material-symbols-outlined">local_hospital</span>
+              Obra Social
+            </div>
+          </th>
+          <th>
+            <div class="header-cell">
+              <span class="material-symbols-outlined">settings</span>
+              Acciones
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Loading state -->
+        <tr *ngIf="isLoading">
+          <td colspan="9" class="loading-state">
+            <div class="loading-content">
+              <span class="material-symbols-outlined spinning">sync</span>
+              <h6>Cargando pacientes...</h6>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Data rows -->
+        <tr
+          *ngFor="let paciente of resultsPage.content || []; let i = index"
+          (click)="goToDetail(paciente.id)"
+          class="table-row cursor-pointer"
+        >
+          <td>
+            <span class="entity-name">{{ paciente.nombre }}</span>
+          </td>
+          <td>
+            <span class="entity-name">{{ paciente.apellido }}</span>
+          </td>
+          <td>
+            <div class="entity-info">
+              <span class="material-symbols-outlined">email</span>
+              <span>{{ paciente.email }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="entity-info">
+              <span class="material-symbols-outlined">phone</span>
+              <span>{{ paciente.telefono }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-secondary">{{ paciente.dni }}</span>
+          </td>
+          <td>
+            <div class="entity-info">
+              <span class="material-symbols-outlined">calendar_today</span>
+              <span>{{ paciente.fechaNacimiento | date : "dd/MM/yyyy" }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-info" *ngIf="paciente.obraSocial?.nombre">
+              <span class="material-symbols-outlined">local_hospital</span>
+              {{ paciente.obraSocial.nombre }}
+            </span>
+            <span class="badge badge-muted" *ngIf="!paciente.obraSocial?.nombre">
+              <span class="material-symbols-outlined">block</span>
+              Sin obra social
+            </span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button
+                (click)="goToEdit(paciente.id); $event.stopPropagation()"
+                class="btn-action btn-action-edit"
+                title="Editar paciente"
+              >
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+              <button
+                (click)="confirmDelete(paciente.id); $event.stopPropagation()"
+                class="btn-action btn-action-delete"
+                title="Eliminar paciente"
+              >
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Empty state -->
+        <tr
+          *ngIf="!isLoading && (!resultsPage.content || resultsPage.content.length === 0)"
+        >
+          <td colspan="9" class="empty-state">
+            <div class="empty-state-content">
+              <span class="material-symbols-outlined empty-icon">group_off</span>
+              <h3>No hay pacientes registrados</h3>
+              <p>
+                {{
+                  hasActiveFilters()
+                    ? "No se encontraron pacientes con los filtros aplicados"
+                    : "Comience agregando un nuevo paciente al sistema"
+                }}
+              </p>
+              <button
+                *ngIf="hasActiveFilters()"
+                class="btn btn-primary"
+                (click)="clearFilters()"
+              >
+                <span class="material-symbols-outlined">close</span>
+                Limpiar filtros
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINADOR -->
+  <div class="pagination-container mt-lg" *ngIf="!isLoading && resultsPage.totalPages > 1">
+    <app-pagination
+      [totalPages]="resultsPage.totalPages"
+      [currentPage]="currentPage"
+      (pageChangeRequested)="onPageChangeRequested($event)"
+      [number]="resultsPage.number"
+      [hidden]="resultsPage.numberOfElements < 1"
+    ></app-pagination>
+  </div>
+</div>

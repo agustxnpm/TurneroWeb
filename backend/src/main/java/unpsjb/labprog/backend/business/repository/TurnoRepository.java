@@ -51,40 +51,41 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer>, JpaSpeci
 
     /**
      * Búsqueda paginada avanzada con filtros combinados y ordenamiento dinámico
-     * @param paciente Filtro por nombre o apellido del paciente (LIKE, opcional)
-     * @param medico Filtro por nombre o apellido del médico (LIKE, opcional)
+     * 
+     * @param paciente    Filtro por nombre o apellido del paciente (LIKE, opcional)
+     * @param medico      Filtro por nombre o apellido del médico (LIKE, opcional)
      * @param consultorio Filtro por nombre del consultorio (LIKE, opcional)
-     * @param estado Filtro por estado del turno (opcional)
-     * @param fechaDesde Filtro por fecha desde (opcional)
-     * @param fechaHasta Filtro por fecha hasta (opcional)
-     * @param pageable Configuración de paginación y ordenamiento
+     * @param estado      Filtro por estado del turno (opcional)
+     * @param fechaDesde  Filtro por fecha desde (opcional)
+     * @param fechaHasta  Filtro por fecha hasta (opcional)
+     * @param pageable    Configuración de paginación y ordenamiento
      * @return Página de turnos filtrados y ordenados
      */
     @Query("""
-        SELECT t FROM Turno t
-        JOIN t.paciente p
-        JOIN t.staffMedico sm
-        JOIN sm.medico m
-        JOIN t.consultorio c
-        WHERE (:paciente IS NULL OR 
-               LOWER(p.nombre) LIKE LOWER(CONCAT('%', :paciente, '%')) OR
-               LOWER(p.apellido) LIKE LOWER(CONCAT('%', :paciente, '%')))
-           AND (:medico IS NULL OR
-                LOWER(m.nombre) LIKE LOWER(CONCAT('%', :medico, '%')) OR
-                LOWER(m.apellido) LIKE LOWER(CONCAT('%', :medico, '%')))
-           AND (:consultorio IS NULL OR 
-                LOWER(c.nombre) LIKE LOWER(CONCAT('%', :consultorio, '%')))
-           AND (:estado IS NULL OR t.estado = :estado)
-           AND (CAST(:fechaDesde AS date) IS NULL OR t.fecha >= CAST(:fechaDesde AS date))
-           AND (CAST(:fechaHasta AS date) IS NULL OR t.fecha <= CAST(:fechaHasta AS date))
-        """)
+            SELECT t FROM Turno t
+            JOIN t.paciente p
+            LEFT JOIN t.staffMedico sm
+            LEFT JOIN sm.medico m
+            JOIN t.consultorio c
+            WHERE (:paciente IS NULL OR
+                   LOWER(p.nombre) LIKE LOWER(CONCAT('%', :paciente, '%')) OR
+                   LOWER(p.apellido) LIKE LOWER(CONCAT('%', :paciente, '%')))
+               AND (:medico IS NULL OR
+                    LOWER(m.nombre) LIKE LOWER(CONCAT('%', :medico, '%')) OR
+                    LOWER(m.apellido) LIKE LOWER(CONCAT('%', :medico, '%')))
+               AND (:consultorio IS NULL OR
+                    LOWER(c.nombre) LIKE LOWER(CONCAT('%', :consultorio, '%')))
+               AND (:estado IS NULL OR t.estado = :estado)
+               AND (CAST(:fechaDesde AS date) IS NULL OR t.fecha >= CAST(:fechaDesde AS date))
+               AND (CAST(:fechaHasta AS date) IS NULL OR t.fecha <= CAST(:fechaHasta AS date))
+            """)
     Page<Turno> findByFiltros(@Param("paciente") String paciente,
-                              @Param("medico") String medico,
-                              @Param("consultorio") String consultorio,
-                              @Param("estado") EstadoTurno estado,
-                              @Param("fechaDesde") LocalDate fechaDesde,
-                              @Param("fechaHasta") LocalDate fechaHasta,
-                              Pageable pageable);
+            @Param("medico") String medico,
+            @Param("consultorio") String consultorio,
+            @Param("estado") EstadoTurno estado,
+            @Param("fechaDesde") LocalDate fechaDesde,
+            @Param("fechaHasta") LocalDate fechaHasta,
+            Pageable pageable);
 
     Page<Turno> findByStaffMedico_Id(Integer staffMedicoId, Pageable pageable);
 
@@ -427,42 +428,63 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer>, JpaSpeci
 
     /**
      * Encuentra turnos PROGRAMADOS que deben ser cancelados automáticamente
-     * Busca turnos cuya fecha/hora esté dentro del límite especificado y no hayan
-     * sido confirmados
+     * Busca turnos cuya fecha/hora esté a MENOS de 48 horas de la fecha actual
+     * y que aún no hayan ocurrido (no se confirmaron a tiempo)
      * 
-     * @param estado      Estado del turno (debe ser PROGRAMADO)
-     * @param fechaLimite Fecha límite para cancelación (ej: ahora + 48 horas)
+     * @param estado          Estado del turno (debe ser PROGRAMADO)
+     * @param fechaHoraActual Fecha/hora actual en Argentina (UTC-3)
+     * @param fechaLimite     Fecha límite para cancelación (ej: ahora + 48 horas)
      * @return Lista de turnos que deben ser cancelados
      */
     @Query("""
             SELECT t FROM Turno t
             WHERE t.estado = :estado
+            AND (t.fecha > CAST(:fechaHoraActual AS LocalDate)
+                 OR (t.fecha = CAST(:fechaHoraActual AS LocalDate) AND t.horaInicio > CAST(:fechaHoraActual AS LocalTime)))
             AND (t.fecha < CAST(:fechaLimite AS LocalDate)
                  OR (t.fecha = CAST(:fechaLimite AS LocalDate) AND t.horaInicio <= CAST(:fechaLimite AS LocalTime)))
-            AND (t.fecha > CURRENT_DATE
-                 OR (t.fecha = CURRENT_DATE AND t.horaInicio > CURRENT_TIME))
             ORDER BY t.fecha ASC, t.horaInicio ASC
             """)
     List<Turno> findTurnosParaCancelacionAutomatica(
             @Param("estado") EstadoTurno estado,
+            @Param("fechaHoraActual") java.time.LocalDateTime fechaHoraActual,
             @Param("fechaLimite") java.time.LocalDateTime fechaLimite);
 
     /**
      * Cuenta turnos que están por vencer para cancelación automática
      * 
-     * @param estado      Estado del turno (debe ser PROGRAMADO)
-     * @param fechaLimite Fecha límite para cancelación (ej: ahora + 48 horas)
+     * @param estado          Estado del turno (debe ser PROGRAMADO)
+     * @param fechaHoraActual Fecha/hora actual en Argentina (UTC-3)
+     * @param fechaLimite     Fecha límite para cancelación (ej: ahora + 48 horas)
      * @return Cantidad de turnos que serían cancelados automáticamente
      */
     @Query("""
             SELECT COUNT(t) FROM Turno t
             WHERE t.estado = :estado
+            AND (t.fecha > CAST(:fechaHoraActual AS LocalDate)
+                 OR (t.fecha = CAST(:fechaHoraActual AS LocalDate) AND t.horaInicio > CAST(:fechaHoraActual AS LocalTime)))
             AND (t.fecha < CAST(:fechaLimite AS LocalDate)
                  OR (t.fecha = CAST(:fechaLimite AS LocalDate) AND t.horaInicio <= CAST(:fechaLimite AS LocalTime)))
-            AND (t.fecha > CURRENT_DATE
-                 OR (t.fecha = CURRENT_DATE AND t.horaInicio > CURRENT_TIME))
             """)
     long countTurnosParaCancelacionAutomatica(
             @Param("estado") EstadoTurno estado,
+            @Param("fechaHoraActual") java.time.LocalDateTime fechaHoraActual,
             @Param("fechaLimite") java.time.LocalDateTime fechaLimite);
+
+    // Búsqueda por paciente con paginación
+    Page<Turno> findByPaciente_Id(Integer pacienteId, Pageable pageable);
+
+    // === GESTIÓN DE STAFFMEDICO (para permitir eliminación con auditoría) ===
+
+    /**
+     * Desvincula un StaffMedico de todos los turnos asociados (setea staffMedico a NULL)
+     * Esto permite eliminar el StaffMedico manteniendo el registro histórico del turno
+     * con la información del médico, especialidad y centro en los campos de auditoría
+     *
+     * @param staffMedicoId ID del StaffMedico a desvincular
+     * @return Cantidad de turnos actualizados
+     */
+    @Query("UPDATE Turno t SET t.staffMedico = NULL WHERE t.staffMedico.id = :staffMedicoId")
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+    int desvincularStaffMedico(@Param("staffMedicoId") Integer staffMedicoId);
 }

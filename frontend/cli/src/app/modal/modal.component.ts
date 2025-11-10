@@ -6,55 +6,8 @@ import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
   selector: 'app-modal',
   standalone: true,
   imports: [CommonModule],
-  template: `
- <div class="modal-header">
-      <h4 class="modal-title" id="modal-title">{{title}}</h4>
-      <button type="button" class="close" aria-describedby="modal-title" (click)="modal.dismiss()">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    </div>
-    <div class="modal-body">
-      <p>
-        <strong>{{message}}</strong>
-      </p>
-      <p *ngIf="description">
-        <strong>{{description}}</strong>
-      </p>
-    </div>
-    <div class="modal-footer">
-      <button *ngIf="!isAlert" type="button" class="btn btn-outline-secondary" (click)="modal.dismiss()">Cancelar</button>
-      <button type="button" class="btn btn-success" (click)="modal.close()">Aceptar</button>
-    </div>
-  `,
-  styles: `
-  .modal-header {
-    border-radius: 1rem 1rem 0 0;
-    border-bottom: 1px solid #e9ecef;
-    background: #f8f9fa;
-  }
-
-  .modal-title {
-    font-size: 1.35rem;
-    font-weight: 600;
-  }
-
-  .btn-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-  }
-  .btn-close:hover {
-    opacity: 1;
-  }
-
-  .modal-footer {
-    border-radius: 0 0 1rem 1rem;
-    border-top: 1px solid #e9ecef;
-    background: #f8f9fa;
-  }
-  `
+  templateUrl: './modal.component.html',
+  styleUrl: './modal.component.css',
 })
 export class ModalComponent {
   constructor(public modal: NgbActiveModal) {}

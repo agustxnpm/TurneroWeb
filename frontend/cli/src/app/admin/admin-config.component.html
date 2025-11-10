@@ -1,0 +1,219 @@
+<div class="admin-config-dashboard">
+  <div class="particles-bg">
+    <div
+      class="particle"
+      *ngFor="let p of particles; let i = index"
+      [style.left.px]="p.x"
+      [style.top.px]="p.y"
+      [style.animation-delay.s]="i * 0.2"
+    ></div>
+  </div>
+
+  <div class="dashboard-header">
+    <div class="header-glow"></div>
+    <div class="welcome-section">
+      <div class="welcome-content">
+        <div class="welcome-icon">
+          <i class="fas fa-cogs"></i>
+        </div>
+        <div class="welcome-text">
+          <h1>Panel de Configuraciones del Sistema</h1>
+          <p class="tagline">
+            Gestiona las configuraciones de turnos y notificaciones
+          </p>
+        </div>
+      </div>
+      <div class="user-actions">
+        <button class="btn btn-danger btn-sm" (click)="logout()">
+          <i class="fas fa-sign-out-alt me-2"></i>
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="config-section turnos">
+    <div class="section-background"></div>
+    <div class="section-title-container">
+      <h2><i class="fas fa-calendar-alt me-3"></i>CONFIGURACIÓN DE TURNOS</h2>
+    </div>
+    <div class="config-grid row row-cols-1 row-cols-md-2 g-3">
+      <div class="config-item col">
+        <label class="form-label">Días mínimos para confirmar:</label>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="configTurnos.dias_min_confirmacion"
+          min="1"
+          max="29"
+          (ngModelChange)="validateDiasMin()"
+          [class.is-invalid]="diasMinError"
+        />
+        <div *ngIf="diasMinError" class="invalid-feedback">
+          Días mínimos debe ser al menos 1 y menor que días máximos ({{
+            configTurnos.dias_max_no_confirm || "no definido"
+          }}).
+        </div>
+      </div>
+      <div class="config-item col">
+        <label class="form-label">Días máximos sin confirmar:</label>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="configTurnos.dias_max_no_confirm"
+          min="3"
+          max="30"
+          (ngModelChange)="validateDiasMin()"
+          [class.is-invalid]="diasMinError"
+        />
+        <div *ngIf="diasMinError" class="invalid-feedback">
+          Días máximos debe ser mayor que días mínimos ({{
+            configTurnos.dias_min_confirmacion || "no definido"
+          }}).
+        </div>
+      </div>
+      <div class="config-item col">
+        <label class="form-label">Hora límite diaria:</label>
+        <input
+          type="time"
+          class="form-control"
+          [(ngModel)]="configTurnos.hora_corte_confirmacion"
+        />
+      </div>
+      <div class="config-item col form-check">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          [(ngModel)]="configTurnos.habilitar_cancelacion_automatica"
+          id="cancelAuto"
+        />
+        <label class="form-check-label" for="cancelAuto"
+          >Cancelación automática habilitada</label
+        >
+      </div>
+      <div class="config-item col form-check">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          [(ngModel)]="configTurnos.habilitar_recordatorios"
+          id="recordatorios"
+        />
+        <label class="form-check-label" for="recordatorios"
+          >Recordatorios habilitados</label
+        >
+      </div>
+      <div class="config-item col" *ngIf="configTurnos.habilitar_recordatorios">
+        <label class="form-label">Días para recordatorio:</label>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="configTurnos.dias_recordatorio_confirmacion"
+          min="1"
+          max="15"
+        />
+      </div>
+      <div class="config-item col" *ngIf="configTurnos.habilitar_recordatorios">
+        <label class="form-label">Hora de envío de recordatorios:</label>
+        <input
+          type="time"
+          class="form-control"
+          [(ngModel)]="configTurnos.hora_envio_recordatorios"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="config-section notificaciones">
+    <div class="section-background"></div>
+    <div class="section-title-container">
+      <h2><i class="fas fa-bell me-3"></i>NOTIFICACIONES</h2>
+    </div>
+    <div class="config-grid row row-cols-1 row-cols-md-2 g-3">
+      <div class="config-item col form-check">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          [(ngModel)]="configNotif.habilitar_email"
+          id="email"
+        />
+        <label class="form-check-label" for="email">Email habilitado</label>
+      </div>
+      <div class="config-item col form-check">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          [(ngModel)]="configNotif.habilitar_sms"
+          id="sms"
+        />
+        <label class="form-check-label" for="sms">SMS habilitado</label>
+      </div>
+      <div class="config-item col">
+        <label class="form-label">Nombre de la clínica:</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="configNotif.nombre_clinica"
+        />
+      </div>
+      <div class="config-item col">
+        <label class="form-label">Email para notificaciones:</label>
+        <input
+          type="email"
+          class="form-control"
+          [(ngModel)]="configNotif.email_notificaciones"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="actions-footer mt-4">
+    <button class="btn btn-save me-2" (click)="testClick($event)">
+      <i class="fas fa-save me-2"></i>
+      <span *ngIf="!isSaving">GUARDAR CAMBIOS</span>
+      <span *ngIf="isSaving">Guardando...</span>
+    </button>
+    <button
+      class="btn btn-reset"
+      (click)="restaurarDefaults()"
+      [disabled]="isResetting"
+    >
+      <i class="fas fa-undo me-2"></i>
+      <span *ngIf="!isResetting">RESTAURAR DEFAULTS</span>
+      <span *ngIf="isResetting">Restaurando...</span>
+    </button>
+  </div>
+
+  <div class="last-modification mt-3" *ngIf="ultimaModificacion">
+    <p>
+      <i class="fas fa-history me-2"></i>Última modificación:
+      {{ ultimaModificacion.fecha | date : "dd/MM/yyyy HH:mm" }} por
+      {{ ultimaModificacion.usuario }}
+    </p>
+  </div>
+  <div
+    *ngIf="saveSuccess"
+    class="alert alert-success alert-dismissible fade show"
+    role="alert"
+  >
+    Cambios guardados exitosamente.
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+  <div
+    *ngIf="saveError"
+    class="alert alert-danger alert-dismissible fade show"
+    role="alert"
+  >
+    {{ saveError }}
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="alert"
+      aria-label="Close"
+    ></button>
+  </div>
+</div>

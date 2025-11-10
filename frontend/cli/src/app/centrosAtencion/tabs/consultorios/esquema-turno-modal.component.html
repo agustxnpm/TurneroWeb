@@ -1,0 +1,546 @@
+<!-- Modal Header -->
+<div class="modal-header">
+  <h4 class="modal-title">
+    <i class="fa fa-calendar-plus me-2"></i>
+    Nuevo Esquema de Turno - {{ consultorio?.nombre }}
+  </h4>
+  <button
+    type="button"
+    class="btn-close"
+    aria-label="Close"
+    (click)="onCancel()"
+  >
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+
+<!-- Modal Body -->
+<div class="modal-body modal-esquema-body fade-in">
+  <!-- Información del Consultorio -->
+  <div class="section-card slide-in">
+    <div class="section-title">
+      <div class="section-icon">
+        <i class="fa fa-building"></i>
+      </div>
+      Información del Consultorio
+    </div>
+    <div class="consultorio-info">
+      <div class="d-flex align-items-center">
+        <div class="avatar-consultorio me-3">
+          {{ consultorio?.nombre?.charAt(0) }}
+        </div>
+        <div>
+          <h6 class="mb-1 text-primary fw-bold">{{ consultorio?.nombre }}</h6>
+          <small class="text-muted">
+            <i class="fa fa-hashtag me-1"></i>
+            Consultorio #{{ consultorio?.numero }}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mensajes de Error/Éxito -->
+  <div *ngIf="mensajeError" class="alert alert-danger alert-esquema">
+    <i class="fa fa-exclamation-triangle me-2"></i>
+    {{ mensajeError }}
+  </div>
+
+  <div *ngIf="mensajeExito" class="alert alert-success alert-esquema">
+    <i class="fa fa-check-circle me-2"></i>
+    {{ mensajeExito }}
+  </div>
+
+  <!-- Seleccionar Disponibilidad Médica -->
+  <div class="section-card slide-in">
+    <div class="section-title">
+      <div class="section-icon">
+        <i class="fa fa-user-md"></i>
+      </div>
+      Seleccionar Disponibilidad Médica
+    </div>
+    <div class="form-group-modern">
+      <select
+        class="form-control form-control-modern"
+        [(ngModel)]="esquema.disponibilidadMedicoId"
+        name="disponibilidadMedico"
+        (change)="onDisponibilidadChange()"
+        required
+      >
+        <option [ngValue]="null">
+          <i class="fa fa-hand-point-right"></i>
+          Seleccione una disponibilidad...
+        </option>
+        <option
+          *ngFor="let disp of disponibilidadesDisponibles"
+          [value]="disp.id"
+        >
+          👨‍⚕️ {{ disp.staffMedico?.medico?.nombre }}
+          {{ disp.staffMedico?.medico?.apellido }} - 🕐
+          {{ formatearHorarios(disp.horarios) }}
+        </option>
+      </select>
+      <div class="form-help mt-2">
+        <i class="fa fa-info-circle me-1 text-primary"></i>
+        Solo se muestran disponibilidades de médicos asignados a este centro.
+      </div>
+    </div>
+  </div>
+
+  <!-- Horarios del Consultorio -->
+  <div class="section-card slide-in">
+    <div class="section-title">
+      <div class="section-icon">
+        <i class="fa fa-clock"></i>
+      </div>
+      Horarios de Atención del Consultorio
+    </div>
+    <div class="horarios-consultorio-info">
+      <div *ngIf="consultorioHorarios.length > 0; else noHorariosConsultorio">
+        <!-- Formato horizontal compacto -->
+        <div class="horarios-horizontal">
+          <div *ngFor="let horario of consultorioHorarios" class="horario-chip">
+            <span class="dia-badge">{{ getDiaNombre(horario.diaSemana) }}</span>
+            <span class="hora-range">
+              {{ horario.horaInicio }} - {{ horario.horaFin }}
+            </span>
+            <span
+              class="estado-badge"
+              [class.activo]="horario.activo"
+              [class.inactivo]="!horario.activo"
+            >
+              <i
+                class="fa"
+                [class.fa-check]="horario.activo"
+                [class.fa-times]="!horario.activo"
+              ></i>
+            </span>
+          </div>
+        </div>
+      </div>
+      <ng-template #noHorariosConsultorio>
+        <div class="empty-state">
+          <i class="fa fa-exclamation-triangle"></i>
+          <p class="mb-0">
+            Este consultorio no tiene horarios de atención configurados.
+          </p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Esquemas Existentes -->
+  <div class="section-card slide-in">
+    <div class="section-title">
+      <div class="section-icon">
+        <i class="fa fa-list"></i>
+      </div>
+      Esquemas Existentes en este Consultorio
+    </div>
+    <div class="horarios-consultorio-info">
+      <div *ngIf="esquemasExistentes.length > 0; else noEsquemasExistentes">
+        <div class="row">
+          <div *ngFor="let esquema of esquemasExistentes" class="col-md-6 mb-3">
+            <div class="horario-ref">
+              <div class="d-flex align-items-center mb-2">
+                <i class="fa fa-user-md text-primary me-2"></i>
+                <strong class="text-primary">
+                  {{ esquema.staffMedico?.medico?.nombre }}
+                  {{ esquema.staffMedico?.medico?.apellido }}
+                </strong>
+              </div>
+              <div class="small">
+                <span
+                  *ngFor="let horario of esquema.horarios; let last = last"
+                  class="me-2 mb-1 d-inline-block"
+                >
+                  <span class="badge bg-warning text-dark">
+                    {{ getDiaNombre(horario.dia) }} {{ horario.horaInicio }}-{{
+                      horario.horaFin
+                    }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ng-template #noEsquemasExistentes>
+        <div class="empty-state">
+          <i class="fa fa-calendar-check"></i>
+          <p class="mb-0">
+            No hay esquemas configurados para este consultorio.
+          </p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Análisis de Intersección -->
+  <div *ngIf="disponibilidadSeleccionada" class="form-group-modern mb-4">
+    <label class="form-label-modern">
+      <i class="fa fa-calculator me-2"></i>
+      Análisis de Intersección de Horarios
+    </label>
+
+    <!-- Explicación del proceso -->
+    <div class="alert alert-info">
+      <i class="fa fa-info-circle me-2"></i>
+      <strong>Proceso de cálculo:</strong> Se analizan automáticamente los
+      horarios del médico, del consultorio y los esquemas existentes para
+      encontrar los períodos disponibles.
+    </div>
+
+    <!-- Visualización del proceso de intersección -->
+    <div class="interseccion-visual">
+      <!-- 1. Disponibilidad del Médico -->
+      <div class="interseccion-step">
+        <h6 class="interseccion-title">
+          <span class="step-number">1</span>
+          <i class="fa fa-user-md me-2"></i>
+          Disponibilidad del Médico Seleccionado
+        </h6>
+        <div class="horarios-referencia medico-horarios">
+          <div class="horario-ref">
+            <strong
+              >{{ disponibilidadSeleccionada.staffMedico?.medico?.nombre }}
+              {{
+                disponibilidadSeleccionada.staffMedico?.medico?.apellido
+              }}</strong
+            >
+            <br />
+            <div *ngFor="let horario of disponibilidadSeleccionada.horarios">
+              <span class="badge bg-primary">{{
+                getDiaNombre(horario.dia)
+              }}</span>
+              <span class="ms-2"
+                >{{ horario.horaInicio }} - {{ horario.horaFin }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Esquemas Existentes -->
+      <div class="interseccion-step">
+        <h6 class="interseccion-title">
+          <span class="step-number">2</span>
+          <i class="fa fa-calendar-times me-2"></i>
+          Horarios ocupados
+        </h6>
+        <div class="horarios-referencia esquemas-existentes">
+          <div
+            *ngFor="let esquema of esquemasExistentes"
+            class="horario-ref ocupado"
+          >
+            <strong
+              >{{ esquema.staffMedico?.medico?.nombre }}
+              {{ esquema.staffMedico?.medico?.apellido }}</strong
+            >
+            <br />
+            <span
+              *ngFor="let horario of esquema.horarios; let last = last"
+              class="me-1"
+            >
+              <span class="badge bg-warning text-dark">{{
+                getDiaNombre(horario.dia)
+              }}</span>
+              <span class="ms-1"
+                >{{ horario.horaInicio }}-{{ horario.horaFin }}</span
+              >{{ !last ? ", " : "" }}
+            </span>
+          </div>
+          <div *ngIf="esquemasExistentes.length === 0" class="text-muted">
+            <i class="fa fa-check-circle me-2"></i>
+            No hay esquemas ocupando horarios en este consultorio
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultado de la Intersección -->
+      <div class="interseccion-resultado">
+        <h6 class="interseccion-title resultado">
+          <span class="step-number">⚡</span>
+          <i class="fa fa-check-double me-2"></i>
+          Horarios Disponibles Resultantes
+        </h6>
+
+        <div
+          *ngIf="horariosDisponibles.length > 0; else noResultados"
+          class="horarios-tabla-container"
+        >
+          <div class="alert alert-success">
+            <i class="fa fa-lightbulb me-2"></i>
+            <strong
+              >{{ horariosDisponibles.length }} horario(s) disponible(s)</strong
+            >
+            encontrado(s) para asignar al esquema. Seleccione los que desea
+            incluir y ajuste los horarios dentro del rango disponible:
+          </div>
+
+          <div class="alert alert-info">
+            <i class="fa fa-info-circle me-2"></i>
+            <strong>Tip:</strong> Puede personalizar las horas de inicio y fin
+            dentro del rango disponible de cada médico. Los campos se
+            habilitarán cuando seleccione el horario.
+          </div>
+
+          <!-- Error de validación -->
+          <div *ngIf="errorValidacion" class="alert alert-danger">
+            <i class="fa fa-exclamation-triangle me-2"></i>
+            <strong>Error:</strong> {{ errorValidacion }}
+          </div>
+
+          <!-- Tabla de horarios disponibles para seleccionar -->
+          <div class="table-responsive">
+            <table class="table table-striped table-hover">
+              <thead class="table-primary">
+                <tr>
+                  <th width="50">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [checked]="todosSeleccionados()"
+                      [indeterminate]="algunosSeleccionados()"
+                      (change)="toggleTodosSeleccionados()"
+                    />
+                  </th>
+                  <th>Día</th>
+                  <th>Hora Inicio (Personalizable)</th>
+                  <th>Hora Fin (Personalizable)</th>
+                  <th>Duración</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let horario of horariosDisponibles; let i = index"
+                  [class.table-success]="isHorarioSeleccionado(horario)"
+                >
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [checked]="isHorarioSeleccionado(horario)"
+                      (change)="toggleHorarioSeleccionado(horario, null)"
+                    />
+                  </td>
+                  <td>
+                    <span class="badge bg-primary">{{
+                      getDiaNombre(horario.dia)
+                    }}</span>
+                  </td>
+                  <td>
+                    <input
+                      type="time"
+                      class="form-control form-control-sm"
+                      [value]="getHorarioPersonalizado(horario, 'inicio')"
+                      (change)="
+                        actualizarHorarioPersonalizado(
+                          horario,
+                          'inicio',
+                          $event
+                        )
+                      "
+                      [disabled]="!isHorarioSeleccionado(horario)"
+                      style="min-width: 120px"
+                      placeholder="Hora inicio"
+                    />
+                    <small class="text-muted d-block"
+                      >Disponible: {{ horario.horaInicio }} -
+                      {{ horario.horaFin }}</small
+                    >
+                  </td>
+                  <td>
+                    <input
+                      type="time"
+                      class="form-control form-control-sm"
+                      [value]="getHorarioPersonalizado(horario, 'fin')"
+                      (change)="
+                        actualizarHorarioPersonalizado(horario, 'fin', $event)
+                      "
+                      [disabled]="!isHorarioSeleccionado(horario)"
+                      style="min-width: 120px"
+                      placeholder="Hora fin"
+                    />
+                    <small class="text-muted d-block"
+                      >Disponible: {{ horario.horaInicio }} -
+                      {{ horario.horaFin }}</small
+                    >
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{
+                      calcularDuracion(
+                        getHorarioPersonalizado(horario, "inicio"),
+                        getHorarioPersonalizado(horario, "fin")
+                      )
+                    }}</span>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-sm"
+                      [class]="
+                        isHorarioSeleccionado(horario)
+                          ? 'btn-warning'
+                          : 'btn-success'
+                      "
+                      (click)="toggleHorarioSeleccionado(horario, null)"
+                    >
+                      <i
+                        class="fa"
+                        [class]="
+                          isHorarioSeleccionado(horario)
+                            ? 'fa-minus'
+                            : 'fa-plus'
+                        "
+                      ></i>
+                      {{
+                        isHorarioSeleccionado(horario) ? "Quitar" : "Agregar"
+                      }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Controles rápidos -->
+          <div class="controles-rapidos mt-3">
+            <button
+              type="button"
+              class="btn btn-success me-2"
+              (click)="seleccionarTodos()"
+              [disabled]="todosSeleccionados()"
+            >
+              <i class="fa fa-check-double me-2"></i>
+              Seleccionar Todos
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              (click)="limpiarTodos()"
+              [disabled]="ningunoSeleccionado()"
+            >
+              <i class="fa fa-eraser me-2"></i>
+              Limpiar Selección
+            </button>
+          </div>
+        </div>
+
+        <ng-template #noResultados>
+          <div class="alert alert-warning">
+            <i class="fa fa-exclamation-triangle me-2"></i>
+            <strong>No hay horarios disponibles</strong>
+            <div class="mt-2">
+              <div *ngIf="!disponibilidadSeleccionada">
+                → Seleccione primero una disponibilidad médica.
+              </div>
+              <div
+                *ngIf="
+                  disponibilidadSeleccionada && consultorioHorarios.length === 0
+                "
+              >
+                → El consultorio no tiene horarios de atención configurados.
+              </div>
+              <div
+                *ngIf="
+                  disponibilidadSeleccionada && consultorioHorarios.length > 0
+                "
+              >
+                → No hay intersección entre la disponibilidad del médico y los
+                horarios del consultorio, o todos los horarios están ocupados
+                por otros esquemas.
+              </div>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuración del Esquema -->
+  <div *ngIf="esquema.horarios.length > 0" class="form-group-modern mb-4">
+    <label class="form-label-modern">
+      <i class="fa fa-cog me-2"></i>
+      Configuración del Esquema
+    </label>
+
+    <div class="row">
+      <div class="col-12">
+        <label class="form-label-small">Intervalo de Turnos (minutos)</label>
+        <select
+          [(ngModel)]="esquema.intervalo"
+          name="intervalo"
+          class="form-control form-control-sm"
+          required
+        >
+          <option value="15">15 minutos</option>
+          <option value="20">20 minutos</option>
+          <option value="30">30 minutos</option>
+          <option value="45">45 minutos</option>
+          <option value="60">60 minutos</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Resumen de Turnos -->
+    <div class="resumen-turnos mt-3">
+      <div class="resumen-item">
+        <span class="resumen-label">Total de horarios seleccionados:</span>
+        <span class="resumen-valor">{{ esquema.horarios.length }}</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-label">Tiempo total disponible:</span>
+        <span class="resumen-valor">{{ calcularTiempoTotal() }} minutos</span>
+      </div>
+      <div class="resumen-item">
+        <span class="resumen-label"
+          >Turnos estimados ({{ esquema.intervalo }}min):</span
+        >
+        <span class="resumen-valor"
+          >{{ calcularTurnosEstimados() }} turnos</span
+        >
+      </div>
+    </div>
+
+    <!-- Advertencia de horarios inválidos -->
+    <div *ngIf="tieneHorariosInvalidos()" class="alert alert-warning mt-3">
+      <i class="fa fa-exclamation-triangle me-2"></i>
+      <strong>Advertencia:</strong> Algunos horarios están fuera del rango
+      disponible del médico:
+      <ul class="mb-0 mt-2">
+        <li *ngFor="let horarioInvalido of getHorariosInvalidos()">
+          {{ horarioInvalido }}
+        </li>
+      </ul>
+      <small class="d-block mt-2">
+        <i class="fa fa-info-circle me-1"></i>
+        Ajuste los horarios dentro del rango disponible para poder guardar el
+        esquema.
+      </small>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Footer -->
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="onCancel()">
+    <i class="fa fa-times me-2"></i>
+    Cancelar
+  </button>
+  <button
+    type="button"
+    class="btn btn-success btn-crear-esquema"
+    (click)="guardarEsquema()"
+    [disabled]="!puedeGuardar() || guardando"
+  >
+    <i
+      class="fa"
+      [class.fa-save]="!guardando"
+      [class.fa-spinner]="guardando"
+      [class.fa-spin]="guardando"
+    ></i>
+    {{ guardando ? "Guardando..." : "Crear Esquema" }}
+  </button>
+</div>

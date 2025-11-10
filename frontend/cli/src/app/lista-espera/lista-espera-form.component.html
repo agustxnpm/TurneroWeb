@@ -1,0 +1,208 @@
+<div class="lista-espera-card card p-xl mb-xl">
+    <div class="lista-espera-header d-flex align-items-center justify-content-between mb-lg">
+        <div class="d-flex align-items-center gap-md">
+            <span class="material-symbols-outlined header-icon">queue</span>
+            <h2 class="mb-0">
+                {{ data ? 'Editar' : 'Nueva' }} Solicitud en Lista de Espera
+            </h2>
+        </div>
+        <button type="button" class="btn btn-icon" *ngIf="!isPatientMode" aria-label="Cerrar" (click)="cerrar()">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="lista-espera-body">
+        <form [formGroup]="form">
+        <!-- Búsqueda de Paciente -->
+        <div class="form-group mb-lg">
+            <label class="form-label" for="searchPaciente">
+                <span class="material-symbols-outlined me-2">person_search</span>
+                Paciente*
+            </label>
+
+            <!-- Input de búsqueda -->
+            <div class="patient-search-wrapper" *ngIf="!isPatientMode">
+                <input type="text" 
+                       class="form-control" 
+                       id="searchPaciente" 
+                       [value]="searchTerm"
+                       (input)="onSearchPaciente($event)" 
+                       (focus)="onFocusSearch()" 
+                       (blur)="onBlurSearch()"
+                       placeholder="Buscar por nombre, apellido o DNI..." 
+                       autocomplete="off"
+                       [disabled]="pacienteSeleccionado !== null"
+                       aria-label="Buscar paciente por nombre, apellido o DNI" />
+
+                <!-- Botón para limpiar selección -->
+                <button type="button" 
+                        class="btn-clear-search" 
+                        *ngIf="pacienteSeleccionado"
+                        (click)="limpiarSeleccionPaciente()" 
+                        aria-label="Cambiar paciente">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+
+                <!-- Indicador de carga -->
+                <div class="search-spinner" *ngIf="buscandoPacientes" role="status" aria-label="Buscando pacientes">
+                    <span class="material-symbols-outlined spinner">progress_activity</span>
+                </div>
+
+                <!-- Resultados de búsqueda -->
+                <div class="search-results" 
+                     *ngIf="showSearchResults && !buscandoPacientes"
+                     role="listbox"
+                     aria-label="Resultados de búsqueda">
+                    <div class="search-result-item" 
+                         *ngFor="let paciente of pacientesBuscados"
+                         (click)="seleccionarPaciente(paciente)"
+                         role="option"
+                         tabindex="0"
+                         (keydown.enter)="seleccionarPaciente(paciente)">
+                        <div class="result-name">
+                            <span class="material-symbols-outlined">person</span>
+                            {{ paciente.nombre }} {{ paciente.apellido }}
+                        </div>
+                        <div class="result-details">
+                            <span class="badge badge-secondary">
+                                <span class="material-symbols-outlined">badge</span>
+                                DNI: {{ paciente.dni }}
+                            </span>
+                            <span class="badge badge-info" *ngIf="paciente.email">
+                                <span class="material-symbols-outlined">email</span>
+                                {{ paciente.email }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Sin resultados -->
+                    <div class="no-results" *ngIf="pacientesBuscados.length === 0">
+                        <span class="material-symbols-outlined">search_off</span>
+                        <p>No se encontraron pacientes con ese criterio</p>
+                        <small>Intenta buscar por nombre, apellido o DNI</small>
+                    </div>
+                </div>
+
+                <!-- Paciente seleccionado (badge) -->
+                <div class="selected-patient-badge" *ngIf="pacienteSeleccionado">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <strong>{{ pacienteSeleccionado.nombre }} {{ pacienteSeleccionado.apellido }}</strong>
+                    <span class="text-muted">
+                        <span class="material-symbols-outlined">badge</span>
+                        DNI: {{ pacienteSeleccionado.dni }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Modo paciente (deshabilitado y autocompleto) -->
+            <div *ngIf="isPatientMode">
+                <select class="form-control" id="pacienteId" formControlName="pacienteId" aria-label="Seleccionar paciente">
+                    <option *ngFor="let paciente of pacientes" [value]="paciente.id">
+                        {{ paciente.nombre }} {{ paciente.apellido }} - DNI: {{ paciente.dni || 'No disponible' }}
+                    </option>
+                </select>
+            </div>
+
+            <small class="form-text d-flex align-items-center gap-xs mt-sm" *ngIf="!isPatientMode && !pacienteSeleccionado">
+                <span class="material-symbols-outlined info-icon">info</span>
+                Escribe al menos 2 caracteres para buscar
+            </small>
+        </div>
+
+        <!-- Especialidad -->
+        <div class="form-group mb-lg">
+            <label class="form-label" for="especialidadId">
+                <span class="material-symbols-outlined me-2">medical_services</span>
+                Especialidad*
+            </label>
+            <select class="form-control" id="especialidadId" formControlName="especialidadId" required aria-label="Seleccionar especialidad">
+                <option value="">Seleccione una especialidad</option>
+                <option *ngFor="let esp of especialidades" [value]="esp.id">
+                    {{ esp.nombre }}
+                </option>
+            </select>
+        </div>
+
+        <!-- Centro de Atención -->
+        <div class="form-group mb-lg">
+            <label class="form-label" for="centroAtencionId">
+                <span class="material-symbols-outlined me-2">local_hospital</span>
+                Centro de Atención*
+            </label>
+            <select class="form-control" id="centroAtencionId" formControlName="centroAtencionId" required aria-label="Seleccionar centro de atención">
+                <option value="">Seleccione un centro</option>
+                <option *ngFor="let centro of centros" [value]="centro.id">
+                    {{ centro.nombre }}
+                </option>
+            </select>
+        </div>
+
+        <!-- Médico preferido -->
+        <div class="form-group mb-lg">
+            <label class="form-label" for="medicoId">
+                <span class="material-symbols-outlined me-2">stethoscope</span>
+                Médico Preferido
+            </label>
+            <select class="form-control" id="medicoId" formControlName="medicoId" aria-label="Seleccionar médico preferido">
+                <option value="">Sin preferencia</option>
+                <option *ngFor="let medico of medicos" [value]="medico.id">
+                    {{ medico.nombre }} {{ medico.apellido }}
+                </option>
+            </select>
+        </div>
+
+        <!-- Fechas deseadas -->
+        <div class="form-row d-flex gap-md mb-lg">
+            <div class="form-group flex-fill">
+                <label class="form-label" for="fechaDeseadaDesde">
+                    <span class="material-symbols-outlined me-2">event</span>
+                    Fecha Deseada Desde
+                </label>
+                <input type="date" class="form-control" id="fechaDeseadaDesde" formControlName="fechaDeseadaDesde" aria-label="Fecha deseada desde" />
+            </div>
+            <div class="form-group flex-fill">
+                <label class="form-label" for="fechaDeseadaHasta">
+                    <span class="material-symbols-outlined me-2">event</span>
+                    Fecha Deseada Hasta
+                </label>
+                <input type="date" class="form-control" id="fechaDeseadaHasta" formControlName="fechaDeseadaHasta" aria-label="Fecha deseada hasta" />
+            </div>
+        </div>
+
+        <!-- Nivel de urgencia médica -->
+        <div class="form-group mb-lg">
+            <label class="form-label" for="urgenciaMedica">
+                <span class="material-symbols-outlined me-2">emergency</span>
+                Nivel de Urgencia Médica*
+            </label>
+            <select class="form-control" id="urgenciaMedica" formControlName="urgenciaMedica" required aria-label="Seleccionar nivel de urgencia médica">
+                <option *ngFor="let nivel of nivelesUrgencia" [value]="nivel.value">
+                    {{ nivel.label }}
+                </option>
+            </select>
+            <small class="form-text d-flex align-items-center gap-xs mt-sm">
+                <span class="material-symbols-outlined info-icon">info</span>
+                Seleccione el nivel de urgencia para esta solicitud
+            </small>
+        </div>
+    </form>
+    </div>
+
+    <div class="lista-espera-footer d-flex flex-column flex-md-row justify-content-end gap-md mt-lg">
+        <button type="button" 
+                class="btn btn-secondary w-100 w-md-auto" *ngIf="!isPatientMode"
+                (click)="cerrar()"
+                aria-label="Cancelar y cerrar formulario">
+            <span class="material-symbols-outlined me-2">close</span>
+            Cancelar
+        </button>
+        <button type="submit" 
+                class="btn btn-primary w-100 w-md-auto" 
+                (click)="guardar()" 
+                [disabled]="!form.valid"
+                aria-label="Guardar solicitud en lista de espera">
+            <span class="material-symbols-outlined me-2">save</span>
+            Guardar
+        </button>
+    </div>
+</div>

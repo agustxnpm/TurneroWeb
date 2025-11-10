@@ -32,7 +32,8 @@ public class DeepLinkService {
     @Autowired
     private UserRepository userRepository;
 
-    // TODO: Agregar repositorios cuando se implemente funcionalidad de filtros automáticos
+    // TODO: Agregar repositorios cuando se implemente funcionalidad de filtros
+    // automáticos
     // @Autowired private MedicoRepository medicoRepository;
     // @Autowired private EspecialidadRepository especialidadRepository;
     // @Autowired private CentroAtencionRepository centroAtencionRepository;
@@ -67,7 +68,8 @@ public class DeepLinkService {
 
         // TODO: Implementar filtros automáticos basados en el contexto del turno
         // Por ahora solo redirige a la agenda sin filtros pre-seleccionados
-        // Funcionalidad pendiente: extraer médico, especialidad, centro de atención del turno
+        // Funcionalidad pendiente: extraer médico, especialidad, centro de atención del
+        // turno
         // para pre-seleccionar filtros en la agenda del paciente
 
         deepLinkTokenRepository.save(deepLinkToken);
@@ -81,7 +83,7 @@ public class DeepLinkService {
     public DeepLinkResponseDTO validarDeepLinkToken(String token) {
         // Buscar token válido
         Optional<DeepLinkToken> tokenOpt = deepLinkTokenRepository.findValidToken(token, LocalDateTime.now());
-        
+
         if (tokenOpt.isEmpty()) {
             throw new RuntimeException("Token inválido o expirado");
         }
@@ -115,18 +117,17 @@ public class DeepLinkService {
 
         // Generar tokens JWT
         UserDetails userDetails = userService.loadUserByUsername(user.getEmail());
-        
+
         String accessToken = jwtTokenProvider.generateAccessToken(userDetails);
         String refreshToken = jwtTokenProvider.generateRefreshToken(userDetails);
 
         // Construir respuesta con tokens (sin role, ya que va en el JWT)
         DeepLinkResponseDTO.TokensDTO tokens = new DeepLinkResponseDTO.TokensDTO(
-            accessToken,
-            refreshToken,
-            "Bearer",
-            user.getEmail(),
-            paciente.getNombre() + " " + paciente.getApellido()
-        );
+                accessToken,
+                refreshToken,
+                "Bearer",
+                user.getEmail(),
+                paciente.getNombre() + " " + paciente.getApellido());
 
         // Construir contexto del turno (simplificado - sin filtros automáticos)
         DeepLinkResponseDTO.TurnoContextDTO context = new DeepLinkResponseDTO.TurnoContextDTO();
@@ -147,10 +148,10 @@ public class DeepLinkService {
     @Transactional
     public void limpiarTokensAntiguos() {
         LocalDateTime now = LocalDateTime.now();
-        
+
         // Eliminar tokens expirados
         deepLinkTokenRepository.deleteExpiredTokens(now);
-        
+
         // Eliminar tokens usados con más de 7 días
         LocalDateTime sevenDaysAgo = now.minusDays(7);
         deepLinkTokenRepository.deleteOldUsedTokens(sevenDaysAgo);

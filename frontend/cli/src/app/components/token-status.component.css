@@ -1,0 +1,12 @@
+.card {
+  font-size: 0.875rem;
+}
+.text-expired {
+  color: #dc3545 !important;
+}
+.text-valid {
+  color: #198754 !important;
+}
+.text-warning-time {
+  color: #fd7e14 !important;
+}

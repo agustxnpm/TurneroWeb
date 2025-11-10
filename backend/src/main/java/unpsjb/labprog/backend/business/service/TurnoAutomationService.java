@@ -13,6 +13,8 @@ import unpsjb.labprog.backend.model.EstadoTurno;
 import unpsjb.labprog.backend.model.Turno;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -42,6 +44,9 @@ public class TurnoAutomationService {
     @Value("${app.url:http://localhost:4200}")
     private String appUrl;
 
+    // Zona horaria de Argentina
+    private static final ZoneId ARGENTINA_ZONE = ZoneId.of("America/Argentina/Buenos_Aires");
+
     /**
      * Job que se ejecuta cada hora para cancelar turnos no confirmados
      * Cancela turnos PROGRAMADOS que no fueron confirmados dentro del tiempo límite
@@ -57,17 +62,24 @@ public class TurnoAutomationService {
         try {
             logger.info("🔄 Iniciando proceso de cancelación automática de turnos...");
             
+            // Obtener fecha/hora actual en zona horaria de Argentina (UTC-3)
+            ZonedDateTime ahoraArgentina = ZonedDateTime.now(ARGENTINA_ZONE);
+            LocalDateTime ahora = ahoraArgentina.toLocalDateTime();
+            
             // Calcular fecha límite: ahora + horas de anticipación configuradas
-            LocalDateTime limiteConfirmacion = LocalDateTime.now().plusHours(horasAnticipacion);
+            LocalDateTime limiteConfirmacion = ahora.plusHours(horasAnticipacion);
+            logger.info("📅 Fecha/hora actual (Argentina UTC-3): {} | Límite de confirmación: {} ({} horas)", 
+                       ahora, limiteConfirmacion, horasAnticipacion);
             
             // Buscar turnos PROGRAMADOS cuya fecha/hora sea dentro del límite y no hayan sido confirmados
             List<Turno> turnosACancelar = turnoRepository.findTurnosParaCancelacionAutomatica(
                 EstadoTurno.PROGRAMADO,
+                ahora,
                 limiteConfirmacion
             );
             
             if (turnosACancelar.isEmpty()) {
-                logger.debug("✅ No hay turnos para cancelar automáticamente");
+                logger.info("✅ No hay turnos para cancelar automáticamente");
                 return;
             }
             
@@ -190,9 +202,13 @@ public class TurnoAutomationService {
             return 0L;
         }
         
-        LocalDateTime limiteConfirmacion = LocalDateTime.now().plusHours(horasAnticipacion);
+        // Usar zona horaria de Argentina
+        ZonedDateTime ahoraArgentina = ZonedDateTime.now(ARGENTINA_ZONE);
+        LocalDateTime ahora = ahoraArgentina.toLocalDateTime();
+        LocalDateTime limiteConfirmacion = ahora.plusHours(horasAnticipacion);
         return turnoRepository.countTurnosParaCancelacionAutomatica(
             EstadoTurno.PROGRAMADO,
+            ahora,
             limiteConfirmacion
         );
     }

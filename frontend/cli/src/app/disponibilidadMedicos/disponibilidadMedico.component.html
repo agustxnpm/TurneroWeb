@@ -1,0 +1,297 @@
+<div class="disponibilidad-medico-container">
+  <div class="card p-xl mb-xl mx-auto">
+    <!-- HEADER LVE NORMALIZADO -->
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-md">
+        <span class="material-symbols-outlined header-icon">calendar_month</span>
+        <div>
+          <h2 class="mb-0">Disponibilidad Médica</h2>
+          <p class="text-muted mb-0 mt-sm">Gestión de horarios y disponibilidad de médicos</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="router.navigate(['/disponibilidades-medico/new'])">
+        <span class="material-symbols-outlined">add_circle</span>
+        <span class="d-none d-sm-inline">Nueva Disponibilidad</span>
+      </button>
+    </div>
+
+    <!-- BARRA DE FILTROS -->
+    <div class="filters-section mb-lg">
+      <h5 class="filters-title mb-md">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtros de búsqueda
+      </h5>
+
+      <div class="row g-3">
+        <!-- Búsqueda por staff médico -->
+        <div class="col-md-4">
+          <label for="staffMedicoFilter" class="form-label">
+            <span class="material-symbols-outlined">medical_services</span>
+            Staff Médico
+          </label>
+          <input
+            type="text"
+            id="staffMedicoFilter"
+            class="form-control"
+            placeholder="Buscar por nombre o apellido..."
+            [(ngModel)]="filters.staffMedico"
+            (input)="applyFilters()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Búsqueda por especialidad -->
+        <div class="col-md-4">
+          <label for="especialidadFilter" class="form-label">
+            <span class="material-symbols-outlined">stethoscope</span>
+            Especialidad
+          </label>
+          <input
+            type="text"
+            id="especialidadFilter"
+            class="form-control"
+            placeholder="Buscar por especialidad..."
+            [(ngModel)]="filters.especialidad"
+            (input)="applyFilters()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Filtro por día -->
+        <div class="col-md-4">
+          <label for="diaFilter" class="form-label">
+            <span class="material-symbols-outlined">today</span>
+            Día de la semana
+          </label>
+          <select
+            id="diaFilter"
+            class="form-select"
+            [(ngModel)]="filters.dia"
+            (change)="applyFilters()"
+          >
+            <option value="">Todos los días</option>
+            <option *ngFor="let dia of diasSemana" [value]="dia.value">
+              {{ dia.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fila de controles -->
+      <div class="row g-3 mt-sm">
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="d-flex gap-sm w-100">
+            <button
+              class="btn btn-secondary flex-fill"
+              (click)="clearFilters()"
+              [disabled]="!filters.staffMedico && !filters.especialidad && !filters.dia"
+            >
+              <span class="material-symbols-outlined">close</span>
+              Limpiar filtros
+            </button>
+            <button
+              class="btn btn-primary flex-fill"
+              (click)="applyFilters()"
+              [disabled]="loading"
+            >
+              <span class="material-symbols-outlined" [class.spinning]="loading">sync</span>
+              Actualizar
+            </button>
+          </div>
+        </div>
+        <div class="col-md-6 d-flex align-items-end justify-content-end">
+          <div class="d-flex align-items-center gap-sm">
+            <label for="pageSizeSelect" class="form-label mb-0 text-nowrap">
+              <span class="material-symbols-outlined">view_list</span>
+              Mostrar:
+            </label>
+            <select
+              id="pageSizeSelect"
+              class="form-select"
+              style="width: auto;"
+              [(ngModel)]="pageSize"
+              (change)="changePageSize($any($event.target).value)"
+            >
+              <option [value]="5">5</option>
+              <option [value]="10">10</option>
+              <option [value]="25">25</option>
+              <option [value]="50">50</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de resultados -->
+      <div class="row mt-md" *ngIf="!loading && totalElements > 0">
+        <div class="col-12">
+          <div class="info-badge">
+            <span class="material-symbols-outlined">info</span>
+            Mostrando {{ disponibilidades.length }} de {{ totalElements }} registros
+            (Página {{ currentPage + 1 }} de {{ totalPages }})
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA LVE NORMALIZADA -->
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>
+              <button
+                class="header-button"
+                (click)="sortByColumn('staffMedicoName')"
+                [class.active]="sortBy === 'staffMedicoName'"
+                aria-label="Ordenar por staff médico"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">medical_services</span>
+                  Staff Médico
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="sortBy === 'staffMedicoName'"
+                    aria-hidden="true"
+                  >
+                    {{ sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="sortBy !== 'staffMedicoName'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">schedule</span>
+                Horarios de Disponibilidad
+              </div>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">settings</span>
+                Acciones
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading state -->
+          <tr *ngIf="loading">
+            <td colspan="4" class="loading-state">
+              <div class="loading-content">
+                <span class="material-symbols-outlined spinning">sync</span>
+                <h6>Cargando disponibilidades...</h6>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data rows -->
+          <tr
+            *ngFor="let disp of disponibilidades"
+            (click)="goToDetail(disp.id)"
+            class="table-row cursor-pointer"
+          >
+            <td>
+              <div class="entity-info-full">
+                <div class="entity-avatar-medico">
+                  <span class="material-symbols-outlined" aria-hidden="true">medical_services</span>
+                </div>
+                <div class="entity-details">
+                  <div class="entity-name">
+                    {{ disp.staffMedicoName || getStaffMedicoNombre(disp.staffMedicoId) }}
+                  </div>
+                  <div class="entity-subtitle">
+                    <span class="badge badge-especialidad">
+                      <span class="material-symbols-outlined" aria-hidden="true">stethoscope</span>
+                      {{ disp.especialidadName || getStaffEspecialidad(disp.staffMedicoId) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="horarios-container">
+                <div
+                  *ngFor="let horario of disp.horarios"
+                  class="badge badge-horario"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">event</span>
+                  <div class="horario-content">
+                    <span class="dia-label">{{ horario.dia }}</span>
+                    <span class="hora-range">{{ horario.horaInicio }} - {{ horario.horaFin }}</span>
+                  </div>
+                </div>
+                <div
+                  *ngIf="!disp.horarios || disp.horarios.length === 0"
+                  class="badge badge-muted"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">schedule_off</span>
+                  Sin horarios configurados
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  (click)="goToEdit(disp.id); $event.stopPropagation()"
+                  class="btn-action btn-action-edit"
+                  title="Editar disponibilidad"
+                  aria-label="Editar disponibilidad"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                </button>
+                <button
+                  (click)="confirmDelete(disp.id); $event.stopPropagation()"
+                  class="btn-action btn-action-delete"
+                  title="Eliminar disponibilidad"
+                  aria-label="Eliminar disponibilidad"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty state -->
+          <tr *ngIf="!loading && disponibilidades.length === 0">
+            <td colspan="4" class="empty-state">
+              <div class="empty-state-content">
+                <span class="material-symbols-outlined empty-icon">event_busy</span>
+                <h3>No hay disponibilidades registradas</h3>
+                <p>
+                  {{
+                    filters.staffMedico || filters.especialidad || filters.dia
+                      ? "No se encontraron resultados con los filtros aplicados"
+                      : "Comience agregando una nueva disponibilidad al sistema"
+                  }}
+                </p>
+                <button
+                  *ngIf="filters.staffMedico || filters.especialidad || filters.dia"
+                  class="btn btn-primary"
+                  (click)="clearFilters()"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                  Limpiar filtros
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINADOR -->
+    <div class="pagination-container mt-lg" *ngIf="!loading && totalPages > 1">
+      <app-pagination
+        [totalPages]="totalPages"
+        [currentPage]="currentPage + 1"
+        (pageChangeRequested)="changePage($event - 1)"
+      ></app-pagination>
+    </div>
+  </div>
+</div>

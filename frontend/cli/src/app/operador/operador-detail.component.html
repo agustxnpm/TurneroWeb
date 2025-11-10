@@ -1,0 +1,334 @@
+<div class="operador-detail-card card p-xl mb-xl mx-auto" *ngIf="operador" style="max-width: 1000px;">
+  <!-- Header -->
+  <div class="operador-detail-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">manage_accounts</span>
+      <div>
+        <h2 class="mb-0" *ngIf="!esNuevo()">
+          {{ operador.nombre }} {{ operador.apellido }}
+        </h2>
+        <h2 class="mb-0" *ngIf="esNuevo()">
+          Nuevo Operador
+        </h2>
+        <p class="text-muted mb-0 mt-sm">
+          <ng-container *ngIf="!modoEdicion && !esNuevo()">Información del operador</ng-container>
+          <ng-container *ngIf="modoEdicion && !esNuevo()">Editando información</ng-container>
+          <ng-container *ngIf="esNuevo()">Registro de nuevo operador</ng-container>
+        </p>
+      </div>
+    </div>
+    
+    <div class="d-flex gap-md" *ngIf="!modoEdicion && !esNuevo()">
+      <button type="button" class="btn btn-primary" (click)="activarEdicion()" aria-label="Editar información del operador">
+        <span class="material-symbols-outlined me-2">edit</span>
+        <span class="d-none d-sm-inline">Editar</span>
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="goBack()" aria-label="Volver al listado">
+        <span class="material-symbols-outlined me-2">arrow_back</span>
+        <span class="d-none d-sm-inline">Volver</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODO VISTA (Solo lectura) -->
+  <div *ngIf="!modoEdicion && !esNuevo()" class="operador-info-view">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">tag</span>
+          <div class="info-content">
+            <label class="info-label">ID</label>
+            <div class="info-value">{{ operador.id }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">{{ operador.activo ? 'check_circle' : 'cancel' }}</span>
+          <div class="info-content">
+            <label class="info-label">Estado</label>
+            <div class="info-value">
+              <span class="badge" [ngClass]="operador.activo ? 'bg-success' : 'bg-secondary'">
+                {{ operador.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">person</span>
+          <div class="info-content">
+            <label class="info-label">Nombre Completo</label>
+            <div class="info-value">{{ operador.nombre }} {{ operador.apellido }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">badge</span>
+          <div class="info-content">
+            <label class="info-label">DNI</label>
+            <div class="info-value">{{ operador.dni || '-' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">email</span>
+          <div class="info-content">
+            <label class="info-label">Correo Electrónico</label>
+            <div class="info-value">{{ operador.email }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">phone</span>
+          <div class="info-content">
+            <label class="info-label">Teléfono</label>
+            <div class="info-value">{{ operador.telefono || '-' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODO EDICIÓN/CREACIÓN -->
+  <form *ngIf="modoEdicion || esNuevo()" #form="ngForm" (ngSubmit)="save()" novalidate>
+    <div class="row g-4">
+      <!-- Nombre -->
+      <div class="col-md-6">
+        <label for="nombre" class="form-label">
+          <span class="material-symbols-outlined me-2">person</span>
+          Nombre
+        </label>
+        <input
+          [(ngModel)]="operador.nombre"
+          name="nombre"
+          id="nombre"
+          class="form-control"
+          placeholder="Ingrese el nombre"
+          required
+          #nombre="ngModel"
+        />
+        <div *ngIf="isInvalidField(nombre)" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>El nombre es requerido</small>
+        </div>
+      </div>
+
+      <!-- Apellido -->
+      <div class="col-md-6">
+        <label for="apellido" class="form-label">
+          <span class="material-symbols-outlined me-2">person</span>
+          Apellido
+        </label>
+        <input
+          [(ngModel)]="operador.apellido"
+          name="apellido"
+          id="apellido"
+          class="form-control"
+          placeholder="Ingrese el apellido"
+          required
+          #apellido="ngModel"
+        />
+        <div *ngIf="isInvalidField(apellido)" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>El apellido es requerido</small>
+        </div>
+      </div>
+
+      <!-- DNI -->
+      <div class="col-md-6">
+        <label for="dni" class="form-label">
+          <span class="material-symbols-outlined me-2">badge</span>
+          DNI
+        </label>
+        <input
+          [(ngModel)]="operador.dni"
+          name="dni"
+          id="dni"
+          type="text"
+          class="form-control"
+          placeholder="Ingrese el DNI"
+          required
+          #dni="ngModel"
+        />
+        <div *ngIf="isInvalidField(dni)" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>El DNI es requerido</small>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="col-md-6">
+        <label for="email" class="form-label">
+          <span class="material-symbols-outlined me-2">email</span>
+          Correo Electrónico
+        </label>
+        <input
+          [(ngModel)]="operador.email"
+          name="email"
+          id="email"
+          type="email"
+          class="form-control"
+          placeholder="ejemplo@correo.com"
+          required
+          email
+          #email="ngModel"
+        />
+        <div *ngIf="isInvalidField(email)" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small *ngIf="email.errors?.['required']">El correo electrónico es requerido</small>
+          <small *ngIf="email.errors?.['email']">Debe ser un correo electrónico válido</small>
+        </div>
+      </div>
+
+      <!-- Teléfono -->
+      <div class="col-md-6">
+        <label for="telefono" class="form-label">
+          <span class="material-symbols-outlined me-2">phone</span>
+          Teléfono
+        </label>
+        <input
+          [(ngModel)]="operador.telefono"
+          name="telefono"
+          id="telefono"
+          type="text"
+          class="form-control"
+          placeholder="Ingrese el teléfono (opcional)"
+          #telefono="ngModel"
+        />
+      </div>
+
+      <!-- Estado Activo -->
+      <div class="col-md-6 d-flex align-items-end">
+        <div class="form-check form-switch">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="activo"
+            [(ngModel)]="operador.activo"
+            name="activo"
+          />
+          <label class="form-check-label" for="activo">
+            <span class="material-symbols-outlined me-2" style="vertical-align: middle; font-size: 1.25rem;">
+              {{ operador.activo ? 'check_circle' : 'cancel' }}
+            </span>
+            Operador activo
+          </label>
+        </div>
+      </div>
+
+      <!-- Información sobre contraseña automática para nuevos operadores -->
+      <div class="col-12" *ngIf="esNuevo()">
+        <div class="info-badge">
+          <span class="material-symbols-outlined me-2">info</span>
+          <div>
+            <strong>Contraseña automática:</strong> Se generará una contraseña segura automáticamente y será enviada por correo electrónico al operador.
+          </div>
+        </div>
+      </div>
+
+      <!-- Toggle cambiar contraseña (solo en edición) -->
+      <div class="col-12" *ngIf="!esNuevo()">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="toggleCambiarPassword()"
+          aria-label="Cambiar contraseña"
+        >
+          <span class="material-symbols-outlined me-2">{{ cambiarPassword ? 'close' : 'lock' }}</span>
+          {{ cambiarPassword ? 'Cancelar cambio de contraseña' : 'Cambiar contraseña' }}
+        </button>
+      </div>
+
+      <!-- Contraseña: solo para edición cuando se activa el cambio -->
+      <ng-container *ngIf="!esNuevo() && cambiarPassword">
+        <div class="col-md-6">
+          <label for="password" class="form-label">
+            <span class="material-symbols-outlined me-2">lock</span>
+            Nueva Contraseña
+          </label>
+          <input
+            [(ngModel)]="password"
+            name="password"
+            id="password"
+            type="password"
+            class="form-control"
+            placeholder="Ingrese la nueva contraseña"
+            required
+            minlength="6"
+            #pwd="ngModel"
+          />
+          <div *ngIf="pwd?.invalid && (pwd.dirty || pwd.touched)" class="text-danger d-flex align-items-center gap-xs mt-xs">
+            <span class="material-symbols-outlined">error</span>
+            <small *ngIf="pwd.errors?.['required']">La contraseña es requerida</small>
+            <small *ngIf="pwd.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres</small>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="confirmPassword" class="form-label">
+            <span class="material-symbols-outlined me-2">lock</span>
+            Confirmar Contraseña
+          </label>
+          <input
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
+            id="confirmPassword"
+            type="password"
+            class="form-control"
+            placeholder="Confirme la nueva contraseña"
+            required
+            #cpwd="ngModel"
+          />
+          <div *ngIf="confirmPassword && password !== confirmPassword && (cpwd.dirty || cpwd.touched)" class="text-danger d-flex align-items-center gap-xs mt-xs">
+            <span class="material-symbols-outlined">error</span>
+            <small>Las contraseñas no coinciden</small>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Botones de acción -->
+      <div class="col-12">
+        <div class="d-flex gap-md flex-wrap justify-content-end">
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="form.invalid || (!esNuevo() && cambiarPassword && passwordMismatch())"
+            aria-label="Guardar operador"
+          >
+            <span class="material-symbols-outlined me-2">save</span>
+            {{ esNuevo() ? 'Crear Operador' : 'Guardar Cambios' }}
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="cancelar()"
+            aria-label="Cancelar edición"
+          >
+            <span class="material-symbols-outlined me-2">close</span>
+            Cancelar
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-danger" 
+            (click)="confirmDelete()"
+            *ngIf="!esNuevo() && operador.id"
+            aria-label="Eliminar operador"
+          >
+            <span class="material-symbols-outlined me-2">delete</span>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

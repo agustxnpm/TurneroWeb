@@ -1,0 +1,501 @@
+<div class="card p-xl mb-xl mx-auto">
+  <!-- HEADER LVE NORMALIZADO -->
+  <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">event_available</span>
+      <div>
+        <h2 class="mb-0">Agenda Administrativa</h2>
+        <p class="text-white mb-0 mt-sm">Vista completa para gestionar turnos, días excepcionales y asignaciones</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+  <div class="filters-section mb-lg">
+    <h5 class="filters-title mb-md">
+      <span class="material-symbols-outlined">filter_list</span>
+      Filtros de búsqueda
+    </h5>
+
+    <form class="filters-form">
+      <div class="row g-3">
+        <!-- Filtrar por -->
+        <div class="col-md-6">
+          <label class="form-label">
+            <span class="material-symbols-outlined">category</span>
+            Filtrar por
+          </label>
+          <select class="form-select" [(ngModel)]="filterType" name="filterType">
+            <option value="staffMedico">Staff Médico</option>
+            <option value="centroAtencion">Centro de Atención</option>
+            <option value="consultorio">Consultorio</option>
+            <option value="especialidad">Especialidad</option>
+          </select>
+        </div>
+        
+        <!-- Valor de búsqueda -->
+        <div class="col-md-6">
+          <label class="form-label">
+            <span class="material-symbols-outlined">search</span>
+            Valor de búsqueda
+          </label> 
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="filterValue"
+            name="filterValue"
+            placeholder="Ingrese el valor a buscar"
+            list="filterOptions"
+          />
+          <datalist id="filterOptions">
+            <option *ngFor="let option of getFilterOptions()" [value]="option"></option>
+          </datalist>
+        </div>
+      </div>
+      
+      <div class="d-flex gap-sm mt-md">
+        <button type="button" class="btn btn-primary flex-fill" (click)="applyFilter()">
+          <span class="material-symbols-outlined">search</span>
+          Buscar
+        </button>
+        <button type="button" class="btn btn-secondary flex-fill" (click)="clearFilter()">
+          <span class="material-symbols-outlined">close</span>
+          Limpiar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- INFORMACIÓN DE TURNOS AFECTADOS -->
+  <div class="info-badge mb-md" *ngIf="turnosAfectados.length > 0">
+    <span class="material-symbols-outlined">info</span>
+    {{ turnosAfectados.length }} turnos afectados por días excepcionales se muestran en sus fechas correspondientes con indicadores especiales
+  </div>
+
+  <!-- TURNOS DISPONIBLES AGRUPADOS POR FECHA -->
+  <div class="agenda-section">
+    <div class="agenda-header mb-md">
+      <h5 class="agenda-title">
+        <span class="material-symbols-outlined">calendar_month</span>
+        Agenda de Turnos
+      </h5>
+      <div class="agenda-info">
+        <span class="info-badge">
+          <span class="material-symbols-outlined">event_note</span>
+          {{ slotsDisponibles.length }} turnos encontrados
+        </span>
+        <span class="info-badge" *ngIf="turnosAfectados.length > 0">
+          <span class="material-symbols-outlined">warning</span>
+          {{ turnosAfectados.length }} afectados
+        </span>
+      </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loading-content">
+        <span class="material-symbols-outlined spinning">sync</span>
+        <h6>Cargando agenda...</h6>
+      </div>
+    </div>
+
+    <!-- Turnos Agrupados por Médico (Vista Expandible) -->
+    <div class="turnos-grouped" *ngIf="!isLoading && slotsDisponibles.length > 0">
+      <!-- Lista de médicos con acordeón -->
+      <div *ngFor="let medicoEntry of agruparSlotsPorMedico() | keyvalue" class="medico-item mb-md">
+        <!-- Header del médico (clickeable para expandir/colapsar) -->
+        <div
+          class="medico-header"
+          [class.medico-expandido]="isMedicoExpandido(medicoEntry.key)"
+          (click)="toggleMedicoExpansion(medicoEntry.key)">
+          
+          <div class="medico-avatar">
+            <span class="material-symbols-outlined">person</span>
+          </div>
+
+          <div class="medico-info">
+            <h5 class="medico-nombre">
+              {{ getMedicoInfo(medicoEntry.key).nombre }}
+              {{ getMedicoInfo(medicoEntry.key).apellido }}
+            </h5>
+
+            <div class="medico-detalles">
+              <span class="detalle-item">
+                <span class="material-symbols-outlined">medical_services</span>
+                {{ getEspecialidadesUnicas(medicoEntry.value).join(", ") }}
+              </span>
+              <span class="detalle-item">
+                <span class="material-symbols-outlined">location_on</span>
+                {{ getCentrosUnicos(medicoEntry.value).length }} centro(s)
+              </span>
+            </div>
+          </div>
+
+          <div class="medico-stats">
+            <div class="stat-badge">
+              <span class="stat-number">{{
+                getTurnosDisponiblesPorMedico(medicoEntry.value)
+              }}</span>
+              <span class="stat-label">turnos</span>
+            </div>
+
+            <div
+              class="proximo-turno-badge"
+              *ngIf="getProximoTurno(medicoEntry.value) as proximo">
+              <span class="material-symbols-outlined">schedule</span>
+              {{ proximo.fecha | date : "dd/MM" }} - {{ proximo.horaInicio }}
+            </div>
+          </div>
+
+          <div class="expand-icon">
+            <span
+              class="material-symbols-outlined"
+              *ngIf="!isMedicoExpandido(medicoEntry.key)">expand_more</span>
+            <span
+              class="material-symbols-outlined"
+              *ngIf="isMedicoExpandido(medicoEntry.key)">expand_less</span>
+          </div>
+        </div>
+
+        <!-- TURNOS EXPANDIBLES POR DÍA -->
+        <div
+          class="medico-turnos-expandible"
+          *ngIf="isMedicoExpandido(medicoEntry.key)">
+          
+          <!-- Acordeón por día -->
+          <div
+            *ngFor="let fecha of getFechasOrdenadas(medicoEntry.value)"
+            class="dia-acordeon mb-sm">
+            
+            <!-- Header del día -->
+            <div
+              class="fecha-header"
+              [class.fecha-expandida]="isDiaExpandido(medicoEntry.key, fecha)"
+              [class.fecha-excepcional]="esDiaExcepcional(fecha)"
+              (click)="toggleDiaExpansion(medicoEntry.key, fecha)">
+              
+              <div class="fecha-info">
+                <div class="fecha-main">
+                  <span class="material-symbols-outlined">calendar_today</span>
+                  <h6 class="fecha-title">{{ formatearFecha(fecha) }}</h6>
+                </div>
+                
+                <!-- Indicador de día excepcional -->
+                <div class="exception-badge-compact" *ngIf="esDiaExcepcional(fecha)">
+                  <span class="exception-icon">{{ getIconoExcepcion(fecha) }}</span>
+                  <span class="exception-label">{{ getTipoExcepcionLabel(fecha) }}</span>
+                </div>
+              </div>
+
+              <div class="fecha-stats">
+                <div class="stat-badge-sm">
+                  <span class="stat-number">{{
+                    getTurnosDisponiblesPorDia(getSlotsPorDia(medicoEntry.value, fecha))
+                  }}</span>
+                  <span class="stat-label">disponibles</span>
+                </div>
+
+                <div
+                  class="primer-turno-badge"
+                  *ngIf="getPrimerTurnoDia(getSlotsPorDia(medicoEntry.value, fecha)) as primer">
+                  <span class="material-symbols-outlined">schedule</span>
+                  {{ primer.horaInicio }}
+                </div>
+
+                <div class="expand-icon-sm">
+                  <span
+                    class="material-symbols-outlined"
+                    *ngIf="!isDiaExpandido(medicoEntry.key, fecha)">expand_more</span>
+                  <span
+                    class="material-symbols-outlined"
+                    *ngIf="isDiaExpandido(medicoEntry.key, fecha)">expand_less</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slots del día (expandible) -->
+            <div
+              class="slots-grid"
+              *ngIf="isDiaExpandido(medicoEntry.key, fecha)">
+              
+              <div
+                *ngFor="let slot of getSlotsPorDia(medicoEntry.value, fecha)"
+                class="slot-card"
+                [class.slot-selected]="slotSeleccionado?.id === slot.id"
+                [class.slot-excepcional]="esConfiguracionEspecial(slot)"
+                [class.slot-feriado]="esConfiguracionEspecial(slot) && getTipoConfiguracionEspecial(slot) === 'FERIADO'"
+                [class.slot-mantenimiento]="esConfiguracionEspecial(slot) && getTipoConfiguracionEspecial(slot) === 'MANTENIMIENTO'"
+                [class.slot-atencion-especial]="esConfiguracionEspecial(slot) && getTipoConfiguracionEspecial(slot) === 'ATENCION_ESPECIAL'"
+                [class.slot-ocupado]="!esConfiguracionEspecial(slot) && slot.ocupado"
+                [class.slot-disponible]="!esConfiguracionEspecial(slot) && !slot.ocupado"
+                (click)="seleccionarSlot(slot, $event)">
+                
+                <!-- Hora del slot -->
+                <div class="slot-time">
+                  <span class="material-symbols-outlined">schedule</span>
+                  <span>{{ slot.horaInicio }} - {{ slot.horaFin }}</span>
+                </div>
+                
+                <!-- Especialidad -->
+                <div class="slot-info">
+                  <span class="material-symbols-outlined">medical_services</span>
+                  <span>{{ slot.especialidadStaffMedico }}</span>
+                </div>
+                
+                <!-- Ubicación -->
+                <div class="slot-location">
+                  <div class="location-item">
+                    <span class="material-symbols-outlined">door_front</span>
+                    <span>{{ slot.consultorioNombre }}</span>
+                  </div>
+                  <div class="location-item">
+                    <span class="material-symbols-outlined">location_on</span>
+                    <span>{{ slot.nombreCentro }}</span>
+                  </div>
+                </div>
+
+                <!-- Información del paciente si está ocupado -->
+                <div class="slot-paciente" *ngIf="slot.ocupado && slot.pacienteNombre">
+                  <div class="entity-info">
+                    <div class="entity-avatar entity-avatar-paciente">
+                      {{ slot.pacienteNombre?.charAt(0) }}{{ slot.pacienteApellido?.charAt(0) }}
+                    </div>
+                    <div class="entity-details">
+                      <strong>{{ slot.pacienteNombre }} {{ slot.pacienteApellido }}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Información de configuración especial -->
+                <div class="slot-exception-info" *ngIf="esConfiguracionEspecial(slot)">
+                  <div class="exception-badge">
+                    <span class="exception-icon">{{ getIconoExcepcion(slot.fecha, slot) }}</span>
+                    <div class="exception-details">
+                      <span class="exception-type">{{ getTipoExcepcionLabel(slot.fecha, slot) }}</span>
+                      <span class="exception-description" *ngIf="getDescripcionExcepcion(slot.fecha, slot)">
+                        {{ getDescripcionExcepcion(slot.fecha, slot) }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="exception-warning">
+                    <span class="material-symbols-outlined">warning</span>
+                    <span>{{ getTipoConfiguracionEspecial(slot) === 'FERIADO' ? 'No disponible por feriado' : 
+                             getTipoConfiguracionEspecial(slot) === 'MANTENIMIENTO' ? 'Consultorio en mantenimiento' : 
+                             'Reservado para atención especial' }}</span>
+                  </div>
+                </div>
+
+                <!-- Estado del slot -->
+                <div class="slot-status">
+                  <!-- Configuración especial: Atención Especial -->
+                  <span class="badge badge-warning" *ngIf="esConfiguracionEspecial(slot) && getTipoConfiguracionEspecial(slot) === 'ATENCION_ESPECIAL'">
+                    <span class="material-symbols-outlined">local_hospital</span>
+                    Atención Especial
+                  </span>
+                  <!-- Configuración especial: Mantenimiento -->
+                  <span class="badge badge-secondary" *ngIf="esConfiguracionEspecial(slot) && getTipoConfiguracionEspecial(slot) === 'MANTENIMIENTO'">
+                    <span class="material-symbols-outlined">construction</span>
+                    Mantenimiento
+                  </span>
+                  <!-- Configuración especial: Feriado -->
+                  <span class="badge badge-danger" *ngIf="esConfiguracionEspecial(slot) && getTipoConfiguracionEspecial(slot) === 'FERIADO'">
+                    <span class="material-symbols-outlined">event_busy</span>
+                    Feriado
+                  </span>
+                  <!-- Turno ocupado por paciente -->
+                  <span class="badge badge-primary" *ngIf="!esConfiguracionEspecial(slot) && slot.ocupado">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    Asignado
+                  </span>
+                  <!-- Slot disponible -->
+                  <span class="badge badge-success" *ngIf="!esConfiguracionEspecial(slot) && !slot.ocupado">
+                    <span class="material-symbols-outlined">add_circle</span>
+                    Disponible
+                  </span>
+                </div>
+
+                <!-- Check de selección -->
+                <div class="slot-check" *ngIf="slotSeleccionado?.id === slot.id">
+                  <span class="material-symbols-outlined">check_circle</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENSAJE CUANDO NO HAY TURNOS -->
+    <div class="empty-state" *ngIf="!isLoading && slotsDisponibles.length === 0">
+      <div class="empty-state-content">
+        <span class="material-symbols-outlined empty-icon">event_busy</span>
+        <h3>No hay turnos para mostrar</h3>
+        <p>No se encontraron turnos con los filtros seleccionados.</p>
+        <p>Intenta cambiar los filtros o seleccionar otra fecha.</p>
+        <button class="btn btn-primary" (click)="clearFilter()">
+          <span class="material-symbols-outlined">filter_alt_off</span>
+          Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PARA ASIGNAR PACIENTE -->
+  <div *ngIf="showModal" class="modal-backdrop" (click)="closeModal()">
+    <div class="modal-dialog modal-dialog-centered" (click)="$event.stopPropagation()">
+      <div class="modal-content">
+        <!-- Header del Modal -->
+        <div class="modal-header">
+          <div class="modal-title-wrapper">
+            <span class="material-symbols-outlined modal-icon">event_available</span>
+            <div>
+              <h3>{{ slotSeleccionado?.ocupado ? 'Detalle del Turno' : 'Asignar Turno' }}</h3>
+              <p>{{ slotSeleccionado?.ocupado ? 'Información completa del turno médico' : 'Asignar un paciente a este turno' }}</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        
+        <!-- Body del Modal -->
+        <div class="modal-body">
+          <div class="info-grid">
+            <!-- Médico -->
+            <div class="info-item">
+              <div class="info-label">
+                <span class="material-symbols-outlined">person</span>
+                Médico
+              </div>
+              <div class="info-value">{{ slotSeleccionado?.staffMedicoNombre }} {{ slotSeleccionado?.staffMedicoApellido }}</div>
+            </div>
+
+            <!-- Especialidad -->
+            <div class="info-item">
+              <div class="info-label">
+                <span class="material-symbols-outlined">medical_services</span>
+                Especialidad
+              </div>
+              <div class="info-value">{{ slotSeleccionado?.especialidadStaffMedico }}</div>
+            </div>
+
+            <!-- Consultorio -->
+            <div class="info-item">
+              <div class="info-label">
+                <span class="material-symbols-outlined">door_front</span>
+                Consultorio
+              </div>
+              <div class="info-value">{{ slotSeleccionado?.consultorioNombre }}</div>
+            </div>
+
+            <!-- Centro de Atención -->
+            <div class="info-item">
+              <div class="info-label">
+                <span class="material-symbols-outlined">location_on</span>
+                Centro de Atención
+              </div>
+              <div class="info-value">{{ slotSeleccionado?.nombreCentro }}</div>
+            </div>
+
+            <!-- Fecha y Hora -->
+            <div class="info-item info-item-full">
+              <div class="info-label">
+                <span class="material-symbols-outlined">schedule</span>
+                Fecha y Hora
+              </div>
+              <div class="info-value">{{ formatearFecha(slotSeleccionado?.fecha || '') }} - {{ slotSeleccionado?.horaInicio }} a {{ slotSeleccionado?.horaFin }}</div>
+            </div>
+
+            <!-- Paciente Asignado (solo si está ocupado por paciente) -->
+            <div class="info-item info-item-full" *ngIf="slotSeleccionado && !esConfiguracionEspecial(slotSeleccionado) && slotSeleccionado?.ocupado && slotSeleccionado?.pacienteNombre">
+              <div class="info-label">
+                <span class="material-symbols-outlined">person</span>
+                Paciente Asignado
+              </div>
+              <div class="info-value">
+                <div class="entity-info">
+                  <div class="entity-avatar entity-avatar-paciente">
+                    {{ slotSeleccionado?.pacienteNombre?.charAt(0) }}{{ slotSeleccionado?.pacienteApellido?.charAt(0) }}
+                  </div>
+                  <span>{{ slotSeleccionado?.pacienteNombre }} {{ slotSeleccionado?.pacienteApellido }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Información de configuración especial -->
+            <div class="info-item info-item-full info-item-exception" *ngIf="slotSeleccionado && esConfiguracionEspecial(slotSeleccionado)">
+              <div class="info-label">
+                <span class="exception-icon">{{ getIconoExcepcion(slotSeleccionado.fecha, slotSeleccionado) }}</span>
+                Configuración Especial
+              </div>
+              <div class="info-value exception-details">
+                <div class="exception-type">{{ getTipoExcepcionLabel(slotSeleccionado.fecha, slotSeleccionado) }}</div>
+                <div class="exception-description" *ngIf="getDescripcionExcepcion(slotSeleccionado.fecha, slotSeleccionado)">
+                  {{ getDescripcionExcepcion(slotSeleccionado.fecha, slotSeleccionado) }}
+                </div>
+                <div class="exception-warning">
+                  <span class="material-symbols-outlined">warning</span>
+                  Este turno no puede realizarse {{ slotSeleccionado.enMantenimiento ? 'debido a mantenimiento programado' : 'en la fecha programada' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección de asignación de paciente -->
+          <div class="patient-assignment" *ngIf="slotSeleccionado && !slotSeleccionado.ocupado && !esConfiguracionEspecial(slotSeleccionado)">
+            <div class="assignment-header">
+              <span class="material-symbols-outlined">group</span>
+              <h4>Asignar Paciente</h4>
+            </div>
+            <div class="assignment-field">
+              <label class="form-label">
+                <span class="material-symbols-outlined">person</span>
+                Seleccionar Paciente
+              </label>
+              <select
+                class="form-select"
+                [(ngModel)]="pacienteId"
+              >
+                <option value="">Seleccione un paciente...</option>
+                <option *ngFor="let paciente of pacientes" [value]="paciente.id">
+                  {{ paciente.nombre }} {{ paciente.apellido }} (ID: {{ paciente.id }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Mensaje informativo para configuraciones especiales -->
+          <div class="special-config-alert" *ngIf="slotSeleccionado && esConfiguracionEspecial(slotSeleccionado)">
+            <div class="alert-header">
+              <span class="material-symbols-outlined">info</span>
+              <h4>Información de Configuración</h4>
+            </div>
+            <p>Este horario no está disponible para asignar pacientes debido a la configuración especial del sistema.</p>
+            <div class="alert-details">
+              <strong>Tipo:</strong> {{ getTipoExcepcionLabel(slotSeleccionado.fecha, slotSeleccionado) }}
+              <br>
+              <strong>Descripción:</strong> {{ getDescripcionExcepcion(slotSeleccionado.fecha, slotSeleccionado) || 'Sin descripción adicional' }}
+            </div>
+          </div>
+        </div>
+        
+        <!-- Footer del Modal -->
+        <div class="modal-footer">
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            (click)="asignarTurno()"
+            *ngIf="slotSeleccionado && !slotSeleccionado.ocupado && !esConfiguracionEspecial(slotSeleccionado)"
+            [disabled]="!pacienteId || isAssigning">
+            <span class="material-symbols-outlined">save</span>
+            {{ isAssigning ? 'Asignando...' : 'Asignar Turno' }}
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">
+            <span class="material-symbols-outlined">close</span>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

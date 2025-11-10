@@ -37,33 +37,39 @@ export interface MenuSection {
  * según userContext.allRoles (incluyendo roles heredados).
  */
 export const MENU_CONFIG: MenuSection[] = [
-  
+
   // ========================================
   // SECCIÓN: PACIENTE
   // ========================================
   {
     id: 'paciente',
     label: 'Panel de Paciente',
-    icon: 'fa-user-injured',
+    icon: 'personal_injury',
     role: Role.PACIENTE,
     order: 1,
     items: [
       {
         label: 'Mi Dashboard',
         route: '/paciente-dashboard',
-        icon: 'fa-tachometer-alt',
+        icon: 'dashboard',
         description: 'Panel principal del paciente'
       },
       {
         label: 'Mi Agenda',
         route: '/paciente-agenda',
-        icon: 'fa-calendar-alt',
+        icon: 'calendar_month',
         description: 'Ver mis turnos programados'
+      },
+      {
+        label: 'Mi Historial',
+        route: '/paciente-historial',
+        icon: 'history',
+        description: 'Ver historial de atenciones médicas'
       },
       {
         label: 'Mis Notificaciones',
         route: '/paciente-notificaciones',
-        icon: 'fa-bell',
+        icon: 'notifications',
         description: 'Notificaciones y alertas',
         badge: {
           value: 0, // Se actualiza dinámicamente
@@ -73,9 +79,15 @@ export const MENU_CONFIG: MenuSection[] = [
       {
         label: 'Mi Perfil',
         route: '/paciente-perfil',
-        icon: 'fa-user-circle',
+        icon: 'account_circle',
         description: 'Datos personales y configuración',
         requiresPrimaryRole: true // Solo visible si el usuario es PACIENTE como rol primario
+      },
+      {
+        label: 'Lista de Espera',
+        route: '/lista-espera-form',
+        icon: 'schedule',
+        description: 'Agregarme a lista de espera de pacientes'
       }
     ]
   },
@@ -86,32 +98,38 @@ export const MENU_CONFIG: MenuSection[] = [
   {
     id: 'medico',
     label: 'Panel de Médico',
-    icon: 'fa-user-md',
+    icon: 'medical_services',
     role: Role.MEDICO,
     order: 2,
     items: [
       {
         label: 'Mi Dashboard',
         route: '/medico-dashboard',
-        icon: 'fa-tachometer-alt',
+        icon: 'dashboard',
         description: 'Panel principal del médico'
       },
       {
         label: 'Mis Horarios',
         route: '/medico-horarios',
-        icon: 'fa-clock',
+        icon: 'schedule',
         description: 'Gestionar disponibilidad'
       },
       {
         label: 'Estadísticas',
         route: '/medico-estadisticas',
-        icon: 'fa-chart-bar',
+        icon: 'bar_chart',
         description: 'Métricas y reportes'
+      },
+      {
+        label: 'Sobreturnos',
+        route: '/turnos/new',
+        icon: 'event_busy',
+        description: 'Registrar sobreturno manual (fuera de agenda)'
       },
       {
         label: 'Mi Perfil',
         route: '/medico-perfil',
-        icon: 'fa-user-circle',
+        icon: 'account_circle',
         description: 'Datos profesionales',
         requiresPrimaryRole: true // Solo visible si el usuario es MEDICO como rol primario
       }
@@ -124,46 +142,64 @@ export const MENU_CONFIG: MenuSection[] = [
   {
     id: 'operador',
     label: 'Panel de Operador',
-    icon: 'fa-user-cog',
+    icon: 'admin_panel_settings',
     role: Role.OPERADOR,
     order: 3,
     items: [
       {
         label: 'Mi Dashboard',
         route: '/operador-dashboard',
-        icon: 'fa-tachometer-alt',
+        icon: 'dashboard',
         description: 'Panel principal del operador'
       },
       {
         label: 'Gestión de Turnos',
         route: '/turnos',
-        icon: 'fa-calendar',
+        icon: 'event',
         description: 'Administrar turnos del sistema'
+      },
+      {
+        label: 'Sobreturnos',
+        route: '/turnos/new',
+        icon: 'event_busy',
+        description: 'Registrar sobreturno manual (fuera de agenda)'
       },
       {
         label: 'Pacientes',
         route: '/pacientes',
-        icon: 'fa-users',
+        icon: 'group',
         description: 'Gestionar pacientes'
       },
       {
         label: 'Mi Perfil',
         route: '/operador-perfil',
-        icon: 'fa-user-circle',
+        icon: 'account_circle',
         description: 'Configuración personal',
         requiresPrimaryRole: true // Solo visible si el usuario es OPERADOR como rol primario
       },
-     /*  {
-        label: 'Solicitar Turno',
-        route: '/turnos/new',
-        icon: 'fa-calendar-plus',
-        description: 'Reservar un nuevo turno médico'
-      } */
+      /*  {
+         label: 'Solicitar Turno',
+         route: '/turnos/new',
+         icon: 'add_box',
+         description: 'Reservar un nuevo turno médico'
+       } */
       {
         label: 'Agenda de turnos',
         route: '/agenda',
-        icon: 'fa-calendar-plus',
+        icon: 'event_note',
         description: 'Reservar un nuevo turno médico'
+      },
+      {
+        label: 'Lista de Espera',
+        route: '/lista-espera',
+        icon: 'pending_actions',
+        description: 'Gestionar lista de espera de pacientes'
+      },
+      {
+        label: 'Estadísticas Lista Espera', // 👈 NUEVO
+        route: '/lista-espera-estadisticas',
+        icon: 'trending_up',
+        description: 'Métricas y análisis de lista de espera'
       }
     ]
   },
@@ -175,69 +211,94 @@ export const MENU_CONFIG: MenuSection[] = [
   {
     id: 'administrador',
     label: 'Panel de Administración',
-    icon: 'fa-shield-alt',
+    icon: 'shield',
     role: Role.ADMINISTRADOR,
     order: 4,
     items: [
       {
         label: 'Dashboard',
         route: '/admin-dashboard',
-        icon: 'fa-tachometer-alt',
+        icon: 'dashboard',
         description: 'Panel de control administrativo'
       },
       {
+        label: 'Panel Auditoria',
+        route: '/turnos/audit-dashboard',
+        icon: 'policy',
+        description: 'Panel de control administrativo'
+      },
+
+      {
         label: 'Centros de Atención',
         route: '/centrosAtencion',
-        icon: 'fa-hospital',
+        icon: 'local_hospital',
         description: 'Gestionar centros médicos'
       },
       {
         label: 'Consultorios',
         route: '/consultorios',
-        icon: 'fa-door-open',
+        icon: 'meeting_room',
         description: 'Administrar consultorios'
       },
       {
         label: 'Especialidades',
         route: '/especialidades',
-        icon: 'fa-stethoscope',
+        icon: 'medical_information',
         description: 'Gestionar especialidades médicas'
       },
       {
         label: 'Médicos',
         route: '/medicos',
-        icon: 'fa-user-md',
+        icon: 'medical_services',
         description: 'Administrar médicos'
       },
       {
         label: 'Staff Médico',
         route: '/staffMedico',
-        icon: 'fa-id-badge',
+        icon: 'badge',
         description: 'Asignaciones y vinculaciones'
       },
       {
         label: 'Disponibilidad',
         route: '/disponibilidades-medico',
-        icon: 'fa-calendar-check',
+        icon: 'event_available',
         description: 'Horarios disponibles'
       },
       {
         label: 'Esquemas de Turno',
         route: '/esquema-turno',
-        icon: 'fa-calendar-alt',
+        icon: 'calendar_view_month',
         description: 'Configurar esquemas'
       },
       {
         label: 'Obras Sociales',
         route: '/obraSocial',
-        icon: 'fa-briefcase-medical',
+        icon: 'health_and_safety',
         description: 'Gestionar obras sociales'
       },
-       {
+      {
         label: 'Operadores',
         route: '/operadores',
-        icon: 'fa-user-circle',
+        icon: 'support_agent',
         description: 'Operadores',
+      },
+      {
+        label: 'Gestionar Admins',
+        route: '/admin/users',
+        icon: 'admin_panel_settings',
+        description: 'Crear y administrar cuentas de administrador'
+      },
+      {
+        label: 'Estadísticas Lista Espera',
+        route: '/lista-espera-estadisticas',
+        icon: 'trending_up',
+        description: 'Métricas y análisis de lista de espera'
+      },
+      {
+        label: 'Metricas',
+        route: '/dashboard-gestion',
+        icon: 'leaderboard',
+        description: 'Métricas y análisis de gestión'
       },
       {
         divider: true,
@@ -247,10 +308,11 @@ export const MENU_CONFIG: MenuSection[] = [
       {
         label: 'Mi Perfil',
         route: '/admin-perfil',
-        icon: 'fa-user-circle',
+        icon: 'account_circle',
         description: 'Perfil de administrador',
         requiresPrimaryRole: true // Solo visible si el usuario es ADMINISTRADOR como rol primario
       }
+
     ]
   },
 
@@ -262,26 +324,26 @@ export const MENU_CONFIG: MenuSection[] = [
   {
     id: 'gestion',
     label: 'Gestión General',
-    icon: 'fa-building',
+    icon: 'apartment',
     role: Role.OPERADOR, // Solo para operadores
     order: 6, // Después del panel de operador
     items: [
       {
         label: 'Centros de Atención',
         route: '/centrosAtencion',
-        icon: 'fa-hospital',
+        icon: 'local_hospital',
         description: 'Ver centros médicos'
       },
       {
         label: 'Consultorios',
         route: '/consultorios',
-        icon: 'fa-door-open',
+        icon: 'meeting_room',
         description: 'Ver consultorios'
       },
       {
         label: 'Especialidades',
         route: '/especialidades',
-        icon: 'fa-stethoscope',
+        icon: 'medical_information',
         description: 'Ver especialidades'
       }
     ]
@@ -296,7 +358,7 @@ export const SHARED_MENU_ITEMS: MenuItem[] = [
   {
     label: 'Inicio',
     route: '/',
-    icon: 'fa-home',
+    icon: 'home',
     description: 'Página principal'
   }
 ];
@@ -321,7 +383,7 @@ export function getMenuSectionsForRoles(userRoles: Role[]): MenuSection[] {
 export function getAllMenuItems(userRoles: Role[]): MenuItem[] {
   const sections = getMenuSectionsForRoles(userRoles);
   const itemsMap = new Map<string, MenuItem>();
-  
+
   sections.forEach(section => {
     section.items.forEach(item => {
       if (item.route && !itemsMap.has(item.route)) {
@@ -329,7 +391,7 @@ export function getAllMenuItems(userRoles: Role[]): MenuItem[] {
       }
     });
   });
-  
+
   return Array.from(itemsMap.values());
 }
 

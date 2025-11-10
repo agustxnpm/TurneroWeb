@@ -1,0 +1,360 @@
+<div class="dashboard-wrapper">
+  <!-- Header del Dashboard -->
+  <div class="dashboard-header card">
+    <div class="header-content">
+      <div class="welcome-info">
+        <span class="material-symbols-outlined header-icon">settings</span>
+        <div>
+          <h1>Panel de Operaciones</h1>
+          <p class="header-subtitle">Gestiona las operaciones de manera eficiente</p>
+        </div>
+      </div>
+      <div class="user-info">
+        <div class="info-item">
+          <span class="material-symbols-outlined">person</span>
+          <span>{{ getUserName() }}</span>
+        </div>
+        <div class="info-item">
+          <span class="material-symbols-outlined">email</span>
+          <span>{{ getUserEmail() }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección Acciones Rápidas -->
+  <section class="quick-actions-section card">
+    <h2>
+      <span class="material-symbols-outlined">bolt</span>
+      Acciones Rápidas
+    </h2>
+    <p class="section-description">Accede rápidamente a las funciones principales</p>
+
+    <div class="actions-grid">
+      <div class="card action-card" (click)="goToTurnos()">
+        <span class="material-symbols-outlined card-icon">calendar_month</span>
+        <h3>Administrar Turnos</h3>
+        <p>Ver, agendar y gestionar turnos de pacientes</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="goToOperadores()">
+        <span class="material-symbols-outlined card-icon">group</span>
+        <h3>Gestionar Operadores</h3>
+        <p>Ver y agregar nuevos operadores</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="goToCentros()">
+        <span class="material-symbols-outlined card-icon">local_hospital</span>
+        <h3>Gestionar Centros</h3>
+        <p>Administrar centros médicos y establecimientos de salud</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="goToReportes()">
+        <span class="material-symbols-outlined card-icon">analytics</span>
+        <h3>Ver Reportes</h3>
+        <p>Analizar métricas y reportes del sistema</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="goToPacientes()">
+        <span class="material-symbols-outlined card-icon">personal_injury</span>
+        <h3>Gestionar Pacientes</h3>
+        <p>Ver y administrar información de pacientes</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="createPaciente()">
+        <span class="material-symbols-outlined card-icon">person_add</span>
+        <h3>Crear Paciente</h3>
+        <p>Registrar un nuevo paciente en el sistema</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="goToMedicos()">
+        <span class="material-symbols-outlined card-icon">medical_services</span>
+        <h3>Gestionar Médicos</h3>
+        <p>Ver y administrar información de médicos</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="createMedico()">
+        <span class="material-symbols-outlined card-icon">person_add</span>
+        <h3>Crear Médico</h3>
+        <p>Registrar un nuevo médico en el sistema</p>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+
+      <div class="card action-card" (click)="viewNotifications()">
+        <span class="material-symbols-outlined card-icon">notifications</span>
+        <h3>Notificaciones</h3>
+        <p>Ver mensajes y alertas del sistema</p>
+        <span class="notification-badge" *ngIf="contadorNotificaciones > 0">{{ contadorNotificaciones }}</span>
+        <span class="material-symbols-outlined card-arrow">arrow_forward</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Turnos Gestionados -->
+  <section class="appointments-section card">
+    <div class="section-header">
+      <div class="section-title">
+        <span class="material-symbols-outlined">event_available</span>
+        <div>
+          <h2>Turnos Gestionados</h2>
+          <p class="section-description">Administra los turnos de los pacientes</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="scheduleAppointment()">
+        <span class="material-symbols-outlined">add_circle</span>
+        Agendar Turno
+      </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filter-tabs">
+      <button
+        class="filter-tab"
+        [class.active]="currentFilter === 'pending'"
+        (click)="setFilter('pending')"
+      >
+        <span class="material-symbols-outlined">schedule</span>
+        <span>Pendientes</span>
+        <span class="tab-count" *ngIf="getFilterCount('pending') > 0">
+          {{ getFilterCount("pending") }}
+        </span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="currentFilter === 'upcoming'"
+        (click)="setFilter('upcoming')"
+      >
+        <span class="material-symbols-outlined">calendar_today</span>
+        <span>Próximos</span>
+        <span class="tab-count" *ngIf="getFilterCount('upcoming') > 0">
+          {{ getFilterCount("upcoming") }}
+        </span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="currentFilter === 'past'"
+        (click)="setFilter('past')"
+      >
+        <span class="material-symbols-outlined">history</span>
+        <span>Pasados</span>
+        <span class="tab-count" *ngIf="getFilterCount('past') > 0">
+          {{ getFilterCount("past") }}
+        </span>
+      </button>
+      <button
+        class="filter-tab"
+        [class.active]="currentFilter === 'all'"
+        (click)="setFilter('all')"
+      >
+        <span class="material-symbols-outlined">list</span>
+        <span>Todos</span>
+        <span class="tab-count">{{ allTurnos.length }}</span>
+      </button>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="search-container">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Buscar por paciente, médico, centro o ID..."
+        [(ngModel)]="searchQuery"
+        (input)="applySearch()"
+      />
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-section" *ngIf="isLoadingTurnos">
+      <span class="material-symbols-outlined spinner-large">sync</span>
+      <p>Cargando turnos...</p>
+    </div>
+
+    <!-- Lista de Turnos -->
+    <div class="appointments-grid" *ngIf="!isLoadingTurnos && filteredTurnos.length > 0">
+      <div
+        class="card appointment-card"
+        *ngFor="let turno of filteredTurnos; trackBy: trackByTurno"
+        [class.status-programado]="turno.status === 'programado'"
+        [class.status-confirmado]="turno.status === 'confirmado'"
+        [class.status-completo]="turno.status === 'completo'"
+        [class.status-cancelado]="turno.status === 'cancelado'"
+        [class.status-reagendado]="turno.status === 'reagendado'"
+      >
+        <!-- Fecha y Estado -->
+        <div class="appointment-header">
+          <div class="date-info">
+            <span class="material-symbols-outlined">calendar_today</span>
+            <div class="date-details">
+              <span class="date-day">{{ turno.day }}</span>
+              <span class="date-month">{{ turno.month }}</span>
+              <span class="date-year">{{ turno.year }}</span>
+            </div>
+            <div class="time-details">
+              <span class="material-symbols-outlined">schedule</span>
+              <span class="time-value">{{ turno.time }}</span>
+            </div>
+          </div>
+          <div class="status-badge" [ngClass]="'status-' + turno.status">
+            <span class="material-symbols-outlined">{{ getStatusIcon(turno.status) }}</span>
+          </div>
+        </div>
+
+        <!-- Información del Turno -->
+        <div class="appointment-info">
+          <!-- Paciente -->
+          <div class="info-item patient-info">
+            <span class="material-symbols-outlined">person</span>
+            <div class="info-content">
+              <strong class="info-value">{{ turno.patientName }}</strong>
+            </div>
+          </div>
+
+          <!-- Médico -->
+          <div class="info-item doctor-info">
+            <span class="material-symbols-outlined">medical_services</span>
+            <div class="info-content">
+              <strong class="info-value">{{ turno.doctor }}</strong>
+              <span class="info-label">{{ turno.specialty }}</span>
+            </div>
+          </div>
+
+          <!-- Ubicación -->
+          <div class="info-item location-info">
+            <span class="material-symbols-outlined">location_on</span>
+            <div class="info-content">
+              <span class="info-value">{{ turno.location }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="appointment-actions" *ngIf="canPerformActions(turno)">
+          <button
+            class="btn btn-success btn-sm"
+            *ngIf="canConfirm(turno)"
+            (click)="confirmarTurno(turno)"
+            title="Confirmar turno"
+          >
+            <span class="material-symbols-outlined">check_circle</span>
+            Confirmar
+          </button>
+
+          <button
+            class="btn btn-secondary btn-sm"
+            *ngIf="canReschedule(turno)"
+            (click)="reprogramarTurno(turno)"
+            title="Reagendar turno"
+          >
+            <span class="material-symbols-outlined">event_repeat</span>
+            Reagendar
+          </button>
+
+          <button
+            class="btn btn-danger btn-sm"
+            *ngIf="canCancel(turno)"
+            (click)="cancelarTurno(turno)"
+            title="Cancelar turno"
+          >
+            <span class="material-symbols-outlined">cancel</span>
+            Cancelar
+          </button>
+
+          <button
+            class="btn btn-secondary btn-sm"
+            (click)="verDetalle(turno.id)"
+            title="Ver detalle"
+          >
+            <span class="material-symbols-outlined">visibility</span>
+            Ver
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoadingTurnos && filteredTurnos.length === 0">
+      <span class="material-symbols-outlined empty-icon">event_busy</span>
+      <h3>No hay turnos {{ getEmptyStateText() }}</h3>
+      <p>{{ getEmptyStateDescription() }}</p>
+    </div>
+  </section>
+
+  <!-- Modal de Cancelación -->
+  <div class="modal-overlay" *ngIf="showReasonModal" (click)="closeModal()">
+    <div class="card modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <span class="material-symbols-outlined icon-status icon-warning">cancel</span>
+        <h3>Cancelar Turno</h3>
+        <button class="btn-close-modal" (click)="closeModal()" [disabled]="isSubmitting">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="turno-summary" *ngIf="selectedTurno">
+          <div class="summary-item">
+            <span class="material-symbols-outlined">event</span>
+            <span>{{ selectedTurno.day }}/{{ selectedTurno.month }} a las {{ selectedTurno.time }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="material-symbols-outlined">person</span>
+            <span>{{ selectedTurno.patientName }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="material-symbols-outlined">medical_services</span>
+            <span>{{ selectedTurno.doctor }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="material-symbols-outlined">location_on</span>
+            <span>{{ selectedTurno.location }}</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="cancelReason">Motivo de cancelación</label>
+          <textarea
+            id="cancelReason"
+            class="form-control"
+            [(ngModel)]="motivo"
+            rows="4"
+            placeholder="Escribe el motivo de la cancelación (mínimo 5 caracteres)..."
+            [disabled]="isSubmitting"
+          ></textarea>
+          <small class="form-hint">El motivo es obligatorio y debe tener al menos 5 caracteres</small>
+          <div class="form-error" *ngIf="motivo && motivo.length < 5">
+            <span class="material-symbols-outlined">warning</span>
+            <span>El motivo debe tener al menos 5 caracteres</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          class="btn btn-secondary"
+          (click)="closeModal()"
+          [disabled]="isSubmitting"
+        >
+          <span class="material-symbols-outlined">arrow_back</span>
+          Volver
+        </button>
+        <button
+          class="btn btn-danger"
+          (click)="submitReason()"
+          [disabled]="!motivo.trim() || motivo.trim().length < 5 || isSubmitting"
+        >
+          <span class="spinner" *ngIf="isSubmitting"></span>
+          <span class="material-symbols-outlined" *ngIf="!isSubmitting">cancel</span>
+          {{ isSubmitting ? "Procesando..." : "Cancelar Turno" }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

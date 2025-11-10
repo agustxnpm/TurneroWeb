@@ -1,0 +1,153 @@
+<div class="admin-detail-card card p-xl mb-xl mx-auto" style="max-width: 1000px;">
+  <!-- Header -->
+  <div class="admin-detail-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">admin_panel_settings</span>
+      <div>
+        <h2 class="mb-0">
+          {{ route.snapshot.params['id'] ? 'Editar Administrador' : 'Nuevo Administrador' }}
+        </h2>
+        <p class="text-muted mb-0 mt-sm">
+          {{ route.snapshot.params['id'] ? 'Actualización de usuario administrador' : 'Registro de nuevo usuario administrador' }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMULARIO -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+    <div class="row g-4">
+      <!-- Nombre -->
+      <div class="col-md-6">
+        <label for="nombre" class="form-label">
+          <span class="material-symbols-outlined me-2">person</span>
+          Nombre
+        </label>
+        <input
+          formControlName="nombre"
+          id="nombre"
+          class="form-control"
+          placeholder="Ingrese el nombre"
+          [class.is-invalid]="form.get('nombre')?.invalid && form.get('nombre')?.touched"
+        />
+        <div *ngIf="form.get('nombre')?.invalid && form.get('nombre')?.touched" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>El nombre es requerido</small>
+        </div>
+      </div>
+
+      <!-- Apellido -->
+      <div class="col-md-6">
+        <label for="apellido" class="form-label">
+          <span class="material-symbols-outlined me-2">person</span>
+          Apellido
+        </label>
+        <input
+          formControlName="apellido"
+          id="apellido"
+          class="form-control"
+          placeholder="Ingrese el apellido"
+          [class.is-invalid]="form.get('apellido')?.invalid && form.get('apellido')?.touched"
+        />
+        <div *ngIf="form.get('apellido')?.invalid && form.get('apellido')?.touched" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>El apellido es requerido</small>
+        </div>
+      </div>
+
+      <!-- DNI -->
+      <div class="col-md-6">
+        <label for="dni" class="form-label">
+          <span class="material-symbols-outlined me-2">badge</span>
+          DNI
+        </label>
+        <input
+          formControlName="dni"
+          id="dni"
+          type="text"
+          class="form-control"
+          placeholder="Ingrese el DNI"
+          [class.is-invalid]="form.get('dni')?.invalid && form.get('dni')?.touched"
+        />
+        <div *ngIf="form.get('dni')?.invalid && form.get('dni')?.touched" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>El DNI es requerido</small>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="col-md-6">
+        <label for="email" class="form-label">
+          <span class="material-symbols-outlined me-2">email</span>
+          Correo Electrónico
+        </label>
+        <input
+          formControlName="email"
+          id="email"
+          type="email"
+          class="form-control"
+          placeholder="ejemplo@correo.com"
+          [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+        />
+        <div *ngIf="form.get('email')?.invalid && form.get('email')?.touched" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small *ngIf="form.get('email')?.errors?.['required']">El correo electrónico es requerido</small>
+          <small *ngIf="form.get('email')?.errors?.['email']">Debe ser un correo electrónico válido</small>
+        </div>
+      </div>
+
+      <!-- Teléfono -->
+      <div class="col-md-6">
+        <label for="telefono" class="form-label">
+          <span class="material-symbols-outlined me-2">phone</span>
+          Teléfono
+        </label>
+        <input
+          formControlName="telefono"
+          id="telefono"
+          type="text"
+          class="form-control"
+          placeholder="Ingrese el teléfono (opcional)"
+        />
+        <small class="text-muted d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">info</span>
+          Campo opcional
+        </small>
+      </div>
+
+      <!-- Información sobre contraseña automática -->
+      <div class="col-12" *ngIf="!route.snapshot.params['id']">
+        <div class="info-badge">
+          <span class="material-symbols-outlined me-2">info</span>
+          <div>
+            <strong>Contraseña automática:</strong> Se generará una contraseña segura automáticamente y será enviada por correo electrónico al administrador.
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="col-12">
+        <div class="d-flex gap-md flex-wrap justify-content-end">
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="form.invalid || isSubmitting"
+            aria-label="Guardar administrador"
+          >
+            <span class="material-symbols-outlined me-2">save</span>
+            {{ isSubmitting ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="router.navigate(['/admin/users'])"
+            aria-label="Cancelar y volver"
+          >
+            <span class="material-symbols-outlined me-2">close</span>
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

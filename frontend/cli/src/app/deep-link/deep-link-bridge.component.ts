@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DeepLinkService } from '../services/deep-link.service';
+import { TurnoService } from '../turnos/turno.service';
 
 /**
  * Componente puente para procesar enlaces profundos (deep links)
@@ -9,102 +10,27 @@ import { DeepLinkService } from '../services/deep-link.service';
  * 1. Recibe un token desde la URL
  * 2. Valida el token con el backend
  * 3. Establece una sesión automática si el token es válido
- * 4. Redirige al usuario a la página de agenda con contexto pre-seleccionado
+ * 4. Si el tipo es "CONFIRMACION", confirma automáticamente el turno
+ * 5. Redirige al usuario a la página de agenda con mensaje de confirmación
  */
 @Component({
   selector: 'app-deep-link-bridge',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="container mt-5">
-      <div class="row justify-content-center">
-        <div class="col-md-6">
-          <div class="card shadow-sm">
-            <div class="card-body text-center p-5">
-              <div *ngIf="loading" class="loading-state">
-                <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-                  <span class="visually-hidden">Cargando...</span>
-                </div>
-                <h4 class="mb-2">Verificando acceso...</h4>
-                <p class="text-muted">Por favor espere mientras validamos su enlace</p>
-              </div>
-
-              <div *ngIf="error" class="error-state">
-                <i class="fas fa-exclamation-circle text-danger mb-3" style="font-size: 3rem;"></i>
-                <h4 class="mb-2 text-danger">Error de Acceso</h4>
-                <p class="text-muted mb-4">{{ errorMessage }}</p>
-                <button class="btn btn-primary" (click)="goToLogin()">
-                  <i class="fas fa-sign-in-alt me-2"></i>Ir al Login
-                </button>
-              </div>
-
-              <div *ngIf="success" class="success-state">
-                <i class="fas fa-check-circle text-success mb-3" style="font-size: 3rem;"></i>
-                <h4 class="mb-2 text-success">¡Acceso Autorizado!</h4>
-                <p class="text-muted">Redirigiendo a la agenda...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .loading-state, .error-state, .success-state {
-      animation: fadeIn 0.3s ease-in;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .card {
-      border: none;
-      border-radius: 15px;
-    }
-
-    .spinner-border {
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    i.fas {
-      animation: scaleIn 0.5s ease-out;
-    }
-
-    @keyframes scaleIn {
-      0% {
-        transform: scale(0);
-      }
-      50% {
-        transform: scale(1.1);
-      }
-      100% {
-        transform: scale(1);
-      }
-    }
-  `]
+  templateUrl: './deep-link-brigde.component.html',
+  styleUrl: './deep-link-bridge.component.css'
 })
 export class DeepLinkBridgeComponent implements OnInit {
   loading = true;
   error = false;
   success = false;
   errorMessage = '';
+  confirmingAppointment = false;
 
   constructor(
     private route: ActivatedRoute,
     private deepLinkService: DeepLinkService,
+    private turnoService: TurnoService,
     private router: Router
   ) {}
 
@@ -130,13 +56,18 @@ export class DeepLinkBridgeComponent implements OnInit {
     this.deepLinkService.validateDeepLink(token).subscribe({
       next: (response) => {
         if (response.status_code === 200) {
-          this.showSuccess();
+          const context = response.data.context;
           
-          // Esperar un momento para mostrar el mensaje de éxito
-          setTimeout(() => {
-            // Redirigir a la agenda de pacientes
-            this.router.navigate(['/paciente-agenda']);
-          }, 1500);
+          // Si el tipo es "CONFIRMACION", confirmar el turno automáticamente
+          if (context && context.tipo === 'CONFIRMACION' && context.turnoId) {
+            this.confirmarTurno(context.turnoId);
+          } else {
+            // Para otros tipos, simplemente redirigir a la agenda
+            this.showSuccess();
+            setTimeout(() => {
+              this.router.navigate(['/paciente-agenda']);
+            }, 1500);
+          }
         } else {
           this.showError(response.status_text || 'Token inválido o expirado.');
         }
@@ -157,12 +88,55 @@ export class DeepLinkBridgeComponent implements OnInit {
   }
 
   /**
+   * Confirma un turno automáticamente
+   */
+  private confirmarTurno(turnoId: number): void {
+    this.confirmingAppointment = true;
+    
+    this.turnoService.confirmar(turnoId).subscribe({
+      next: (response) => {
+        if (response.status_code === 200) {
+          console.log('✅ Turno confirmado exitosamente:', response);
+          this.showSuccess();
+          
+          // Guardar mensaje de confirmación para mostrar en la agenda
+          sessionStorage.setItem('turno_confirmado', JSON.stringify({
+            turnoId: turnoId,
+            mensaje: 'Tu turno ha sido confirmado exitosamente desde el correo electrónico.'
+          }));
+          
+          setTimeout(() => {
+            this.router.navigate(['/paciente-dashboard']);
+          }, 2000);
+        } else {
+          this.showError(response.status_text || 'No se pudo confirmar el turno.');
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al confirmar turno:', err);
+        
+        let message = 'Ocurrió un error al confirmar el turno.';
+        if (err.error && err.error.status_text) {
+          message = err.error.status_text;
+        } else if (err.status === 400) {
+          message = 'El turno no puede ser confirmado en este momento.';
+        } else if (err.status === 404) {
+          message = 'El turno no fue encontrado.';
+        }
+        
+        this.showError(message);
+      }
+    });
+  }
+
+  /**
    * Muestra un mensaje de error
    */
   private showError(message: string): void {
     this.loading = false;
     this.error = true;
     this.success = false;
+    this.confirmingAppointment = false;
     this.errorMessage = message;
   }
 
@@ -173,6 +147,7 @@ export class DeepLinkBridgeComponent implements OnInit {
     this.loading = false;
     this.error = false;
     this.success = true;
+    this.confirmingAppointment = false;
   }
 
   /**

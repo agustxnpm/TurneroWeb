@@ -41,6 +41,10 @@
               <i class="fas fa-search"></i>
               Buscar CAPS por cercanía
             </button>
+            <button type="button" class="btn btn-view-all-turnos" routerLink="/paciente-agenda">
+              <i class="fas fa-calendar-alt"></i>
+              Ver todos los turnos
+            </button>
           </div>
         </div>
       </form>
@@ -415,4 +419,16 @@
       </div>
     </div>
   </div>
+
+  <!-- MODAL DE MAPA DE CENTROS -->
+  <app-centros-mapa-modal
+    *ngIf="showMapaModal"
+    [centros]="centrosAtencionCompletos"
+    [especialidades]="especialidadesCompletas"
+    [slotsDisponibles]="slotsOriginales"
+    especialidadSeleccionadaInicial=""
+    (centroSeleccionado)="onCentroSeleccionadoDelMapa($event)"
+    (modalCerrado)="cerrarMapaModal()"
+  >
+  </app-centros-mapa-modal>
 </div>

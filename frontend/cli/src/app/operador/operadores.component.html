@@ -1,0 +1,323 @@
+<div class="operadores-container">
+  <div class="card p-xl mb-xl mx-auto">
+    <!-- Header LVE -->
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-3">
+        <span class="material-symbols-outlined header-icon">
+          manage_accounts
+        </span>
+        <div>
+          <h2 class="mb-0">Operadores</h2>
+          <p class="text-muted mb-0">Gestión de operadores del sistema</p>
+        </div>
+      </div>
+      <button class="btn btn-primary d-flex align-items-center gap-2" (click)="router.navigate(['/operadores/new'])">
+        <span class="material-symbols-outlined">add</span>
+        <span class="d-none d-sm-inline">Nuevo Operador</span>
+      </button>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="filters-section mb-lg">
+      <div class="filters-title">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtros de búsqueda
+      </div>
+      
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="nombreFilter" class="form-label">
+            <span class="material-symbols-outlined">badge</span>
+            Buscar por nombre
+          </label>
+          <input
+            type="text"
+            class="form-control"
+            id="nombreFilter"
+            [(ngModel)]="filters.nombre"
+            (input)="onFilterChange()"
+            placeholder="Ingrese nombre..."
+            autocomplete="off"
+          />
+        </div>
+        
+        <div class="col-md-3">
+          <label for="emailFilter" class="form-label">
+            <span class="material-symbols-outlined">mail</span>
+            Buscar por email
+          </label>
+          <input
+            type="email"
+            class="form-control"
+            id="emailFilter"
+            [(ngModel)]="filters.email"
+            (input)="onFilterChange()"
+            placeholder="Ingrese email..."
+            autocomplete="off"
+          />
+        </div>
+        
+        <div class="col-md-2">
+          <label for="estadoFilter" class="form-label">
+            <span class="material-symbols-outlined">check_circle</span>
+            Estado
+          </label>
+          <select
+            class="form-select"
+            id="estadoFilter"
+            [(ngModel)]="filters.estado"
+            (change)="onFilterChange()"
+          >
+            <option value="">Todos</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+        
+        <div class="col-md-2">
+          <label for="pageSizeSelect" class="form-label">
+            <span class="material-symbols-outlined">view_list</span>
+            Filas por página
+          </label>
+          <select
+            class="form-select"
+            id="pageSizeSelect"
+            [(ngModel)]="pageSize"
+            (change)="onPageSizeChange()"
+          >
+            <option [value]="5">5 filas</option>
+            <option [value]="10">10 filas</option>
+            <option [value]="25">25 filas</option>
+            <option [value]="50">50 filas</option>
+            <option [value]="100">100 filas</option>
+          </select>
+        </div>
+        
+        <div class="col-md-2 d-flex align-items-end">
+          <button
+            class="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2"
+            (click)="clearFilters()"
+            [disabled]="!hasActiveFilters()"
+          >
+            <span class="material-symbols-outlined">close</span>
+            Limpiar
+          </button>
+        </div>
+      </div>
+      
+      <div class="mt-3" *ngIf="hasActiveFilters()">
+        <div class="info-badge">
+          <span class="material-symbols-outlined">info</span>
+          Filtros activos aplicados
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de operadores -->
+    <div class="table-responsive mb-lg">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="border-0">
+              <div class="header-cell">
+                <span class="material-symbols-outlined">tag</span>
+                ID
+              </div>
+            </th>
+            <th class="border-0">
+              <button
+                class="header-button"
+                [class.active]="sortConfig?.field === 'nombre'"
+                (click)="onSortChange('nombre')"
+                type="button"
+                aria-label="Ordenar por nombre"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">badge</span>
+                  Nombre
+                  <span 
+                    class="material-symbols-outlined sort-icon"
+                    [class.inactive]="sortConfig?.field !== 'nombre'"
+                  >
+                    {{ sortConfig?.field === 'nombre' && sortConfig?.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th class="border-0">
+              <button
+                class="header-button"
+                [class.active]="sortConfig?.field === 'apellido'"
+                (click)="onSortChange('apellido')"
+                type="button"
+                aria-label="Ordenar por apellido"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">person</span>
+                  Apellido
+                  <span 
+                    class="material-symbols-outlined sort-icon"
+                    [class.inactive]="sortConfig?.field !== 'apellido'"
+                  >
+                    {{ sortConfig?.field === 'apellido' && sortConfig?.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th class="border-0">
+              <button
+                class="header-button"
+                [class.active]="sortConfig?.field === 'email'"
+                (click)="onSortChange('email')"
+                type="button"
+                aria-label="Ordenar por email"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">mail</span>
+                  Email
+                  <span 
+                    class="material-symbols-outlined sort-icon"
+                    [class.inactive]="sortConfig?.field !== 'email'"
+                  >
+                    {{ sortConfig?.field === 'email' && sortConfig?.direction === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th class="border-0 text-center">
+              <div class="header-cell justify-content-center">
+                <span class="material-symbols-outlined">check_circle</span>
+                Estado
+              </div>
+            </th>
+            <th class="border-0 text-center">
+              <div class="header-cell justify-content-center">
+                <span class="material-symbols-outlined">settings</span>
+                Acciones
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading state -->
+          <tr *ngIf="loading">
+            <td colspan="6" class="text-center py-5">
+              <div class="loading-state">
+                <div class="loading-content">
+                  <span class="material-symbols-outlined spinning">progress_activity</span>
+                  <h6>Cargando operadores...</h6>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data rows -->
+          <tr
+            *ngFor="let operador of resultsPage.content || []"
+            (click)="goToDetail(operador.id)"
+            class="table-row cursor-pointer"
+            [attr.aria-label]="'Operador ' + operador.nombre + ' ' + operador.apellido"
+          >
+            <td>
+              <span class="badge-id">{{ operador.id }}</span>
+            </td>
+            <td>
+              <div class="entity-info-compact">
+                <span class="entity-name">{{ operador.nombre }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="entity-info-compact">
+                <span class="entity-name">{{ operador.apellido }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="email-cell">
+                <span class="material-symbols-outlined">mail</span>
+                {{ operador.email }}
+              </div>
+            </td>
+            <td class="text-center">
+              <span
+                class="badge"
+                [class.badge-active]="operador.activo"
+                [class.badge-inactive]="!operador.activo"
+                [attr.aria-label]="operador.activo ? 'Estado activo' : 'Estado inactivo'"
+              >
+                <span class="material-symbols-outlined">
+                  {{ operador.activo ? 'check_circle' : 'cancel' }}
+                </span>
+                {{ operador.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button
+                  (click)="goToEdit(operador.id); $event.stopPropagation()"
+                  class="btn-action btn-action-edit"
+                  title="Editar operador"
+                  aria-label="Editar operador"
+                >
+                  <span class="material-symbols-outlined">edit</span>
+                </button>
+                <button
+                  (click)="confirmDelete(operador.id); $event.stopPropagation()"
+                  class="btn-action btn-action-delete"
+                  title="Eliminar operador"
+                  aria-label="Eliminar operador"
+                >
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty state -->
+          <tr *ngIf="!loading && (!resultsPage.content || resultsPage.content.length === 0)">
+            <td colspan="6" class="text-center py-5">
+              <div class="empty-state">
+                <div class="empty-state-content">
+                  <span class="material-symbols-outlined empty-icon">manage_accounts</span>
+                  <h3>No hay operadores registrados</h3>
+                  <p>
+                    {{ hasActiveFilters() 
+                      ? 'No se encontraron resultados para los filtros aplicados' 
+                      : 'Comience agregando un nuevo operador al sistema' 
+                    }}
+                  </p>
+                  <button
+                    *ngIf="hasActiveFilters()"
+                    class="btn btn-primary d-flex align-items-center gap-2 mx-auto"
+                    (click)="clearFilters()"
+                  >
+                    <span class="material-symbols-outlined">filter_list_off</span>
+                    Limpiar filtros
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación y info de resultados -->
+    <div class="pagination-container" *ngIf="!loading && resultsPage.totalPages > 1">
+      <app-pagination
+        [totalPages]="resultsPage.totalPages"
+        [currentPage]="currentPage"
+        (pageChangeRequested)="onPageChangeRequested($event)"
+        [number]="resultsPage.number"
+        [hidden]="resultsPage.numberOfElements < 1"
+      ></app-pagination>
+    </div>
+
+    <div class="results-info" *ngIf="!loading && resultsPage.totalElements > 0">
+      <span class="material-symbols-outlined">info</span>
+      Mostrando {{ resultsPage.numberOfElements }} de {{ resultsPage.totalElements }} operadores
+      <span *ngIf="resultsPage.totalPages > 1">
+        (página {{ currentPage }} de {{ resultsPage.totalPages }}, {{ pageSize }} filas por página)
+      </span>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,5 @@
 package unpsjb.labprog.backend.dto;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -32,16 +33,22 @@ public class TurnoDTO {
     private Integer centroId;
 
     private String titulo;
-    
+
     // Campos para manejo de slots en la agenda
-    private Boolean esSlot;          // true = slot generado, false/null = turno real
-    private Boolean ocupado;         // true = slot ocupado por un turno, false = disponible
+    private Boolean esSlot; // true = slot generado, false/null = turno real
+    private Boolean ocupado; // true = slot ocupado por un turno, false = disponible
     private Boolean enMantenimiento; // true = slot afectado por mantenimiento, false/null = normal
     // Los colores se manejan en el frontend según el estado
 
     // === CAMPOS DE AUDITORÍA PARA CONSULTAS ===
-    private String ultimoUsuarioModificacion;  // Usuario que realizó la última modificación
+    private String ultimoUsuarioModificacion; // Usuario que realizó la última modificación
     private LocalDateTime fechaUltimaModificacion; // Fecha/hora de la última modificación
-    private String motivoUltimaModificacion;   // Motivo de la última modificación
-    private Integer totalModificaciones;       // Número total de modificaciones
+    private String motivoUltimaModificacion; // Motivo de la última modificación
+    private Integer totalModificaciones; // Número total de modificaciones
+
+    // Nuevo campo de observaciones
+    private String observaciones;
+
+    private Boolean asistio;
+
 }

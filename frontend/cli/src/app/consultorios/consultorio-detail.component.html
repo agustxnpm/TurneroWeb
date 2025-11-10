@@ -1,254 +1,288 @@
-    <div class="container mt-4" *ngIf="consultorio">
-      <div class="card modern-card">
-        <!-- HEADER MODERNO -->
-        <div class="card-header">
-          <div class="header-content">
-            <div class="header-icon">
-              <i class="fas fa-door-open"></i>
-            </div>
-            <div class="header-text">
-              <h1>{{ esNuevo ? 'Nuevo Consultorio' : 'Consultorio #' + consultorio.numero }}</h1>
-              <p>{{ esNuevo ? 'Configure un nuevo consultorio' : consultorio.nombre }}</p>
+    <div class="consultorio-detail-card card p-xl mb-xl mx-auto" *ngIf="consultorio" style="max-width: 1000px;">
+  <!-- Header -->
+  <div class="consultorio-detail-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">door_front</span>
+      <div>
+        <h2 class="mb-0" *ngIf="!esNuevo">
+          Consultorio #{{ consultorio.numero }}
+        </h2>
+        <h2 class="mb-0" *ngIf="esNuevo">
+          Nuevo Consultorio
+        </h2>
+        <p class="text-muted mb-0 mt-sm">
+          <ng-container *ngIf="!modoEdicion && !esNuevo">{{ consultorio.nombre }}</ng-container>
+          <ng-container *ngIf="modoEdicion && !esNuevo">Editando información del consultorio</ng-container>
+          <ng-container *ngIf="esNuevo">Registro de nuevo consultorio</ng-container>
+        </p>
+      </div>
+    </div>
+    
+    <div class="d-flex gap-md" *ngIf="!modoEdicion && !esNuevo">
+      <button type="button" class="btn btn-primary" (click)="activarEdicion()" aria-label="Editar información del consultorio">
+        <span class="material-symbols-outlined me-2">edit</span>
+        <span class="d-none d-sm-inline">Editar</span>
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="goBack()" aria-label="Volver al listado">
+        <span class="material-symbols-outlined me-2">arrow_back</span>
+        <span class="d-none d-sm-inline">Volver</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MODO VISTA (Solo lectura) -->
+  <div *ngIf="!modoEdicion && !esNuevo" class="consultorio-info-view">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">tag</span>
+          <div class="info-content">
+            <label class="info-label">Número</label>
+            <div class="info-value">{{ consultorio.numero }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">label</span>
+          <div class="info-content">
+            <label class="info-label">Nombre</label>
+            <div class="info-value">{{ consultorio.nombre }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">apartment</span>
+          <div class="info-content">
+            <label class="info-label">Centro de Atención</label>
+            <div class="info-value">{{ consultorio.centroAtencion?.nombre || 'Sin centro asignado' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Horarios de Atención -->
+      <div class="col-12">
+        <div class="info-item">
+          <span class="material-symbols-outlined info-icon">schedule</span>
+          <div class="info-content">
+            <label class="info-label">Horarios de Atención</label>
+            <div class="info-value">
+              <!-- Horarios específicos -->
+              <div *ngIf="tieneHorariosEspecificos(); else generalSchedule">
+                <div class="schedule-type-badge mb-sm">
+                  <span class="badge badge-info">Horarios Específicos por Día</span>
+                </div>
+                <div class="schedule-display">
+                  <div *ngFor="let horario of consultorio.horariosSemanales" 
+                       class="schedule-day" 
+                       [class.inactive-day]="!horario.activo">
+                    <span class="day-name">{{ horario.diaSemana }}</span>
+                    <span class="day-hours" *ngIf="horario.activo">
+                      {{ horario.horaApertura }} - {{ horario.horaCierre }}
+                    </span>
+                    <span class="day-hours inactive" *ngIf="!horario.activo">Cerrado</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Horario general -->
+              <ng-template #generalSchedule>
+                <div class="schedule-type-badge mb-sm">
+                  <span class="badge badge-success">Horario General</span>
+                </div>
+                <div class="default-hours" *ngIf="consultorio.horaAperturaDefault && consultorio.horaCierreDefault">
+                  <strong>Todos los días:</strong> {{ consultorio.horaAperturaDefault }} - {{ consultorio.horaCierreDefault }}
+                </div>
+                <span class="text-muted" *ngIf="!consultorio.horaAperturaDefault">Sin horarios configurados</span>
+              </ng-template>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- BODY DEL CARD -->
-        <div class="card-body">
-          <!-- MODO VISTA -->
-          <div *ngIf="!modoEdicion">
-            <div class="info-grid">
-              <div class="info-item">
-                <div class="info-label">
-                  <span class="info-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">🔢</span>
-                  Número
-                </div>
-                <div class="info-value">
-                  {{ consultorio.numero }}
-                </div>
-              </div>
+  <!-- MODO EDICIÓN/CREACIÓN -->
+  <form *ngIf="modoEdicion || esNuevo" #form="ngForm" (ngSubmit)="save()" novalidate>
+    <div class="row g-4">
+      <!-- Número -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="numero">
+            <span class="material-symbols-outlined me-2">tag</span>
+            Número del Consultorio*
+          </label>
+          <input
+            type="number"
+            id="numero"
+            name="numero"
+            class="form-control"
+            [(ngModel)]="consultorio.numero"
+            required
+            min="1"
+            autocomplete="off"
+            aria-label="Número del consultorio"
+            placeholder="Ej: 101"
+            #numero="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="numero.invalid && (numero.dirty || numero.touched)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            <span *ngIf="numero.errors?.['required']">El número es requerido</span>
+            <span *ngIf="numero.errors?.['min']">El número debe ser mayor o igual a 1</span>
+          </small>
+        </div>
+      </div>
 
-              <div class="info-item">
-                <div class="info-label">
-                  <span class="info-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">🏷️</span>
-                  Nombre
-                </div>
-                <div class="info-value">
-                  {{ consultorio.nombre }}
-                </div>
-              </div>
+      <!-- Nombre -->
+      <div class="col-md-6">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="nombre">
+            <span class="material-symbols-outlined me-2">label</span>
+            Nombre del Consultorio*
+          </label>
+          <input
+            type="text"
+            id="nombre"
+            name="nombre"
+            class="form-control"
+            [(ngModel)]="consultorio.nombre"
+            required
+            autocomplete="off"
+            aria-label="Nombre del consultorio"
+            placeholder="Ej: Consultorio Norte"
+            #nombre="ngModel"
+          />
+          <small class="form-text text-danger d-flex align-items-center gap-xs mt-xs" *ngIf="nombre.invalid && (nombre.dirty || nombre.touched)">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">error</span>
+            El nombre es requerido
+          </small>
+        </div>
+      </div>
 
-              <div class="info-item">
-                <div class="info-label">
-                  <span class="info-icon" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">🏥</span>
-                  Centro de Atención
-                </div>
-                <div class="info-value">
-                  {{ consultorio.centroAtencion?.nombre || 'Sin centro asignado' }}
-                </div>
-              </div>
+      <!-- Centro de Atención -->
+      <div class="col-12">
+        <div class="form-group mb-lg">
+          <label class="form-label" for="centroSearch">
+            <span class="material-symbols-outlined me-2">apartment</span>
+            Centro de Atención*
+          </label>
+          <input
+            type="text"
+            id="centroSearch"
+            class="form-control"
+            name="centroSearch"
+            placeholder="Buscar centro de atención..."
+            [(ngModel)]="centroSearch"
+            [ngbTypeahead]="searchCentros"
+            [inputFormatter]="formatCentro"
+            [resultFormatter]="formatCentro"
+            (selectItem)="onSelectCentro($event)"
+            autocomplete="off"
+            aria-label="Buscar centro de atención"
+          />
+          <small class="form-text text-muted d-flex align-items-center gap-xs mt-xs">
+            <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+            Centro de atención al que pertenece este consultorio
+          </small>
+        </div>
+      </div>
 
-              <!-- Horarios de Atención -->
-              <div class="info-item col-md-12">
-                <div class="info-label">
-                  <span class="info-icon" style="background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);">🕐</span>
-                  Horarios de Atención
-                </div>
-                <div class="info-value">
-                  <!-- Mostrar horarios específicos si existen y están configurados -->
-                  <div *ngIf="tieneHorariosEspecificos(); else generalSchedule">
-                    <div class="schedule-type-badge mb-2">
-                      <span class="badge bg-primary">📅 Horarios Específicos por Día</span>
+      <!-- Selector de Tipo de Horario -->
+      <div class="col-12">
+        <div class="form-group mb-lg">
+          <label class="form-label">
+            <span class="material-symbols-outlined me-2">schedule</span>
+            Configuración de Horarios
+          </label>
+          <div class="schedule-type-selector">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="tipoHorario"
+                id="horarioGeneral"
+                value="general"
+                [(ngModel)]="tipoHorario"
+                (change)="onTipoHorarioChange()"
+              />
+              <label class="form-check-label" for="horarioGeneral">
+                <strong>Horario General</strong>
+                <small class="d-block text-muted">Mismo horario todos los días</small>
+              </label>
+            </div>
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="tipoHorario"
+                id="horarioEspecifico"
+                value="especifico"
+                [(ngModel)]="tipoHorario"
+                (change)="onTipoHorarioChange()"
+              />
+              <label class="form-check-label" for="horarioEspecifico">
+                <strong>Horarios Específicos</strong>
+                <small class="d-block text-muted">Diferentes horarios por día</small>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+              <!-- Horarios por Defecto (Solo si tipo = general) -->
+              <div class="col-12" *ngIf="tipoHorario === 'general'">
+                <div class="horarios-section card p-lg mb-lg">
+                  <h3 class="d-flex align-items-center gap-sm mb-md">
+                    <span class="material-symbols-outlined">schedule</span>
+                    Horario General
+                  </h3>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label class="form-label" for="horaAperturaDefault">Hora de Apertura</label>
+                        <input
+                          type="time"
+                          id="horaAperturaDefault"
+                          class="form-control"
+                          name="horaAperturaDefault"
+                          [(ngModel)]="consultorio.horaAperturaDefault"
+                          required
+                          aria-label="Hora de apertura"
+                        />
+                      </div>
                     </div>
-                    <div class="schedule-display">
-                      <div *ngFor="let horario of consultorio.horariosSemanales" class="schedule-day" 
-                           [ngClass]="{'inactive-day': !horario.activo}">
-                        <span class="day-name">{{ horario.diaSemana }}</span>
-                        <span class="day-hours" *ngIf="horario.activo">
-                          {{ horario.horaApertura }} - {{ horario.horaCierre }}
-                        </span>
-                        <span class="day-hours inactive" *ngIf="!horario.activo">Cerrado</span>
+                    <div class="col-md-6">
+                      <div class="form-group">
+                        <label class="form-label" for="horaCierreDefault">Hora de Cierre</label>
+                        <input
+                          type="time"
+                          id="horaCierreDefault"
+                          class="form-control"
+                          name="horaCierreDefault"
+                          [(ngModel)]="consultorio.horaCierreDefault"
+                          required
+                          aria-label="Hora de cierre"
+                        />
                       </div>
                     </div>
                   </div>
-                  
-                  <!-- Mostrar horarios generales como fallback -->
-                  <ng-template #generalSchedule>
-                    <div class="schedule-type-badge mb-2">
-                      <span class="badge bg-success">⏰ Horario General</span>
-                    </div>
-                    <div class="default-hours" *ngIf="consultorio.horaAperturaDefault && consultorio.horaCierreDefault">
-                      <strong>Todos los días:</strong> {{ consultorio.horaAperturaDefault }} - {{ consultorio.horaCierreDefault }}
-                    </div>
-                    <span class="text-muted" *ngIf="!consultorio.horaAperturaDefault">Sin horarios configurados</span>
-                  </ng-template>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- MODO EDICIÓN -->
-          <form *ngIf="modoEdicion" #form="ngForm" (ngSubmit)="save()">
-            <div class="row">
-              <!-- Número -->
-              <div class="col-md-6">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">🔢</span>
-                    Número del Consultorio
-                  </label>
-                  <input 
-                    type="number" 
-                    name="numero" 
-                    required 
-                    placeholder="Número del consultorio" 
-                    class="form-control form-control-modern"
-                    [(ngModel)]="consultorio.numero" 
-                    #numero="ngModel" 
-                    min="1"
-                  />
-                  <div *ngIf="numero.invalid && (numero.dirty || numero.touched)" class="form-help text-danger">
-                    <div *ngIf="numero.errors?.['required']">
-                      El número del consultorio es requerido
-                    </div>
-                    <div *ngIf="numero.errors?.['min']">
-                      El número debe ser mayor o igual a 1
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Nombre -->
-              <div class="col-md-6">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">🏷️</span>
-                    Nombre del Consultorio
-                  </label>
-                  <input 
-                    name="nombre" 
-                    required 
-                    placeholder="Nombre del consultorio" 
-                    class="form-control form-control-modern" 
-                    [(ngModel)]="consultorio.nombre"
-                    #nombre="ngModel"
-                  />
-                  <div *ngIf="nombre.invalid && (nombre.dirty || nombre.touched)" class="form-help text-danger">
-                    <div *ngIf="nombre.errors?.['required']">
-                      El nombre del consultorio es requerido
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Centro de Atención -->
-              <div class="col-md-12">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">🏥</span>
-                    Centro de Atención
-                  </label>
-                  <input
-                    type="text"
-                    class="form-control form-control-modern"
-                    name="centroSearch"
-                    placeholder="Buscar centro..."
-                    [(ngModel)]="centroSearch"
-                    [ngbTypeahead]="searchCentros"
-                    [inputFormatter]="formatCentro"
-                    [resultFormatter]="formatCentro"
-                    (selectItem)="onSelectCentro($event)"
-                  />
-                  <div class="form-help">
-                    Centro de atención al que pertenece este consultorio
-                  </div>
-                </div>
-              </div>
-
-              <!-- Selector de Tipo de Horario -->
-              <div class="col-md-12">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);">🕐</span>
-                    Configuración de Horarios
-                  </label>
-                  <div class="schedule-type-selector">
-                    <div class="form-check form-check-inline">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        name="tipoHorario"
-                        id="horarioGeneral"
-                        value="general"
-                        [(ngModel)]="tipoHorario"
-                        (change)="onTipoHorarioChange()"
-                      />
-                      <label class="form-check-label" for="horarioGeneral">
-                        <strong>Horario General</strong>
-                        <small class="d-block text-muted">Mismo horario todos los días</small>
-                      </label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        name="tipoHorario"
-                        id="horarioEspecifico"
-                        value="especifico"
-                        [(ngModel)]="tipoHorario"
-                        (change)="onTipoHorarioChange()"
-                      />
-                      <label class="form-check-label" for="horarioEspecifico">
-                        <strong>Horarios Específicos</strong>
-                        <small class="d-block text-muted">Diferentes horarios por día</small>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Horarios por Defecto (Solo si tipo = general) -->
-              <div class="col-md-12" *ngIf="tipoHorario === 'general'">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">⏰</span>
-                    Horario General
-                  </label>
-                  <div class="row">
-                    <div class="col-md-6">
-                      <label class="form-label">Hora de Apertura</label>
-                      <input
-                        type="time"
-                        class="form-control form-control-modern"
-                        name="horaAperturaDefault"
-                        [(ngModel)]="consultorio.horaAperturaDefault"
-                        required
-                      />
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label">Hora de Cierre</label>
-                      <input
-                        type="time"
-                        class="form-control form-control-modern"
-                        name="horaCierreDefault"
-                        [(ngModel)]="consultorio.horaCierreDefault"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div class="form-help">
-                    Este horario se aplicará a todos los días de la semana.
-                  </div>
+                  <small class="form-text text-muted d-flex align-items-center gap-xs mt-sm">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+                    Este horario se aplicará a todos los días de la semana
+                  </small>
                 </div>
               </div>
 
               <!-- Horarios por Día de la Semana (Solo si tipo = especifico) -->
-              <div class="col-md-12" *ngIf="tipoHorario === 'especifico'">
-                <div class="form-group-modern">
-                  <label class="form-label-modern">
-                    <span class="form-icon" style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);">📅</span>
+              <div class="col-12" *ngIf="tipoHorario === 'especifico'">
+                <div class="horarios-section card p-lg mb-lg">
+                  <h3 class="d-flex align-items-center gap-sm mb-md">
+                    <span class="material-symbols-outlined">calendar_month</span>
                     Horarios por Día de la Semana
-                  </label>
+                  </h3>
                   <div class="schedule-editor">
                     <div *ngFor="let horario of consultorio.horariosSemanales; let i = index" 
                          class="schedule-day-editor">
@@ -291,54 +325,50 @@
                       </div>
                       
                       <div class="day-closed" *ngIf="!horario.activo">
-                        <span class="text-muted">Cerrado</span>
+                        Cerrado
                       </div>
                     </div>
                   </div>
-                  <div class="form-help">
-                    Configure horarios específicos para cada día. Desmarque para días que no atiende.
-                  </div>
+                  <small class="form-text text-muted d-flex align-items-center gap-xs mt-sm">
+                    <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
+                    Configure horarios específicos para cada día. Desmarque para días que no atiende
+                  </small>
                 </div>
               </div>
             </div>
-          </form>
-        </div>
 
-        <!-- FOOTER DEL CARD -->
-        <div class="card-footer">
-          <div class="d-flex gap-2 flex-wrap">
-            <!-- Botones en modo vista -->
-            <ng-container *ngIf="!modoEdicion">
-              <button type="button" class="btn btn-modern btn-back" (click)="goBack()">
-                ← Volver
-              </button>
-              <button type="button" class="btn btn-modern btn-edit" (click)="activarEdicion()">
-                ✏️ Editar
-              </button>
-              <button 
-                type="button" 
-                class="btn btn-modern btn-delete ms-auto" 
-                (click)="remove()"
-                *ngIf="consultorio.id && consultorio.id !== 0"
-              >
-                🗑️ Eliminar
-              </button>
-            </ng-container>
+    <!-- Botones de acción -->
+    <div class="d-flex flex-wrap gap-md mt-xl pt-lg border-top">
+      <button
+        type="submit"
+        class="btn btn-success"
+        [disabled]="form.invalid"
+        aria-label="Guardar consultorio"
+      >
+        <span class="material-symbols-outlined me-2">save</span>
+        Guardar Consultorio
+      </button>
 
-            <!-- Botones en modo edición -->
-            <ng-container *ngIf="modoEdicion">
-              <button 
-                type="submit" 
-                class="btn btn-modern btn-save" 
-                (click)="save()"
-              >
-                💾 Guardar
-              </button>
-              <button type="button" class="btn btn-modern btn-cancel" (click)="cancelar()">
-                ❌ Cancelar
-              </button>
-            </ng-container>
-          </div>
-        </div>
-      </div>
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="cancelar()"
+        aria-label="Cancelar cambios"
+      >
+        <span class="material-symbols-outlined me-2">close</span>
+        Cancelar
+      </button>
+
+      <button
+        *ngIf="consultorio.id && consultorio.id !== 0 && !esNuevo"
+        type="button"
+        class="btn btn-danger"
+        (click)="remove()"
+        aria-label="Eliminar consultorio"
+      >
+        <span class="material-symbols-outlined me-2">delete</span>
+        Eliminar
+      </button>
     </div>
+  </form>
+</div>

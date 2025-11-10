@@ -1,0 +1,144 @@
+/* ================================================
+   GRAFICO TORTA COMPONENT - ESTILOS NORMALIZADOS
+   ================================================
+   Sistema 100% basado en variables globales (styles.css)
+   Material Symbols para iconos
+   ================================================ */
+
+.grafico-torta {
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-lg);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--box-shadow-soft);
+}
+
+/* ================================================
+   HEADER
+   ================================================ */
+
+.chart-header {
+  padding-bottom: var(--space-md);
+  border-bottom: 2px solid var(--border-color);
+  margin-bottom: var(--space-md);
+}
+
+.chart-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.chart-title-wrapper .material-symbols-outlined {
+  font-size: 24px;
+  color: var(--color-accent);
+  font-variation-settings: 'FILL' 1, 'wght' 400;
+}
+
+.chart-title-wrapper h6 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* ================================================
+   CANVAS WRAPPER
+   ================================================ */
+
+.chart-canvas-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md) 0;
+  min-height: 250px;
+}
+
+.chart-canvas-wrapper canvas {
+  max-height: 320px;
+  max-width: 100%;
+}
+
+/* ================================================
+   EMPTY STATE
+   ================================================ */
+
+.empty-state-chart {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  min-height: 250px;
+}
+
+.empty-state-chart .material-symbols-outlined {
+  font-size: 64px;
+  color: var(--color-text-secondary);
+  opacity: 0.3;
+  font-variation-settings: 'FILL' 0, 'wght' 300;
+}
+
+.empty-state-chart p {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  text-align: center;
+}
+
+/* ================================================
+   RESPONSIVE
+   ================================================ */
+
+@media (max-width: 992px) {
+  .grafico-torta {
+    padding: var(--space-md);
+  }
+
+  .chart-canvas-wrapper {
+    min-height: 220px;
+  }
+
+  .chart-canvas-wrapper canvas {
+    max-height: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .grafico-torta {
+    padding: var(--space-sm);
+  }
+
+  .chart-title-wrapper .material-symbols-outlined {
+    font-size: 20px;
+  }
+
+  .chart-title-wrapper h6 {
+    font-size: var(--font-size-base);
+  }
+
+  .chart-canvas-wrapper {
+    min-height: 200px;
+  }
+
+  .chart-canvas-wrapper canvas {
+    max-height: 240px;
+  }
+}
+
+@media (max-width: 576px) {
+  .chart-canvas-wrapper {
+    min-height: 180px;
+    padding: var(--space-sm) 0;
+  }
+
+  .chart-canvas-wrapper canvas {
+    max-height: 200px;
+  }
+}

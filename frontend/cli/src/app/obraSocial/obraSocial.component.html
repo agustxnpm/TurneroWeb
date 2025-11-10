@@ -1,0 +1,304 @@
+<div class="obra-social-container">
+  <div class="card p-xl mb-xl mx-auto">
+    <!-- HEADER LVE NORMALIZADO -->
+    <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+      <div class="d-flex align-items-center gap-md">
+        <span class="material-symbols-outlined header-icon">health_and_safety</span>
+        <div>
+          <h2 class="mb-0">Obras Sociales</h2>
+          <p class="text-muted mb-0 mt-sm">Gestión de obras sociales del sistema</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" (click)="router.navigate(['/obraSocial/new'])">
+        <span class="material-symbols-outlined">add_circle</span>
+        <span class="d-none d-sm-inline">Nueva Obra Social</span>
+      </button>
+    </div>
+
+    <!-- BARRA DE BÚSQUEDA Y FILTROS -->
+    <div class="filters-section mb-lg">
+      <h5 class="filters-title mb-md">
+        <span class="material-symbols-outlined">filter_list</span>
+        Filtros de búsqueda
+      </h5>
+
+      <div class="row g-3">
+        <!-- Búsqueda por nombre -->
+        <div class="col-md-4">
+          <label for="nombreFilter" class="form-label">
+            <span class="material-symbols-outlined">health_and_safety</span>
+            Nombre
+          </label>
+          <input
+            type="text"
+            id="nombreFilter"
+            class="form-control"
+            placeholder="Buscar por nombre..."
+            [(ngModel)]="filters.nombre"
+            (input)="onFilterChange()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Búsqueda por código -->
+        <div class="col-md-4">
+          <label for="codigoFilter" class="form-label">
+            <span class="material-symbols-outlined">tag</span>
+            Código
+          </label>
+          <input
+            type="text"
+            id="codigoFilter"
+            class="form-control"
+            placeholder="Buscar por código..."
+            [(ngModel)]="filters.codigo"
+            (input)="onFilterChange()"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Ordenamiento -->
+        <div class="col-md-2">
+          <label for="sortByFilter" class="form-label">
+            <span class="material-symbols-outlined">sort</span>
+            Ordenar por
+          </label>
+          <select
+            id="sortByFilter"
+            class="form-select"
+            [(ngModel)]="filters.sortBy"
+            (change)="onFilterChange()"
+          >
+            <option value="nombre">Nombre</option>
+            <option value="codigo">Código</option>
+          </select>
+        </div>
+
+        <!-- Dirección de ordenamiento -->
+        <div class="col-md-2">
+          <label for="sortDirFilter" class="form-label">
+            <span class="material-symbols-outlined">swap_vert</span>
+            Dirección
+          </label>
+          <select
+            id="sortDirFilter"
+            class="form-select"
+            [(ngModel)]="filters.sortDir"
+            (change)="onFilterChange()"
+          >
+            <option value="asc">Ascendente</option>
+            <option value="desc">Descendente</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fila de controles -->
+      <div class="row g-3 mt-sm">
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="d-flex gap-sm w-100">
+            <button
+              class="btn btn-secondary flex-fill"
+              (click)="clearFilters()"
+              [disabled]="!filters.nombre && !filters.codigo"
+            >
+              <span class="material-symbols-outlined">close</span>
+              Limpiar filtros
+            </button>
+            <button
+              class="btn btn-primary flex-fill"
+              (click)="onFilterChange()"
+            >
+              <span class="material-symbols-outlined">sync</span>
+              Actualizar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de resultados -->
+      <div class="row mt-md" *ngIf="resultsPage.totalElements > 0">
+        <div class="col-12">
+          <div class="info-badge">
+            <span class="material-symbols-outlined">info</span>
+            Mostrando {{ resultsPage.numberOfElements }} de {{ resultsPage.totalElements }} registros
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA LVE NORMALIZADA -->
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>
+              <button
+                class="header-button"
+                (click)="toggleSort('nombre')"
+                [class.active]="filters.sortBy === 'nombre'"
+                aria-label="Ordenar por nombre"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">health_and_safety</span>
+                  Nombre
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="filters.sortBy === 'nombre'"
+                    aria-hidden="true"
+                  >
+                    {{ filters.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="filters.sortBy !== 'nombre'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <button
+                class="header-button"
+                (click)="toggleSort('codigo')"
+                [class.active]="filters.sortBy === 'codigo'"
+                aria-label="Ordenar por código"
+              >
+                <div class="header-cell">
+                  <span class="material-symbols-outlined">tag</span>
+                  Código
+                  <span
+                    class="material-symbols-outlined sort-icon"
+                    *ngIf="filters.sortBy === 'codigo'"
+                    aria-hidden="true"
+                  >
+                    {{ filters.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                  </span>
+                  <span
+                    class="material-symbols-outlined sort-icon inactive"
+                    *ngIf="filters.sortBy !== 'codigo'"
+                    aria-hidden="true"
+                  >
+                    unfold_more
+                  </span>
+                </div>
+              </button>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">description</span>
+                Descripción
+              </div>
+            </th>
+            <th>
+              <div class="header-cell">
+                <span class="material-symbols-outlined">settings</span>
+                Acciones
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Loading state -->
+          <tr *ngIf="resultsPage.content.length === 0 && resultsPage.totalElements === 0">
+            <td colspan="4" class="loading-state">
+              <div class="loading-content">
+                <span class="material-symbols-outlined spinning">sync</span>
+                <h6>Cargando obras sociales...</h6>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Data rows -->
+          <tr
+            *ngFor="let obraSocial of resultsPage.content || []; let i = index"
+            (click)="goToDetail(obraSocial.id)"
+            class="table-row cursor-pointer"
+          >
+            <td>
+              <div class="entity-info-full">
+                <div class="entity-avatar-obra-social">
+                  <span class="material-symbols-outlined" aria-hidden="true">health_and_safety</span>
+                </div>
+                <div class="entity-details">
+                  <div class="entity-name">{{ obraSocial.nombre }}</div>
+                  <div class="entity-subtitle">Obra Social</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="badge badge-codigo">
+                <span class="material-symbols-outlined" aria-hidden="true">tag</span>
+                {{ obraSocial.codigo }}
+              </div>
+            </td>
+            <td>
+              <div class="descripcion-text">
+                {{ obraSocial.descripcion || "Sin descripción" }}
+              </div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button
+                  (click)="goToEdit(obraSocial.id); $event.stopPropagation()"
+                  class="btn-action btn-action-edit"
+                  title="Editar obra social"
+                  aria-label="Editar obra social"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+                </button>
+                <button
+                  (click)="confirmDelete(obraSocial.id); $event.stopPropagation()"
+                  class="btn-action btn-action-delete"
+                  title="Eliminar obra social"
+                  aria-label="Eliminar obra social"
+                >
+                  <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Empty state -->
+          <tr
+            *ngIf="resultsPage.content.length === 0 && resultsPage.totalElements >= 0"
+          >
+            <td colspan="4" class="empty-state">
+              <div class="empty-state-content">
+                <span class="material-symbols-outlined empty-icon">health_and_safety</span>
+                <h3>No hay obras sociales registradas</h3>
+                <p>
+                  {{
+                    filters.nombre || filters.codigo
+                      ? "No se encontraron resultados con los filtros aplicados"
+                      : "Comience agregando una nueva obra social al sistema"
+                  }}
+                </p>
+                <button
+                  *ngIf="filters.nombre || filters.codigo"
+                  class="btn btn-primary"
+                  (click)="clearFilters()"
+                >
+                  <span class="material-symbols-outlined">close</span>
+                  Limpiar filtros
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINADOR -->
+    <div class="pagination-container mt-lg" *ngIf="resultsPage.totalPages > 1">
+      <app-pagination
+        [totalPages]="resultsPage.totalPages"
+        [currentPage]="currentPage"
+        (pageChangeRequested)="onPageChangeRequested($event)"
+        [number]="resultsPage.number"
+        [hidden]="resultsPage.numberOfElements < 1"
+      ></app-pagination>
+    </div>
+  </div>
+</div>

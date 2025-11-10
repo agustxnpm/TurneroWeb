@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
@@ -67,11 +67,12 @@ export class AgendaService {
   obtenerEventos(esquemaTurnoId: number, semanas: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.url}/eventos?esquemaTurnoId=${esquemaTurnoId}&semanas=${semanas}`);
   }
-  // Obtener todos los eventos (con filtros opcionales)
+  // Obtener todos los eventos (con filtros opcionales) - AGENDA PRIVADA
   obtenerTodosLosEventos(semanas: number, filtros?: {
     especialidad?: string;
     staffMedicoId?: number;
     centroId?: number;
+    filtrarPorPreferencia?: boolean;
   }): Observable<any[]> {
     let url = `${this.url}/eventos/todos?semanas=${semanas}`;
     
@@ -86,6 +87,10 @@ export class AgendaService {
       if (filtros.centroId) {
         url += `&centroId=${filtros.centroId}`;
       }
+      if (filtros.filtrarPorPreferencia === true) {
+        url += `&filtrarPorPreferencia=true`;
+        console.log('🕐 [AgendaService] Filtrado por preferencias horarias ACTIVADO en agenda privada');
+      }
     }
     
     console.log('🌐 Llamando a agenda service:', url);
@@ -97,8 +102,32 @@ export class AgendaService {
     return this.http.get<DataPackage>(`${this.url}/slots-disponibles/${staffMedicoId}?semanas=${semanas}`);
   }
 
-  asignarTurno(turnoId: number, pacienteId: number): Observable<any> {
-    return this.http.post(`${this.url}/asignar-turno`, { turnoId, pacienteId });
+  /**
+   * Obtiene la agenda pública sin requerir autenticación
+   * @param centroId (opcional) ID del centro de atención para filtrar
+   * @param especialidad (opcional) Nombre de la especialidad para filtrar
+   * @param staffMedicoId (opcional) ID del staff médico para filtrar
+   * @returns Observable con los eventos de la agenda pública
+   */
+  getAgendaPublica(
+    centroId?: number, 
+    especialidad?: string, 
+    staffMedicoId?: number
+  ): Observable<any> {
+    let params = new HttpParams();
+    
+    if (centroId) {
+      params = params.append('centroId', centroId.toString());
+    }
+    if (especialidad) {
+      params = params.append('especialidad', especialidad);
+    }
+    if (staffMedicoId) {
+      params = params.append('staffMedicoId', staffMedicoId.toString());
+    }
+    
+    console.log('🌐 [AgendaService] Llamando /publica con params:', params.toString());
+    return this.http.get(`${this.url}/publica`, { params });
   }
 
 }

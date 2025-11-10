@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -163,6 +164,8 @@ public class SecurityConfig {
                                 .requestMatchers("/registro-usuario").permitAll()
                                 // Activación de cuentas
                                 .requestMatchers("/activate-account").permitAll()
+                                // Consulta pública de turnos disponibles (sin información sensible)
+                                .requestMatchers(HttpMethod.GET, "/agenda/publica").permitAll()
 
                                 // ========== ENDPOINTS SOLO ADMINISTRADOR ==========
                                 // Rutas que requieren AdminGuard en el frontend
@@ -172,6 +175,8 @@ public class SecurityConfig {
                                 .requestMatchers("/especialidades/**").hasRole("ADMINISTRADOR")
                                 .requestMatchers("/admin-dashboard/**").hasRole("ADMINISTRADOR")
                                 .requestMatchers("/admin-perfil/**").hasRole("ADMINISTRADOR")
+                                // Gestión de administradores (solo admin puede gestionar otros admins)
+                                .requestMatchers("/api/admins/**").hasRole("ADMINISTRADOR")
                                 // Creación de operadores (solo admin puede crear otros operadores)
                                 .requestMatchers("/operadores/create-by-admin").hasRole("ADMINISTRADOR")
 
@@ -194,7 +199,6 @@ public class SecurityConfig {
                                 // Rutas que requieren OperadorGuard en el frontend
                                 .requestMatchers("/operador-dashboard/**").hasRole("OPERADOR")
                                 .requestMatchers("/operador-agenda/**").hasRole("OPERADOR")
-                                .requestMatchers("/operadores/**").hasRole("OPERADOR")
                                 .requestMatchers("/operador-perfil/**").hasRole("OPERADOR")
 
                                 // ========== ENDPOINTS ADMIN + OPERADOR ==========
@@ -209,6 +213,8 @@ public class SecurityConfig {
                                 .requestMatchers("/staffMedico/**").hasAnyRole("ADMINISTRADOR", "OPERADOR")
                                 .requestMatchers("/disponibilidades-medico/**").hasAnyRole("ADMINISTRADOR", "OPERADOR")
                                 .requestMatchers("/esquema-turno/**").hasAnyRole("ADMINISTRADOR", "OPERADOR")
+                                .requestMatchers("/operadores/**").hasAnyRole("OPERADOR", "ADMINISTRADOR")
+
 
                                 // ========== NUEVA REGLA PARA CONFIGURACIONES ==========
                                 // Rutas para la pantalla de configuración (/rest/config/**)

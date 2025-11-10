@@ -1,0 +1,369 @@
+<div class="card p-xl mb-xl mx-auto">
+  <!-- HEADER LVE NORMALIZADO -->
+  <div class="listado-header d-flex align-items-center justify-content-between mb-lg">
+    <div class="d-flex align-items-center gap-md">
+      <span class="material-symbols-outlined header-icon">event_available</span>
+      <div>
+        <h2 class="mb-0">Turnos Médicos</h2>
+        <p class="text-muted mb-0 mt-sm">Gestión de citas y consultas médicas</p>
+      </div>
+    </div>
+    <div class="d-flex gap-sm">
+      <button
+        class="btn btn-primary"
+        (click)="router.navigate(['/turnos/audit-dashboard'])"
+        title="Dashboard de Auditoría"
+      >
+        <span class="material-symbols-outlined">analytics</span>
+        Dashboard
+      </button>
+      <button
+        class="btn btn-primary"
+        (click)="router.navigate(['/turnos/advanced-search'])"
+        title="Búsqueda Avanzada"
+      >
+        <span class="material-symbols-outlined">search</span>
+        Búsqueda Avanzada
+      </button>
+    </div>
+  </div>
+
+  <!-- BARRA DE FILTROS Y BÚSQUEDA -->
+  <div class="filters-section mb-lg">
+    <h5 class="filters-title mb-md">
+      <span class="material-symbols-outlined">filter_list</span>
+      Filtros de búsqueda
+    </h5>
+
+    <div class="row g-3">
+      <!-- Filtro por Paciente -->
+      <div class="col-md-3">
+        <label for="pacienteFilter" class="form-label">
+          <span class="material-symbols-outlined">person</span>
+          Paciente
+        </label>
+        <input
+          type="text"
+          id="pacienteFilter"
+          class="form-control"
+          placeholder="Buscar por nombre/apellido"
+          [(ngModel)]="filters.paciente"
+          (input)="onFilterChange()"
+        />
+      </div>
+
+      <!-- Filtro por Médico -->
+      <div class="col-md-3">
+        <label for="medicoFilter" class="form-label">
+          <span class="material-symbols-outlined">medical_services</span>
+          Médico
+        </label>
+        <input
+          type="text"
+          id="medicoFilter"
+          class="form-control"
+          placeholder="Buscar por nombre/apellido"
+          [(ngModel)]="filters.medico"
+          (input)="onFilterChange()"
+        />
+      </div>
+
+      <!-- Filtro por Consultorio -->
+      <div class="col-md-3">
+        <label for="consultorioFilter" class="form-label">
+          <span class="material-symbols-outlined">door_front</span>
+          Consultorio
+        </label>
+        <input
+          type="text"
+          id="consultorioFilter"
+          class="form-control"
+          placeholder="Buscar consultorio"
+          [(ngModel)]="filters.consultorio"
+          (input)="onFilterChange()"
+        />
+      </div>
+
+      <!-- Filtro por Estado -->
+      <div class="col-md-3">
+        <label for="estadoFilter" class="form-label">
+          <span class="material-symbols-outlined">info</span>
+          Estado
+        </label>
+        <select
+          id="estadoFilter"
+          class="form-select"
+          [(ngModel)]="filters.estado"
+          (change)="onFilterChange()"
+        >
+          <option value="">Todos los estados</option>
+          <option value="PROGRAMADO">Programado</option>
+          <option value="CONFIRMADO">Confirmado</option>
+          <option value="CANCELADO">Cancelado</option>
+        </select>
+      </div>
+
+      <!-- Filtro Fecha Desde -->
+      <div class="col-md-3">
+        <label for="fechaDesdeFilter" class="form-label">
+          <span class="material-symbols-outlined">calendar_today</span>
+          Desde
+        </label>
+        <input
+          type="date"
+          id="fechaDesdeFilter"
+          class="form-control"
+          [(ngModel)]="filters.fechaDesde"
+          (change)="onFilterChange()"
+        />
+      </div>
+
+      <!-- Filtro Fecha Hasta -->
+      <div class="col-md-3">
+        <label for="fechaHastaFilter" class="form-label">
+          <span class="material-symbols-outlined">event</span>
+          Hasta
+        </label>
+        <input
+          type="date"
+          id="fechaHastaFilter"
+          class="form-control"
+          [(ngModel)]="filters.fechaHasta"
+          (change)="onFilterChange()"
+        />
+      </div>
+
+      <!-- Ordenamiento -->
+      <div class="col-md-3">
+        <label for="sortByFilter" class="form-label">
+          <span class="material-symbols-outlined">sort</span>
+          Ordenar por
+        </label>
+        <select
+          id="sortByFilter"
+          class="form-select"
+          [(ngModel)]="filters.sortBy"
+          (change)="onFilterChange()"
+        >
+          <option value="fecha">Fecha</option>
+          <option value="estado">Estado</option>
+          <option value="horaInicio">Hora</option>
+        </select>
+      </div>
+
+      <!-- Dirección de ordenamiento -->
+      <div class="col-md-3">
+        <label for="sortDirFilter" class="form-label">
+          <span class="material-symbols-outlined">swap_vert</span>
+          Dirección
+        </label>
+        <select
+          id="sortDirFilter"
+          class="form-select"
+          [(ngModel)]="filters.sortDir"
+          (change)="onFilterChange()"
+        >
+          <option value="asc">Ascendente</option>
+          <option value="desc">Descendente</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Botones de control -->
+    <div class="filters-controls d-flex justify-content-between align-items-center mt-md">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="clearFilters()"
+      >
+        <span class="material-symbols-outlined">close</span>
+        Limpiar filtros
+      </button>
+
+      <div class="info-badge">
+        <span class="material-symbols-outlined">check_circle</span>
+        {{ resultsPage.totalElements }} resultado(s)
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA LVE NORMALIZADA -->
+  <div class="table-responsive">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>
+            <div class="header-cell">
+              <span class="material-symbols-outlined">person</span>
+              Paciente
+            </div>
+          </th>
+          <th>
+            <div class="header-cell">
+              <span class="material-symbols-outlined">medical_services</span>
+              Médico
+            </div>
+          </th>
+          <th>
+            <div class="header-cell">
+              <span class="material-symbols-outlined">healing</span>
+              Especialidad
+            </div>
+          </th>
+          <th>
+            <button
+              class="header-button"
+              (click)="toggleSort('fecha')"
+              [class.active]="filters.sortBy === 'fecha'"
+            >
+              <div class="header-cell">
+                <span class="material-symbols-outlined">calendar_month</span>
+                Fecha & Hora
+                <span
+                  class="material-symbols-outlined sort-icon"
+                  *ngIf="filters.sortBy === 'fecha'"
+                >
+                  {{ filters.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                <span
+                  class="material-symbols-outlined sort-icon inactive"
+                  *ngIf="filters.sortBy !== 'fecha'"
+                >
+                  unfold_more
+                </span>
+              </div>
+            </button>
+          </th>
+          <th>
+            <div class="header-cell">
+              <span class="material-symbols-outlined">local_hospital</span>
+              Centro/Consultorio
+            </div>
+          </th>
+          <th>
+            <button
+              class="header-button"
+              (click)="toggleSort('estado')"
+              [class.active]="filters.sortBy === 'estado'"
+            >
+              <div class="header-cell">
+                <span class="material-symbols-outlined">info</span>
+                Estado
+                <span
+                  class="material-symbols-outlined sort-icon"
+                  *ngIf="filters.sortBy === 'estado'"
+                >
+                  {{ filters.sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward' }}
+                </span>
+                <span
+                  class="material-symbols-outlined sort-icon inactive"
+                  *ngIf="filters.sortBy !== 'estado'"
+                >
+                  unfold_more
+                </span>
+              </div>
+            </button>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let turno of resultsPage.content || []; let i = index"
+          class="table-row"
+        >
+          <td>
+            <div class="entity-info">
+              <div class="entity-avatar">
+              <span class="material-symbols-outlined text-primary">person</span>
+              </div>
+              <div class="entity-details">
+                <span class="entity-name"
+                  >{{ turno.nombrePaciente }}
+                  {{ turno.apellidoPaciente }}</span
+                >
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="entity-info">
+              <div class="entity-avatar entity-avatar-medico">
+                <span class="material-symbols-outlined text-primary">local_hospital</span>
+              </div>
+              <div class="entity-details">
+                <span class="entity-name"
+                  >{{ turno.staffMedicoNombre }}
+                  {{ turno.staffMedicoApellido }}</span
+                >
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-especialidad">
+              {{ turno.especialidadStaffMedico || "Sin especialidad" }}
+            </span>
+          </td>
+          <td>
+            <div class="fecha-info">
+              <div class="fecha-day">
+                <span class="material-symbols-outlined">calendar_today</span>
+                {{ turno.fecha | date : "dd/MM/yyyy" }}
+              </div>
+              <div class="fecha-time">
+                <span class="material-symbols-outlined">schedule</span>
+                {{ turno.horaInicio }} - {{ turno.horaFin }}
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="centro-info">
+              <div class="centro-name">
+                <span class="material-symbols-outlined">local_hospital</span>
+                {{ turno.nombreCentro }}
+              </div>
+              <div class="consultorio-name">
+                <span class="material-symbols-outlined">door_front</span>
+                {{ turno.consultorioNombre }}
+              </div>
+            </div>
+          </td>
+          <td>
+            <span
+              class="badge badge-status"
+              [class.badge-status-programado]="turno.estado === 'PROGRAMADO'"
+              [class.badge-status-confirmado]="turno.estado === 'CONFIRMADO'"
+              [class.badge-status-cancelado]="turno.estado === 'CANCELADO'"
+              [class.badge-status-completo]="turno.estado === 'COMPLETO'"
+            >
+              <span class="material-symbols-outlined">
+                {{ getEstadoIconMaterial(turno.estado) }}
+              </span>
+              {{ turno.estado }}
+            </span>
+          </td>
+        </tr>
+        
+        <!-- Estado vacío -->
+        <tr *ngIf="resultsPage.content?.length === 0">
+          <td colspan="8" class="empty-state">
+            <div class="empty-state-content">
+              <span class="material-symbols-outlined empty-icon">event_busy</span>
+              <h3>No hay turnos registrados</h3>
+              <p>No se encontraron turnos con los filtros aplicados</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINADOR -->
+  <div class="pagination-container mt-lg">
+    <app-pagination
+      [totalPages]="resultsPage.totalPages"
+      [currentPage]="currentPage"
+      (pageChangeRequested)="onPageChangeRequested($event)"
+      [number]="resultsPage.number"
+      [hidden]="resultsPage.numberOfElements < 1"
+    ></app-pagination>
+  </div>
+</div>
