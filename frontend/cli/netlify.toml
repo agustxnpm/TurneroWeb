@@ -2,7 +2,7 @@
   # Directorio base del proyecto Angular
   base = "frontend/cli"
   
-  # Comando de build
+  # Comando de build (.npmrc maneja legacy-peer-deps automáticamente)
   command = "npm ci && ng build --configuration production"
   
   # Directorio de publicación (Angular 19 con application builder)
