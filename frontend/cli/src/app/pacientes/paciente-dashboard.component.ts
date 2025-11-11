@@ -6,6 +6,7 @@ import { TurnoService } from "../turnos/turno.service";
 import { Turno } from "../turnos/turno";
 import { DataPackage } from "../data.package";
 import { NotificacionService } from "../services/notificacion.service";
+import { EncuestaService } from "../services/encuesta.service";
 import { AuthService } from "../inicio-sesion/auth.service";
 import { ModalService } from "../modal/modal.service";
 
@@ -27,6 +28,8 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
 
   // Notificaciones
   contadorNotificaciones = 0;
+  // Mapa de encuestas pendientes por turnoId
+  surveyPendingMap: { [turnoId: number]: boolean } = {};
 
   // Modal de cancelación con motivo
   showReasonModal: boolean = false;
@@ -134,6 +137,7 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
     private turnoService: TurnoService,
     private notificacionService: NotificacionService,
     private authService: AuthService,
+    private encuestaService: EncuestaService,
     private modalService: ModalService
   ) {
     // Obtener datos del usuario autenticado
@@ -162,6 +166,7 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.cargarTurnosPaciente();
     this.cargarContadorNotificaciones();
+    this.cargarNotificacionesNoLeidas();
 
 
     // Verificar cada 5 minutos si hay turnos que deben completarse
@@ -351,12 +356,77 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
 
           this.applyFilter();
           this.isLoadingTurnos = false;
+          // Después de cargar turnos, reconstruir el mapa de encuestas pendientes
+          this.buildSurveyMapFromNotifications();
         });
       },
       error: (error) => {
         console.error("Error cargando turnos:", error);
         this.isLoadingTurnos = false;
       },
+    });
+  }
+
+  private cargarNotificacionesNoLeidas() {
+    const pacienteId = this.authService.getCurrentPatientId();
+    if (!pacienteId) return;
+
+    this.notificacionService.obtenerNotificacionesNoLeidas(pacienteId).subscribe({
+      next: (notis) => {
+        // Construir mapa inicial
+        this.surveyPendingMap = {};
+        (notis || []).forEach(n => {
+          if (n && n.tipo === 'ENCUESTA_PENDIENTE' && n.turnoId) {
+            this.surveyPendingMap[n.turnoId] = true;
+          }
+        });
+      },
+      error: (err) => console.error('Error cargando notificaciones no leidas:', err)
+    });
+  }
+
+  private buildSurveyMapFromNotifications() {
+    // Re-query current notificaciones no leidas to ensure map updated
+    const pacienteId = this.authService.getCurrentPatientId();
+    if (!pacienteId) return;
+    this.notificacionService.obtenerNotificacionesNoLeidas(pacienteId).subscribe({
+      next: (notis) => {
+        this.surveyPendingMap = {};
+        (notis || []).forEach(n => {
+          if (n && n.tipo === 'ENCUESTA_PENDIENTE' && n.turnoId) {
+            this.surveyPendingMap[n.turnoId] = true;
+          }
+        });
+      },
+      error: (err) => console.error('Error reconstruyendo mapa de encuestas:', err)
+    });
+    
+    // Además, para los turnos que están en estado COMPLETO pero no tienen
+    // notificación, consultar al backend si hay una encuesta pendiente y
+    // actualizar el mapa para mostrar el botón.
+    this.checkSurveyPendingForCompletedTurnos();
+  }
+
+  private checkSurveyPendingForCompletedTurnos() {
+    const pacienteId = this.authService.getCurrentPatientId();
+    if (!pacienteId) return;
+
+    // Recorrer turnos completados y consultar si hay encuesta pendiente
+    (this.allTurnos || []).forEach(turno => {
+      if (turno && turno.status === 'completo' && !this.surveyPendingMap[turno.id]) {
+        this.encuestaService.isEncuestaPendiente(turno.id).subscribe({
+          next: (dp: any) => {
+            // El backend devuelve { pending: boolean } en data
+            const pending = dp && dp.data && (dp.data.pending === true || dp.data === true);
+            if (pending) {
+              this.surveyPendingMap[turno.id] = true;
+            }
+          },
+          error: (err: any) => {
+            console.error('Error verificando encuesta pendiente para turno', turno.id, err);
+          }
+        });
+      }
     });
   }
   applyFilter() {
@@ -674,6 +744,11 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
 
   viewHistorial() {
     this.router.navigate(["/paciente-historial"]);
+  }
+
+  abrirEncuesta(turnoId: number) {
+    if (!turnoId) return;
+    this.router.navigate(["/paciente/encuesta", turnoId]);
   }
 
 

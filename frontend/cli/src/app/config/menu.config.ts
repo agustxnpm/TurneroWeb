@@ -301,6 +301,12 @@ export const MENU_CONFIG: MenuSection[] = [
         description: 'Métricas y análisis de gestión'
       },
       {
+        label: 'Encuestas',
+        route: '/admin/gestion-encuestas',
+        icon: 'assignment',
+        description: 'Crear y gestionar encuestas para pacientes'
+      },
+      {
         divider: true,
         label: '',
         icon: ''

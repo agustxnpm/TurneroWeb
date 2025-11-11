@@ -885,9 +885,40 @@ public class TurnoService {
                 // Crear notificación de confirmación
                 crearNotificacionConfirmacion(savedTurno);
                 break;
+            case COMPLETO:
+                // Registrar auditoría adicional ya realizada arriba
+                // Crear notificación de turno completado + invitación a encuesta
+                try {
+                    String fechaTurno = formatearFechaTurno(savedTurno);
+                    String especialidad = obtenerEspecialidadTurno(savedTurno);
+                    String medico = obtenerNombreMedico(savedTurno);
+
+                    // Notificación de turno completado (misma que en completarTurno)
+                    notificacionService.crearNotificacion(
+                            savedTurno.getPaciente().getId(),
+                            "Turno Completado",
+                            String.format("Su turno del %s con Dr/a %s en %s ha sido completado exitosamente",
+                                    fechaTurno, medico, especialidad),
+                            TipoNotificacion.CONFIRMACION,
+                            savedTurno.getId(),
+                            "SISTEMA");
+
+                    // Notificación para invitar a completar la encuesta
+                    notificacionService.crearNotificacion(
+                            savedTurno.getPaciente().getId(),
+                            "Encuesta disponible",
+                            "Por favor, contanos sobre tu atención completando una breve encuesta.",
+                            TipoNotificacion.ENCUESTA_PENDIENTE,
+                            savedTurno.getId(),
+                            "SISTEMA");
+
+                } catch (Exception e) {
+                    // No interrumpir el flujo principal si la notificación falla
+                    System.err.println("Error al crear notificaciones para estado COMPLETO: " + e.getMessage());
+                }
+                break;
             case PROGRAMADO:
             case CANCELADO:
-            case COMPLETO:
             case REAGENDADO:
                 auditLogService.logStatusChange(savedTurno, previousStatus.name(), performedBy,
                         motivo != null ? motivo : "Cambio de estado");
@@ -1471,6 +1502,20 @@ public class TurnoService {
         } catch (Exception e) {
             // Log error pero no fallar la operación principal
             System.err.println("Error al crear notificación de turno completado: " + e.getMessage());
+        }
+
+        // Crear notificación para invitar al paciente a completar la encuesta (ENCUESTA_PENDIENTE)
+        try {
+            notificacionService.crearNotificacion(
+                    savedTurno.getPaciente().getId(),
+                    "Encuesta disponible",
+                    "Por favor, contanos sobre tu atención completando una breve encuesta.",
+                    TipoNotificacion.ENCUESTA_PENDIENTE,
+                    savedTurno.getId(),
+                    "SISTEMA");
+        } catch (Exception e) {
+            // No interrumpir el flujo principal si la notificación falla
+            System.err.println("Error al crear notificación de encuesta pendiente: " + e.getMessage());
         }
 
         return toDTO(savedTurno);

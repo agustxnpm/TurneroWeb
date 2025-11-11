@@ -1,0 +1,88 @@
+<div class="encuesta-wrapper card" *ngIf="!loading">
+  <h2 *ngIf="plantilla">{{ plantilla.nombre || 'Encuesta' }}</h2>
+  <p *ngIf="plantilla && plantilla.centroAtencionId">Centro: {{ plantilla.centroAtencionId }}</p>
+
+  <form #encuestaForm="ngForm" *ngIf="plantilla && plantilla.preguntas" (ngSubmit)="enviar()">
+    <div *ngFor="let pregunta of plantilla.preguntas; let idx = index" class="form-group encuesta-question">
+      <label><strong>{{ pregunta.textoPregunta }}</strong></label>
+
+      <div [ngSwitch]="pregunta.tipo">
+        <!-- NPS 0-10 -->
+        <div *ngSwitchCase="'NPS'" class="nps-control">
+          <div class="nps-options">
+            <label *ngFor="let v of [0,1,2,3,4,5,6,7,8,9,10]" class="nps-option">
+              <input type="radio" [name]="'pregunta_' + pregunta.id" [value]="v" [(ngModel)]="respuestas[pregunta.id]"
+                required />
+              <span>{{v}}</span>
+            </label>
+          </div>
+          <small class="text-muted">0 = Muy insatisfecho, 10 = Muy satisfecho</small>
+        </div>
+
+        <!-- RATING (1-5) para ESPERA -->
+        <div *ngSwitchCase="'RATING_ESPERA'" class="rating-control">
+          <label *ngFor="let v of [1,2,3,4,5]" class="rating-option">
+            <input type="radio" [name]="'pregunta_' + pregunta.id" [value]="v" [(ngModel)]="respuestas[pregunta.id]"
+              required />
+            <span>⭐ {{v}}</span>
+          </label>
+          <small class="text-muted">1 = Muy largo, 5 = Muy corto</small>
+        </div>
+
+        <!-- RATING (1-5) para TRATO -->
+        <div *ngSwitchCase="'RATING_TRATO'" class="rating-control">
+          <label *ngFor="let v of [1,2,3,4,5]" class="rating-option">
+            <input type="radio" [name]="'pregunta_' + pregunta.id" [value]="v" [(ngModel)]="respuestas[pregunta.id]"
+              required />
+            <span>⭐ {{v}}</span>
+          </label>
+          <small class="text-muted">1 = Muy malo, 5 = Excelente</small>
+        </div>
+
+        <!-- CSAT simple (1-5) -->
+        <div *ngSwitchCase="'CSAT'" class="csat-control">
+          <label *ngFor="let v of [1,2,3,4,5]" class="csat-option">
+            <input type="radio" [name]="'pregunta_' + pregunta.id" [value]="v" [(ngModel)]="respuestas[pregunta.id]"
+              required />
+            <span>{{v}}</span>
+          </label>
+          <small class="text-muted">1 = Muy insatisfecho, 5 = Muy satisfecho</small>
+        </div>
+
+        <!-- TEXTO_LIBRE -->
+        <div *ngSwitchCase="'TEXTO_LIBRE'">
+          <textarea class="form-control" [(ngModel)]="respuestas[pregunta.id]" [name]="'pregunta_' + pregunta.id"
+            rows="4" placeholder="Escriba su respuesta aquí..."></textarea>
+        </div>
+
+        <!-- Tipo por defecto (texto simple) -->
+        <div *ngSwitchDefault>
+          <input class="form-control" type="text" [(ngModel)]="respuestas[pregunta.id]"
+            [name]="'pregunta_' + pregunta.id" placeholder="Escriba su respuesta" />
+        </div>
+      </div>
+
+    </div>
+
+    <div class="form-actions mt-3">
+      <button class="btn btn-primary me-2" type="submit" [disabled]="submitted || encuestaForm.invalid">
+        {{ submitted ? 'Enviando...' : 'Enviar respuestas' }}
+      </button>
+      <button class="btn btn-secondary" type="button" (click)="goBack()">Volver</button>
+    </div>
+  </form>
+
+  <div *ngIf="!plantilla">
+    <div class="alert alert-info">
+      <p>No hay encuesta configurada para este turno.</p>
+    </div>
+    <button class="btn btn-secondary" (click)="goBack()">Volver</button>
+  </div>
+</div>
+
+<div *ngIf="loading" class="loading text-center">
+  <div class="spinner-border" role="status">
+    <span class="visually-hidden">Cargando...</span>
+  </div>
+  <p class="mt-2">Cargando encuesta...</p>
+</div>

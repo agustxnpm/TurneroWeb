@@ -28,7 +28,7 @@
   </div>
 </div>
 
-<div class="dashboard-wrapper">  
+<div class="dashboard-wrapper">
   <!-- Header del Dashboard -->
   <div class="dashboard-header card">
     <div class="header-content">
@@ -63,7 +63,7 @@
       Acciones Rápidas
     </h2>
     <p class="section-description">Accede rápidamente a las funciones principales</p>
-    
+
     <div class="actions-grid">
       <div class="card action-card" (click)="viewAgenda()">
         <span class="material-symbols-outlined card-icon">calendar_month</span>
@@ -121,26 +121,17 @@
 
     <!-- Filtros -->
     <div class="filter-tabs">
-      <button 
-        class="filter-tab" 
-        [class.active]="currentFilter === 'upcoming'" 
-        (click)="setFilter('upcoming')">
+      <button class="filter-tab" [class.active]="currentFilter === 'upcoming'" (click)="setFilter('upcoming')">
         <span class="material-symbols-outlined">schedule</span>
         <span>Próximos</span>
         <span class="tab-count" *ngIf="getFilterCount('upcoming') > 0">{{ getFilterCount("upcoming") }}</span>
       </button>
-      <button 
-        class="filter-tab" 
-        [class.active]="currentFilter === 'past'" 
-        (click)="setFilter('past')">
+      <button class="filter-tab" [class.active]="currentFilter === 'past'" (click)="setFilter('past')">
         <span class="material-symbols-outlined">history</span>
         <span>Pasados</span>
         <span class="tab-count" *ngIf="getFilterCount('past') > 0">{{ getFilterCount("past") }}</span>
       </button>
-      <button 
-        class="filter-tab" 
-        [class.active]="currentFilter === 'all'" 
-        (click)="setFilter('all')">
+      <button class="filter-tab" [class.active]="currentFilter === 'all'" (click)="setFilter('all')">
         <span class="material-symbols-outlined">list</span>
         <span>Todos</span>
         <span class="tab-count">{{ allTurnos.length }}</span>
@@ -155,14 +146,11 @@
 
     <!-- Lista de Turnos -->
     <div class="appointments-grid" *ngIf="!isLoadingTurnos && filteredTurnos.length > 0">
-      <div 
-        class="card appointment-card" 
-        *ngFor="let turno of filteredTurnos; trackBy: trackByTurno"
+      <div class="card appointment-card" *ngFor="let turno of filteredTurnos; trackBy: trackByTurno"
         [class.status-programado]="turno.status === 'programado'"
-        [class.status-confirmado]="turno.status === 'confirmado'"
-        [class.status-completo]="turno.status === 'completo'"
+        [class.status-confirmado]="turno.status === 'confirmado'" [class.status-completo]="turno.status === 'completo'"
         [class.status-cancelado]="turno.status === 'cancelado'">
-        
+
         <!-- Fecha y Estado -->
         <div class="appointment-header">
           <div class="date-info">
@@ -211,28 +199,26 @@
 
         <!-- Acciones -->
         <div class="appointment-actions" *ngIf="canPerformActions(turno)">
-          <button 
-            class="btn btn-success btn-sm" 
-            *ngIf="canConfirm(turno)" 
-            (click)="confirmarTurno(turno)">
+          <button class="btn btn-success btn-sm" *ngIf="canConfirm(turno)" (click)="confirmarTurno(turno)">
             <span class="material-symbols-outlined">check</span>
             Confirmar
           </button>
 
-          <button 
-            class="btn btn-secondary btn-sm" 
-            *ngIf="canReschedule(turno)" 
-            (click)="reprogramarTurno(turno)">
+          <button class="btn btn-secondary btn-sm" *ngIf="canReschedule(turno)" (click)="reprogramarTurno(turno)">
             <span class="material-symbols-outlined">event_repeat</span>
             Reagendar
           </button>
 
-          <button 
-            class="btn btn-danger btn-sm" 
-            *ngIf="canCancel(turno)" 
-            (click)="cancelarTurno(turno)">
+          <button class="btn btn-danger btn-sm" *ngIf="canCancel(turno)" (click)="cancelarTurno(turno)">
             <span class="material-symbols-outlined">close</span>
             Cancelar
+          </button>
+        </div>
+        <!-- Botón para responder encuesta si existe una encuesta pendiente para turnos completos -->
+        <div class="appointment-actions" *ngIf="turno.status === 'completo' && surveyPendingMap[turno.id]">
+          <button class="btn btn-secondary btn-sm" (click)="abrirEncuesta(turno.id)">
+            <span class="material-symbols-outlined">feedback</span>
+            Responder Encuesta
           </button>
         </div>
       </div>
@@ -243,9 +229,7 @@
       <span class="material-symbols-outlined empty-icon">event_busy</span>
       <h3>No tienes turnos {{ getEmptyStateText() }}</h3>
       <p>{{ getEmptyStateDescription() }}</p>
-      <button 
-        class="btn btn-primary" 
-        (click)="scheduleAppointment()"
+      <button class="btn btn-primary" (click)="scheduleAppointment()"
         *ngIf="currentFilter === 'upcoming' || currentFilter === 'all'">
         <span class="material-symbols-outlined">add_circle</span>
         Solicitar mi primer turno
@@ -259,33 +243,28 @@
       <button class="btn-close-modal" (click)="closeModal()" *ngIf="!isSubmitting">
         <span class="material-symbols-outlined">close</span>
       </button>
-      
+
       <h3>Cancelar Turno</h3>
 
       <div class="turno-info-box" *ngIf="selectedTurno">
         <div class="info-row">
-          <strong>Turno:</strong> 
+          <strong>Turno:</strong>
           <span>{{ selectedTurno.day }}/{{ selectedTurno.month }} a las {{ selectedTurno.time }}</span>
         </div>
         <div class="info-row">
-          <strong>Médico:</strong> 
+          <strong>Médico:</strong>
           <span>{{ selectedTurno.doctor }}</span>
         </div>
         <div class="info-row">
-          <strong>Lugar:</strong> 
+          <strong>Lugar:</strong>
           <span>{{ selectedTurno.location }}</span>
         </div>
       </div>
 
       <div class="form-group">
         <label for="motivo" class="form-label">Motivo de cancelación</label>
-        <textarea 
-          id="motivo"
-          [(ngModel)]="motivo" 
-          rows="4" 
-          class="form-control"
-          [class.is-invalid]="motivo && motivo.length < 5"
-          placeholder="Escribe tu motivo aquí (mínimo 5 caracteres)..."
+        <textarea id="motivo" [(ngModel)]="motivo" rows="4" class="form-control"
+          [class.is-invalid]="motivo && motivo.length < 5" placeholder="Escribe tu motivo aquí (mínimo 5 caracteres)..."
           [disabled]="isSubmitting">
         </textarea>
         <small class="form-text">* El motivo es obligatorio</small>
@@ -295,18 +274,13 @@
       </div>
 
       <div class="modal-actions">
-        <button 
-          class="btn btn-danger btn-full-width" 
-          (click)="submitReason()" 
+        <button class="btn btn-danger btn-full-width" (click)="submitReason()"
           [disabled]="!motivo.trim() || motivo.trim().length < 5 || isSubmitting">
           <span class="material-symbols-outlined spinner" *ngIf="isSubmitting">sync</span>
           <span class="material-symbols-outlined" *ngIf="!isSubmitting">close</span>
           {{ isSubmitting ? "Procesando..." : "Cancelar Turno" }}
         </button>
-        <button 
-          class="btn btn-secondary btn-full-width" 
-          (click)="closeModal()" 
-          [disabled]="isSubmitting">
+        <button class="btn btn-secondary btn-full-width" (click)="closeModal()" [disabled]="isSubmitting">
           <span class="material-symbols-outlined">arrow_back</span>
           Volver
         </button>

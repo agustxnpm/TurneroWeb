@@ -38,6 +38,13 @@ public class EspecialidadService {
                 .collect(Collectors.toList());
     }
 
+    public List<EspecialidadDTO> search(String term) {
+        List<Especialidad> results = repository.findByNombreContainingIgnoreCase(term);
+        return results.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     public EspecialidadDTO findById(Integer id) {
         Especialidad especialidad = repository.findById(id).orElse(null);
         return especialidad != null ? toDTO(especialidad) : null;
@@ -112,8 +119,8 @@ public class EspecialidadService {
             // Construir motivo detallado con cambios realizados
             String motivo = construirMotivoActualizacionEspecialidad(existente, saved);
             auditLogService.logGenericAction(AuditLog.EntityTypes.ESPECIALIDAD, saved.getId().longValue(),
-                                           AuditLog.Actions.UPDATE, performedBy, null, null,
-                                           existente, saved, motivo);
+                    AuditLog.Actions.UPDATE, performedBy, null, null,
+                    existente, saved, motivo);
         }
 
         return toDTO(saved);
@@ -153,8 +160,8 @@ public class EspecialidadService {
 
         // 🎯 AUDITORÍA
         auditLogService.logGenericAction(AuditLog.EntityTypes.ESPECIALIDAD, id.longValue(),
-                                       AuditLog.Actions.DELETE, performedBy, "ACTIVA", "ELIMINADA",
-                                       especialidad, null, "Especialidad eliminada");
+                AuditLog.Actions.DELETE, performedBy, "ACTIVA", "ELIMINADA",
+                especialidad, null, "Especialidad eliminada");
 
         repository.deleteById(id);
     }
@@ -202,9 +209,8 @@ public class EspecialidadService {
                 .orElseThrow(() -> new IllegalStateException("No existe la especialidad con id " + especialidadId));
 
         CentroAtencion centro = centroAtencionService.findEntityById(centroId);
-        if (centro == null) 
+        if (centro == null)
             throw new IllegalStateException("No existe el centro con id " + centroId);
-        
 
         if (centroAtencionRepository.existsEspecialidadInCentro(centroId, especialidadId)) {
             throw new IllegalStateException("La especialidad ya está asociada a este centro");

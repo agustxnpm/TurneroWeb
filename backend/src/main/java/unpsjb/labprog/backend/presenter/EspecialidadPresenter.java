@@ -105,6 +105,15 @@ public class EspecialidadPresenter {
         }
     }
 
+    @GetMapping("/search/{term}")
+    public ResponseEntity<Object> searchEspecialidad(@PathVariable("term") String term) {
+        try {
+            List<EspecialidadDTO> results = service.search(term);
+            return Response.ok(results, "Resultados de búsqueda de especialidades");
+        } catch (Exception e) {
+            return Response.error(null, "Error en la búsqueda de especialidades: " + e.getMessage());
+        }
+    }
 
     // Get especialidades no asociadas a un centro de atencion
     @GetMapping("/centrosAtencion/{centroId}/especialidades/disponibles")

@@ -1,0 +1,363 @@
+<div class="gestion-encuestas card p-4">
+  <h2 class="mb-4">🔧 Gestión de Encuestas</h2>
+
+  <!-- SECCIÓN: CREAR/EDITAR PREGUNTA -->
+  <section class="crear-pregunta card mb-4 p-3" [ngClass]="editandoPreguntaId ? 'bg-warning-subtle' : 'bg-light'">
+    <h3 class="mb-3">
+      {{ editandoPreguntaId ? '✏️ Editar Pregunta' : '➕ Crear Pregunta' }}
+      <button *ngIf="editandoPreguntaId" class="btn btn-sm btn-outline-secondary float-end"
+        (click)="cancelarEdicionPregunta()">
+        ✖ Cancelar
+      </button>
+    </h3>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>Texto de la pregunta:</strong></label>
+      <input class="form-control" [(ngModel)]="nuevaPreguntaTexto" placeholder="Ej: ¿Cómo calificarías tu experiencia?"
+        maxlength="500" />
+      <small class="form-text text-muted">{{ nuevaPreguntaTexto.length }}/500 caracteres</small>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>Tipo de pregunta:</strong></label>
+      <select class="form-select" [(ngModel)]="nuevaPreguntaTipo">
+        <option *ngFor="let tipo of tiposDisponibles" [value]="tipo.value">
+          {{ tipo.label }} - {{ tipo.description }}
+        </option>
+      </select>
+    </div>
+
+    <button class="btn" [ngClass]="editandoPreguntaId ? 'btn-warning' : 'btn-primary'" (click)="crearPregunta()">
+      {{ editandoPreguntaId ? '💾 Guardar Cambios' : '➕ Crear Pregunta' }}
+    </button>
+  </section>
+
+  <!-- SECCIÓN: CREAR/EDITAR PLANTILLA -->
+  <section class="crear-plantilla card mb-4 p-3" [ngClass]="editandoPlantillaId ? 'bg-warning-subtle' : 'bg-light'">
+    <h3 class="mb-3">
+      {{ editandoPlantillaId ? '✏️ Editar Plantilla' : '📋 Crear Plantilla' }}
+      <button *ngIf="editandoPlantillaId" class="btn btn-sm btn-outline-secondary float-end"
+        (click)="cancelarEdicionPlantilla()">
+        ✖ Cancelar
+      </button>
+    </h3>
+
+    <div class="mb-3">
+      <label class="form-label"><strong>Nombre de la plantilla:</strong></label>
+      <input class="form-control" [(ngModel)]="nuevaPlantillaNombre"
+        placeholder="Ej: Encuesta de Satisfacción General" />
+    </div>
+
+    <button class="btn" [ngClass]="editandoPlantillaId ? 'btn-warning' : 'btn-primary'" (click)="crearPlantilla()">
+      {{ editandoPlantillaId ? '💾 Guardar Cambios' : '➕ Crear Plantilla' }}
+    </button>
+  </section>
+
+  <!-- SECCIÓN: LISTADOS -->
+  <section class="listados row">
+
+    <!-- COLUMNA: PREGUNTAS -->
+    <div class="col-md-6 listado-preguntas">
+      <div class="card p-3">
+        <h4 class="mb-3">📝 Preguntas Disponibles ({{ preguntas.length }})</h4>
+
+        <div *ngIf="preguntas.length === 0" class="alert alert-info">
+          No hay preguntas creadas. Crea una pregunta arriba para comenzar.
+        </div>
+
+        <ul class="list-group mb-3">
+          <li *ngFor="let p of preguntas" class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" [id]="'pregunta-' + p.id"
+                    [checked]="selectedPreguntaIds.indexOf(p.id) !== -1" (change)="togglePreguntaSeleccion(p)" />
+                  <label class="form-check-label" [for]="'pregunta-' + p.id">
+                    <strong>{{ p.textoPregunta }}</strong>
+                    <br>
+                    <small class="text-muted">
+                      <span class="badge bg-secondary">{{ getTipoLabel(p.tipo) }}</span>
+                      ID: {{ p.id }}
+                    </small>
+                  </label>
+                </div>
+              </div>
+              <div class="btn-group-vertical btn-group-sm ms-2">
+                <button class="btn btn-outline-primary btn-sm" (click)="editarPregunta(p)" title="Editar">
+                  ✏️
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="eliminarPregunta(p)" title="Eliminar">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+
+        <div class="actions">
+          <label class="form-label"><strong>Plantilla destino:</strong></label>
+          <select [(ngModel)]="selectedPlantillaId" class="form-select mb-2">
+            <option [ngValue]="null">-- Seleccionar plantilla --</option>
+            <option *ngFor="let pl of plantillas" [ngValue]="pl.id">
+              {{ pl.nombre }} (ID: {{ pl.id }})
+            </option>
+          </select>
+
+          <button class="btn btn-success w-100" (click)="agregarPreguntasSeleccionadas()"
+            [disabled]="selectedPreguntaIds.length === 0 || !selectedPlantillaId">
+            ➕ Agregar {{ selectedPreguntaIds.length }} pregunta(s) seleccionada(s)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMNA: PLANTILLAS -->
+    <div class="col-md-6 listado-plantillas">
+      <div class="card p-3">
+        <h4 class="mb-3">📋 Plantillas ({{ plantillas.length }})</h4>
+
+        <div *ngIf="plantillas.length === 0" class="alert alert-info">
+          No hay plantillas creadas. Crea una plantilla arriba para comenzar.
+        </div>
+
+        <ul class="list-group mb-3">
+          <li *ngFor="let pl of plantillas" class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1">
+                <strong>{{ pl.nombre }}</strong>
+                <br>
+                <small class="text-muted">
+                  ID: {{ pl.id }} |
+                  Preguntas: {{ pl.preguntas?.length || 0 }}
+                  <span *ngIf="pl.centroAtencionId"> | Centro: {{ pl.centroAtencionId }}</span>
+                  <span *ngIf="pl.especialidadId"> | Especialidad: {{ pl.especialidadId }}</span>
+                </small>
+
+                <!-- Lista de preguntas de la plantilla -->
+                <div *ngIf="pl.preguntas && pl.preguntas.length > 0" class="mt-2">
+                  <small class="text-muted d-block mb-1"><strong>Preguntas:</strong></small>
+                  <div *ngFor="let pregunta of pl.preguntas" class="ms-3 mb-1">
+                    <small>
+                      <span class="badge bg-info">{{ pregunta.tipo }}</span>
+                      {{ pregunta.textoPregunta }}
+                      <button class="btn btn-outline-danger btn-sm ms-2 py-0 px-1"
+                        (click)="removerPreguntaPlantilla(pl.id, pregunta.id, pregunta.textoPregunta)"
+                        title="Remover pregunta">
+                        ✖
+                      </button>
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <div class="btn-group-vertical btn-group-sm ms-2">
+                <button class="btn btn-outline-info btn-sm" (click)="abrirPreview(pl)" title="Vista previa">
+                  👁️
+                </button>
+                <button class="btn btn-outline-primary btn-sm" (click)="editarPlantilla(pl)" title="Editar">
+                  ✏️
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="eliminarPlantilla(pl)" title="Eliminar">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+
+        <div class="assign-actions">
+          <h5 class="mb-3">🔗 Asignar Plantilla Seleccionada</h5>
+
+          <div class="mb-3">
+            <label class="form-label"><strong>Plantilla a configurar:</strong></label>
+            <select [(ngModel)]="selectedPlantillaId" class="form-select">
+              <option [ngValue]="null">-- Seleccionar plantilla --</option>
+              <option *ngFor="let pl of plantillas" [ngValue]="pl.id">
+                {{ pl.nombre }} (ID: {{ pl.id }})
+                <span *ngIf="pl.centroAtencion"> - Centro: {{ pl.centroAtencion.nombre }}</span>
+                <span *ngIf="pl.especialidad"> - Esp: {{ pl.especialidad.nombre }}</span>
+              </option>
+            </select>
+          </div>
+
+          <!-- ASIGNAR CENTRO DE ATENCIÓN -->
+          <div class="mb-3 assignment-box">
+            <label class="form-label"><strong>🏥 Centro de Atención:</strong></label>
+
+            <!-- Campo de búsqueda -->
+            <input type="text" class="form-control mb-2" [(ngModel)]="searchCentro"
+              placeholder="🔍 Buscar centro por nombre..." (ngModelChange)="onSearchCentro($event)" />
+            <!-- Cambiado: agrega ngModelChange, remueve (input) -->
+
+            <!-- Centro seleccionado -->
+            <div *ngIf="selectedCentro" class="alert alert-success py-2 mb-2">
+              <!-- Este div se muestra, pero estaba vacío -->
+              ✅ Seleccionado: <strong>{{ selectedCentro.nombre }}</strong> <!-- Agrega esto: el binding del nombre -->
+              <button class="btn btn-sm btn-outline-secondary float-end py-0" (click)="selectedCentro = null">✖</button>
+            </div>
+            <!-- Lista de centros filtrados -->
+            <div *ngIf="!selectedCentro && (searchCentro || centrosFiltrados.length > 0)"
+              class="list-group max-height-200 mb-2">
+              <button *ngFor="let centro of centrosFiltrados.slice(0, 5)" type="button"
+                class="list-group-item list-group-item-action" (click)="seleccionarCentro(centro)">
+                <!-- Cambiado: pasa 'centro' entero, no 'centro.id' -->
+                <strong>{{ centro.nombre }}</strong>
+                <br>
+                <small class="text-muted">{{ centro.direccion || 'Sin dirección' }}</small>
+              </button>
+              <div *ngIf="centrosFiltrados.length === 0 && searchCentro" class="list-group-item text-muted">
+                No se encontraron centros con "{{ searchCentro }}"
+              </div>
+            </div>
+
+            <button class="btn btn-secondary w-100" (click)="asignarCentro()"
+              [disabled]="!selectedPlantillaId || !selectedCentro">
+              ✅ Asignar Centro Seleccionado
+            </button>
+          </div>
+
+          <!-- ASIGNAR ESPECIALIDAD -->
+          <div class="mb-3 assignment-box">
+            <label class="form-label"><strong>🩺 Especialidad:</strong></label>
+
+            <!-- Campo de búsqueda -->
+            <input type="text" class="form-control mb-2" [(ngModel)]="searchEspecialidad"
+              placeholder="🔍 Buscar especialidad por nombre..." (ngModelChange)="onSearchEspecialidad($event)" />
+
+            <!-- Especialidad seleccionada -->
+            <div *ngIf="selectedEspecialidad" class="alert alert-success py-2 mb-2"> <!-- Cambiado -->
+              ✅ Seleccionado: <strong>{{ selectedEspecialidad.nombre }}</strong> <!-- Cambiado -->
+              <button class="btn btn-sm btn-outline-secondary float-end py-0"
+                (click)="selectedEspecialidad = null">✖</button> <!-- Cambiado -->
+            </div>
+
+            <!-- Lista de especialidades filtradas -->
+            <div *ngIf="!selectedEspecialidad && (searchEspecialidad || especialidadesFiltradas.length > 0)"
+              class="list-group max-height-200 mb-2">
+              <button *ngFor="let esp of especialidadesFiltradas.slice(0, 5)" type="button"
+                class="list-group-item list-group-item-action" (click)="seleccionarEspecialidad(esp)">
+                <!-- Cambiado: pasa esp entero -->
+                <strong>{{ esp.nombre }}</strong>
+              </button>
+              <div *ngIf="especialidadesFiltradas.length === 0" class="list-group-item text-muted">
+                No se encontraron especialidades
+              </div>
+              <div *ngIf="especialidadesFiltradas.length > 5" class="list-group-item text-muted text-center">
+                ... y {{ especialidadesFiltradas.length - 5 }} más (sigue escribiendo para filtrar)
+              </div>
+            </div>
+
+            <button class="btn btn-secondary w-100" (click)="asignarEspecialidad()"
+              [disabled]="!selectedPlantillaId || !selectedEspecialidad">
+              ✅ Asignar Especialidad Seleccionada
+            </button>
+          </div>
+
+          <!-- DESASIGNAR -->
+          <button class="btn btn-warning w-100" (click)="desasignarPlantilla()" [disabled]="!selectedPlantillaId">
+            🔓 Desasignar Centro y Especialidad
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- MODAL DE PREVIEW -->
+<div *ngIf="showPreview" class="modal-overlay" (click)="cerrarPreview()">
+  <div class="modal-content-preview card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>👁️ Vista Previa: {{ previewPlantilla?.nombre }}</h3>
+      <button class="btn btn-close" (click)="cerrarPreview()"></button>
+    </div>
+
+    <div class="modal-body">
+      <p class="text-muted">Esta es una vista previa de cómo verán los pacientes esta encuesta.</p>
+
+      <form *ngIf="previewPlantilla?.preguntas">
+        <div *ngFor="let pregunta of previewPlantilla.preguntas; let idx = index"
+          class="form-group mb-4 preview-question">
+          <label class="form-label"><strong>{{ idx + 1 }}. {{ pregunta.textoPregunta }}</strong></label>
+          <small class="d-block text-muted mb-2">
+            <span class="badge bg-secondary">{{ getTipoLabel(pregunta.tipo) }}</span>
+          </small>
+
+          <div [ngSwitch]="pregunta.tipo">
+            <!-- NPS -->
+            <div *ngSwitchCase="'NPS'" class="nps-control">
+              <div class="nps-options">
+                <label *ngFor="let v of [0,1,2,3,4,5,6,7,8,9,10]" class="nps-option">
+                  <input type="radio" [name]="'preview-' + pregunta.id" [value]="v"
+                    [(ngModel)]="previewRespuestas[pregunta.id]" />
+                  <span>{{v}}</span>
+                </label>
+              </div>
+              <small class="text-muted">0 = Muy insatisfecho, 10 = Muy satisfecho</small>
+            </div>
+
+            <!-- RATING ESPERA -->
+            <div *ngSwitchCase="'RATING_ESPERA'" class="rating-control">
+              <label *ngFor="let v of [1,2,3,4,5]" class="rating-option">
+                <input type="radio" [name]="'preview-' + pregunta.id" [value]="v"
+                  [(ngModel)]="previewRespuestas[pregunta.id]" />
+                <span>⭐ {{v}}</span>
+              </label>
+              <br>
+              <small class="text-muted">1 = Muy largo, 5 = Muy corto</small>
+            </div>
+
+            <!-- RATING TRATO -->
+            <div *ngSwitchCase="'RATING_TRATO'" class="rating-control">
+              <label *ngFor="let v of [1,2,3,4,5]" class="rating-option">
+                <input type="radio" [name]="'preview-' + pregunta.id" [value]="v"
+                  [(ngModel)]="previewRespuestas[pregunta.id]" />
+                <span>⭐ {{v}}</span>
+              </label>
+              <br>
+              <small class="text-muted">1 = Muy malo, 5 = Excelente</small>
+            </div>
+
+            <!-- CSAT -->
+            <div *ngSwitchCase="'CSAT'" class="csat-control">
+              <label *ngFor="let v of [1,2,3,4,5]" class="csat-option">
+                <input type="radio" [name]="'preview-' + pregunta.id" [value]="v"
+                  [(ngModel)]="previewRespuestas[pregunta.id]" />
+                <span>{{v}}</span>
+              </label>
+              <br>
+              <small class="text-muted">1 = Muy insatisfecho, 5 = Muy satisfecho</small>
+            </div>
+
+            <!-- TEXTO LIBRE -->
+            <div *ngSwitchCase="'TEXTO_LIBRE'">
+              <textarea class="form-control" [(ngModel)]="previewRespuestas[pregunta.id]"
+                [name]="'preview-' + pregunta.id" rows="4" placeholder="Escriba su respuesta aquí..."></textarea>
+            </div>
+
+            <!-- Default -->
+            <div *ngSwitchDefault>
+              <input class="form-control" type="text" [(ngModel)]="previewRespuestas[pregunta.id]"
+                [name]="'preview-' + pregunta.id" placeholder="Respuesta" />
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <div *ngIf="!previewPlantilla?.preguntas || previewPlantilla.preguntas.length === 0" class="alert alert-warning">
+        ⚠️ Esta plantilla no tiene preguntas asociadas. Agregue preguntas para poder visualizarlas.
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="cerrarPreview()">Cerrar Preview</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div *ngIf="loading" class="text-center mt-4">
+  <div class="spinner-border" role="status">
+    <span class="visually-hidden">Cargando...</span>
+  </div>
+  <p>Cargando datos...</p>
+</div>

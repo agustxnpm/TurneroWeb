@@ -1,0 +1,338 @@
+.gestion-encuestas {
+    max-width: 1400px;
+    margin: 20px auto;
+}
+
+.crear-pregunta,
+.crear-plantilla {
+    border-left: 4px solid #007bff;
+    transition: all 0.3s;
+}
+
+.bg-warning-subtle {
+    background-color: #fff3cd !important;
+    border-left-color: #ffc107 !important;
+}
+
+.listado-preguntas .list-group-item,
+.listado-plantillas .list-group-item {
+    transition: background-color 0.2s;
+}
+
+.listado-preguntas .list-group-item:hover,
+.listado-plantillas .list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.assign-actions {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+h2,
+h3,
+h4,
+h5 {
+    color: #333;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+/* Botones de acción en las listas */
+.btn-group-vertical {
+    flex-shrink: 0;
+}
+
+.btn-group-vertical .btn {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* MODAL PREVIEW */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content-preview {
+    background: white;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.3s;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.modal-body {
+    padding: 30px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #dee2e6;
+    text-align: right;
+    background-color: #f8f9fa;
+}
+
+.preview-question {
+    border-left: 3px solid #007bff;
+    padding-left: 15px;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+/* Controles de encuesta en preview */
+.nps-control .nps-options {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+}
+
+.nps-option {
+    display: inline-block;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.nps-option:hover {
+    transform: scale(1.1);
+}
+
+.nps-option input[type="radio"] {
+    display: none;
+}
+
+.nps-option span {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    background-color: white;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.nps-option input[type="radio"]:checked+span {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.rating-control,
+.csat-control {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.rating-option,
+.csat-option {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.rating-option:hover,
+.csat-option:hover {
+    transform: scale(1.1);
+}
+
+.rating-option input[type="radio"],
+.csat-option input[type="radio"] {
+    display: none;
+}
+
+.rating-option span,
+.csat-option span {
+    display: inline-block;
+    padding: 8px 16px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.rating-option input[type="radio"]:checked+span,
+.csat-option input[type="radio"]:checked+span {
+    background-color: #ffc107;
+    color: white;
+    border-color: #ffc107;
+}
+
+/* Scrollbar personalizado para el modal */
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .modal-content-preview {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .nps-option span {
+        width: 35px;
+        height: 35px;
+        line-height: 35px;
+        font-size: 0.875rem;
+    }
+
+    .listados {
+        flex-direction: column;
+    }
+
+    .listado-preguntas,
+    .listado-plantillas {
+        margin-bottom: 20px;
+    }
+}
+
+
+/* Asignación de centros y especialidades */
+.assignment-box {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.max-height-200 {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+.list-group-item-action {
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.list-group-item-action:hover {
+    background-color: #e9ecef;
+    transform: translateX(5px);
+}
+
+.list-group-item-action:active {
+    background-color: #dee2e6;
+}
+
+.alert-success {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Scrollbar para listas de selección */
+.max-height-200::-webkit-scrollbar {
+    width: 6px;
+}
+
+.max-height-200::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+}
+
+.max-height-200::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+.max-height-200::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Resaltar campo de búsqueda activo */
+input[type="text"]:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}

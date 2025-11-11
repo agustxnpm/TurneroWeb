@@ -31,6 +31,7 @@ import { PacienteDashboardComponent } from "./pacientes/paciente-dashboard.compo
 import { PacienteAgendaComponent } from "./pacientes/paciente-agenda.component";
 import { PacienteReagendarTurnoComponent } from "./pacientes/paciente-reagendar-turno.component";
 import { PacienteNotificacionesComponent } from "./pacientes/paciente-notificaciones.component";
+import { EncuestaComponent } from "./pacientes/encuesta/encuesta.component";
 
 // Medico components
 import { MedicoDashboardComponent } from "./medicos/medico-dashboard.component";
@@ -57,6 +58,7 @@ import { OperadorPerfilComponent } from "./operador/operador-perfil.component";
 import { AdminPerfilComponent } from "./admin/admin-perfil.component";
 import { TokenStatusComponent } from "./components/token-status.component";
 import { AdminDashboardComponent } from "./admin/admin-dashboard.component";
+import { GestionEncuestasComponent } from "./admin/gestion-encuestas/gestion-encuestas.component";
 import { AdminConfigComponent } from "./admin/admin-config.component";
 import { AdminListComponent } from "./admin-management/admin-list.component";
 import { AdminDetailComponent } from "./admin-management/admin-detail.component";
@@ -146,6 +148,11 @@ export const routes: Routes = [
   {
     path: "paciente-preferencias",
     component: PreferenciasPacienteComponent,
+    canActivate: [PatientGuard],
+  },
+  {
+    path: "paciente/encuesta/:id",
+    component: EncuestaComponent,
     canActivate: [PatientGuard],
   },
   {
@@ -383,6 +390,11 @@ export const routes: Routes = [
   {
     path: "admin-dashboard",
     component: AdminDashboardComponent,
+    canActivate: [AdminGuard],
+  },
+  {
+    path: "admin/gestion-encuestas",
+    component: GestionEncuestasComponent,
     canActivate: [AdminGuard],
   },
   {
