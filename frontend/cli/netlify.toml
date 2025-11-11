@@ -5,8 +5,8 @@
   # Comando de build (.npmrc maneja legacy-peer-deps automáticamente)
   command = "npm ci && ng build --configuration production"
   
-  # Directorio de publicación (Angular 19 con application builder)
-  publish = "dist/cli"
+  # Directorio de publicación (Angular 19 con application builder genera dist/cli/browser)
+  publish = "dist/cli/browser"
 
 # Variables de entorno de build
 [build.environment]
