@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { DataPackage } from '../data.package';
 import { AuthService } from '../inicio-sesion/auth.service';
+import { environment } from '../../environments/environment';
 
 /**
  * Interfaz para la respuesta de validación de deep link
@@ -37,7 +38,7 @@ export interface DeepLinkResponse {
   providedIn: 'root'
 })
 export class DeepLinkService {
-  private url = 'rest/deep-links';
+  private url = environment.production ? `${environment.apiUrl}/deep-links` : 'rest/deep-links';
 
   constructor(
     private http: HttpClient,

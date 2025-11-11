@@ -9,6 +9,7 @@ import { Observable, throwError, BehaviorSubject } from "rxjs";
 import { catchError, tap } from "rxjs/operators";
 import { JwtHelperService } from "@auth0/angular-jwt";
 import { SocialAuthService } from '@abacritt/angularx-social-login';
+import { environment } from '../../environments/environment';
 import { DataPackage } from "../data.package";
 import { PacienteService } from "../pacientes/paciente.service";
 import { ModalService } from "../modal/modal.service";
@@ -122,7 +123,7 @@ export const ROLE_HIERARCHY: Record<Role, Role[]> = {
   providedIn: "root",
 })
 export class AuthService {
-  private readonly API_BASE_URL = "rest/api/auth";
+  private readonly API_BASE_URL = environment.production ? `${environment.apiUrl}/api/auth` : "rest/api/auth";
   private readonly ACCESS_TOKEN_KEY = "access_token";
   private readonly REFRESH_TOKEN_KEY = "refresh_token";
   private readonly USER_DATA_KEY = "user_data";

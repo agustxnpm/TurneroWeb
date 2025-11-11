@@ -1,15 +1,19 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
-import { StaffMedico } from './staffMedico';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
+import { StaffMedico } from './staffMedico';
 import { ResultsPage } from '../results-page';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StaffMedicoService {
-  private url = 'rest/staff-medico';
+  private url = environment.production 
+    ? `${environment.apiUrl}/staff-medico`
+    : 'rest/staff-medico';
 
   constructor(private http: HttpClient) { }
 

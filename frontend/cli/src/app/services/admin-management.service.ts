@@ -1,13 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminManagementService {
-  private baseUrl = 'rest/admins';
+  private baseUrl = environment.production 
+    ? `${environment.apiUrl}/admins`
+    : 'rest/admins';
 
   constructor(private http: HttpClient) {}
 

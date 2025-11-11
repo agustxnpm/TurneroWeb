@@ -1,14 +1,16 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-
+import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardService {
-  private base = 'rest/admin-dashboard';
+  private base = environment.production 
+    ? `${environment.apiUrl}/admin-dashboard`
+    : 'rest/admin-dashboard';
 
   constructor(private http: HttpClient) { }
 

@@ -3,12 +3,13 @@ import { HttpClient } from "@angular/common/http";
 import { Observable, map } from "rxjs";
 import { DisponibilidadMedico } from "./disponibilidadMedico";
 import { DataPackage } from "../data.package";
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: "root",
 })
 export class DisponibilidadMedicoService {
-  private url = "rest/disponibilidades-medico";
+  private url = environment.production ? `${environment.apiUrl}/disponibilidades-medico` : "rest/disponibilidades-medico";
 
   constructor(private http: HttpClient) {}
 

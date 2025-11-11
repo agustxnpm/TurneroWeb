@@ -1,53 +1,57 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
 import { Consultorio, HorarioConsultorio } from './consultorio';
+import { ResultsPage } from '../results-page';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ConsultorioService {
-  private consultoriosUrl = 'rest/consultorios';
+  private url = environment.production 
+    ? `${environment.apiUrl}/consultorios`
+    : 'rest/consultorios';
 
   constructor(private http: HttpClient) {}
 
   /** Obtiene todos los consultorios */
   getAll(): Observable<DataPackage<Consultorio[]>> {
-    return this.http.get<DataPackage<Consultorio[]>>(this.consultoriosUrl);
+    return this.http.get<DataPackage<Consultorio[]>>(this.url);
   }
 
   /** Consulta un consultorio por ID */
   getById(id: number): Observable<DataPackage<Consultorio>> {
-    return this.http.get<DataPackage<Consultorio>>(`${this.consultoriosUrl}/${id}`);
+    return this.http.get<DataPackage<Consultorio>>(`${this.url}/${id}`);
   }
 
   /** Crea un nuevo consultorio */
   create(consultorio: Consultorio): Observable<DataPackage<Consultorio>> {
-    return this.http.post<DataPackage<Consultorio>>(this.consultoriosUrl, consultorio);
+    return this.http.post<DataPackage<Consultorio>>(this.url, consultorio);
   }
 
   /** Actualiza un consultorio existente */
   update(id: number, consultorio: Consultorio): Observable<DataPackage<Consultorio>> {
-    return this.http.put<DataPackage<Consultorio>>(`${this.consultoriosUrl}/${id}`, consultorio);
+    return this.http.put<DataPackage<Consultorio>>(`${this.url}/${id}`, consultorio);
   }
 
   /** Elimina un consultorio */
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.consultoriosUrl}/${id}`);
+    return this.http.delete<void>(`${this.url}/${id}`);
   }
 
   /** Lista los consultorios de un Centro de Atención específico */
   listByCentro(centroNombre: string): Observable<DataPackage<Consultorio[]>> {
     return this.http.get<DataPackage<Consultorio[]>>(
-      `${this.consultoriosUrl}/${encodeURIComponent(centroNombre)}/listar`
+      `${this.url}/${encodeURIComponent(centroNombre)}/listar`
     );
   }
 
   /** Obtiene los consultorios asociados a un centro de atención por ID */
   getByCentroAtencion(centroId: number) {
     return this.http.get<DataPackage<Consultorio[]>>(
-    `${this.consultoriosUrl}/centrosAtencion/${centroId}/consultorios`
+    `${this.url}/centrosAtencion/${centroId}/consultorios`
     );
   }
 
@@ -75,6 +79,6 @@ export class ConsultorioService {
   }
 
   byPage(page: number, size: number): Observable<DataPackage> {
-    return this.http.get<DataPackage>(`${this.consultoriosUrl}/page?page=${page-1}&size=${size}`);
+    return this.http.get<DataPackage>(`${this.url}/page?page=${page-1}&size=${size}`);
   }
 }

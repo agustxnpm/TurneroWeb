@@ -3,12 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { EsquemaTurno } from './esquemaTurno';
 import { DataPackage } from '../data.package';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EsquemaTurnoService {
-  private url = 'rest/esquema-turno';
+  private url = environment.production ? `${environment.apiUrl}/esquema-turno` : 'rest/esquema-turno';
 
   constructor(private http: HttpClient) { }
 

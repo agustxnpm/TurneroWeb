@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export interface NotificacionDTO {
   id: number;
@@ -37,7 +38,7 @@ export interface PageNotificacion {
 })
 export class NotificacionService {
 
-  private baseUrl = 'rest/notificaciones';
+  private baseUrl = environment.production ? `${environment.apiUrl}/notificaciones` : 'rest/notificaciones';
   
   // Subject para el contador de notificaciones no leídas
   private contadorNoLeidasSubject = new BehaviorSubject<number>(0);

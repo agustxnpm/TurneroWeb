@@ -3,12 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Turno, TurnoFilter, AuditLog, AuditFilter, AuditPage } from './turno';
 import { DataPackage } from '../data.package';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TurnoService {
-  private url = 'rest/turno';
+  private url = environment.production ? `${environment.apiUrl}/turno` : 'rest/turno';
 
   constructor(private http: HttpClient) { }
 

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
+import { environment } from '../../environments/environment';
 
 export interface ActivationRequest {
   token: string;
@@ -11,7 +12,7 @@ export interface ActivationRequest {
   providedIn: 'root'
 })
 export class ActivacionCuentaService {
-  private readonly apiUrl = 'rest/api/auth';
+  private readonly apiUrl = environment.production ? `${environment.apiUrl}/api/auth` : 'rest/api/auth';
 
   constructor(private http: HttpClient) {}
 

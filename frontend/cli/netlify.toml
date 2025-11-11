@@ -1,0 +1,47 @@
+[build]
+  # Directorio base del proyecto Angular
+  base = "frontend/cli"
+  
+  # Comando de build
+  command = "npm ci && ng build --configuration production"
+  
+  # Directorio de publicación (Angular 19 con application builder)
+  publish = "dist/cli"
+
+# Variables de entorno de build
+[build.environment]
+  NODE_VERSION = "20.11.0"
+  NPM_VERSION = "10"
+
+# Redirección para Angular Router (SPA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers de seguridad
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+# Cache para assets estáticos
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache para archivos JavaScript
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache para archivos CSS
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

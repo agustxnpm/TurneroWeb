@@ -1,12 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ConfigService {
-  private apiUrl = '/rest/config';
+  private apiUrl = environment.production 
+    ? `${environment.apiUrl}/config`
+    : '/rest/config';
 
   constructor(private http: HttpClient) { }
 

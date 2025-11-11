@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
+import { environment } from '../../environments/environment';
 
 // Interfaces para el sistema de auditoría
 export interface AuditLog {
@@ -99,7 +100,7 @@ interface DashboardStatistics extends AuditStatistics {
 })
 export class AuditService {
 
-  private baseUrl = 'rest/audit';
+  private baseUrl = environment.production ? `${environment.apiUrl}/audit` : 'rest/audit';
 
   constructor(private http: HttpClient) { }
 

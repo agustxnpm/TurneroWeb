@@ -3,12 +3,13 @@ import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
 import { Agenda } from './agenda';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AgendaService {
-  private url = 'rest/agenda'; // Base URL del backend
+  private url = environment.production ? `${environment.apiUrl}/agenda` : 'rest/agenda'; // Base URL del backend
 
   constructor(private http: HttpClient) { }
 

@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
 import { Medico } from './medico';
 import { ResultsPage } from '../results-page';
@@ -9,18 +11,20 @@ import { ResultsPage } from '../results-page';
   providedIn: 'root'
 })
 export class MedicoService {
-  private medicosUrl = 'rest/medicos';
+  private url = environment.production 
+    ? `${environment.apiUrl}/medicos`
+    : 'rest/medicos';
 
   constructor(private http: HttpClient) {}
 
   /** Obtiene todos los médicos */
   getAll(): Observable<DataPackage<Medico[]>> {
-    return this.http.get<DataPackage<Medico[]>>(this.medicosUrl);
+    return this.http.get<DataPackage<Medico[]>>(this.url);
   }
 
   /** Consulta un médico por ID */
   getById(id: number): Observable<DataPackage<Medico>> {
-    return this.http.get<DataPackage<Medico>>(`${this.medicosUrl}/${id}`);
+    return this.http.get<DataPackage<Medico>>(`${this.url}/${id}`);
   }
 
   /** Alias para getById - usado por el dashboard */
@@ -42,13 +46,13 @@ export class MedicoService {
 
   /** Crea un nuevo médico */
   create(medico: Medico): Observable<DataPackage<Medico>> {
-    return this.http.post<DataPackage<Medico>>(this.medicosUrl, medico);
+    return this.http.post<DataPackage<Medico>>(this.url, medico);
   }
 
   /** Crea un nuevo médico por administrador */
   createByAdmin(medico: Medico): Observable<DataPackage<Medico>> {
     return this.http.post<DataPackage<Medico>>(
-      `${this.medicosUrl}/create-by-admin`,
+      `${this.url}/create-by-admin`,
       medico
     );
   }
@@ -56,39 +60,39 @@ export class MedicoService {
   /** Crea un nuevo médico por operador */
   createByOperador(medico: Medico): Observable<DataPackage<Medico>> {
     return this.http.post<DataPackage<Medico>>(
-      `${this.medicosUrl}/create-by-operador`,
+      `${this.url}/create-by-operador`,
       medico
     );
   }
 
   /** Actualiza un médico existente */
   update(id: number, medico: Medico): Observable<DataPackage<Medico>> {
-    return this.http.put<DataPackage<Medico>>(`${this.medicosUrl}/${id}`, medico);
+    return this.http.put<DataPackage<Medico>>(`${this.url}/${id}`, medico);
   }
 
   /** Elimina un médico */
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.medicosUrl}/${id}`);
+    return this.http.delete<void>(`${this.url}/${id}`);
   }
 
   /** Busca médicos por término */
   search(term: string): Observable<DataPackage<Medico[]>> {
-    return this.http.get<DataPackage<Medico[]>>(`${this.medicosUrl}/search/${term}`);
+    return this.http.get<DataPackage<Medico[]>>(`${this.url}/search/${term}`);
   }
 
   /** Busca un médico por matrícula */
   findByMatricula(matricula: string): Observable<DataPackage<Medico>> {
-    return this.http.get<DataPackage<Medico>>(`${this.medicosUrl}/matricula/${matricula}`);
+    return this.http.get<DataPackage<Medico>>(`${this.url}/matricula/${matricula}`);
   }
 
   /** Busca un médico por email */
   findByEmail(email: string): Observable<DataPackage<Medico>> {
-    return this.http.get<DataPackage<Medico>>(`${this.medicosUrl}/email/${encodeURIComponent(email)}`);
+    return this.http.get<DataPackage<Medico>>(`${this.url}/email/${encodeURIComponent(email)}`);
   }
 
   /** Paginación */
   byPage(page: number, size: number): Observable<DataPackage> {
-    return this.http.get<DataPackage>(`${this.medicosUrl}/page?page=${page - 1}&size=${size}`);
+    return this.http.get<DataPackage>(`${this.url}/page?page=${page - 1}&size=${size}`);
   }
 
   /**
@@ -137,7 +141,7 @@ export class MedicoService {
       params.append('sortDir', sortDir.trim());
     }
 
-    const url = `${this.medicosUrl}/page?${params.toString()}`;
+    const url = `${this.url}/page?${params.toString()}`;
 
     return this.http.get<DataPackage<ResultsPage>>(url);
   }

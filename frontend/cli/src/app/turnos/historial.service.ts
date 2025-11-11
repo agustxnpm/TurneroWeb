@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
+import { environment } from '../../environments/environment';
 
 export interface HistorialTurnoDTO {
   id: number;
@@ -51,7 +52,7 @@ export interface HistorialFilter {
   providedIn: 'root'
 })
 export class HistorialService {
-  private readonly url = 'rest/turno/historial';
+  private readonly url = environment.production ? `${environment.apiUrl}/turno/historial` : 'rest/turno/historial';
 
   constructor(private http: HttpClient) { }
 

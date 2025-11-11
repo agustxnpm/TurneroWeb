@@ -4,12 +4,13 @@ import { map, Observable } from "rxjs";
 import { Operador } from "./operador";
 import { DataPackage } from "../data.package";
 import { ResultsPage } from "../results-page";
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: "root",
 })
 export class OperadorService {
-  private url = "rest/operadores";
+  private url = environment.production ? `${environment.apiUrl}/operadores` : "rest/operadores";
 
   constructor(private http: HttpClient) {}
 

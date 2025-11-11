@@ -3,12 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ObraSocial } from './obraSocial';
 import { DataPackage } from '../data.package';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ObraSocialService {
-  private url = 'rest/obra-social';
+  private url = environment.production ? `${environment.apiUrl}/obra-social` : 'rest/obra-social';
 
   constructor(private http: HttpClient) {}
 

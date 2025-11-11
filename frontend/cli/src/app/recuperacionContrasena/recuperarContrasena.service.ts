@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { HttpClient } from "@angular/common/http";
 import { Observable } from "rxjs";
+import { environment } from '../../environments/environment';
 
 // Estructura de respuesta estándar
 export interface DataPackage<T = any> {
@@ -11,7 +12,9 @@ export interface DataPackage<T = any> {
 
 @Injectable({ providedIn: "root" })
 export class RecuperarContrasenaService {
-  private base = "rest/api/auth";
+  private base = environment.production 
+    ? `${environment.apiUrl}/api/auth`
+    : "rest/api/auth";
   constructor(private http: HttpClient) {}
 
   /**

@@ -5,12 +5,13 @@ import { Paciente } from "./paciente";
 import { PreferenciaHoraria } from "./preferencia-horaria";
 import { DataPackage } from "../data.package";
 import { ResultsPage } from "../results-page";
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: "root",
 })
 export class PacienteService {
-  private url = "rest/pacientes";
+  private url = environment.production ? `${environment.apiUrl}/pacientes` : "rest/pacientes";
 
   constructor(private http: HttpClient) {}
 

@@ -1,15 +1,19 @@
 // src/app/play-type/play-type.service.ts
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
-import { Especialidad } from './especialidad';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
+import { Especialidad } from './especialidad';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EspecialidadService {
-  private url = 'rest/especialidades';
+  private url = environment.production 
+    ? `${environment.apiUrl}/especialidades`
+    : 'rest/especialidades';
 
   constructor(private http: HttpClient) { }
 

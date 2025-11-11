@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
 import { ListaEspera } from './lista-espera.model';
 
@@ -8,7 +9,9 @@ import { ListaEspera } from './lista-espera.model';
   providedIn: 'root'
 })
 export class ListaEsperaService {
-  private url = 'rest/lista-espera';
+  private url = environment.production 
+    ? `${environment.apiUrl}/lista-espera`
+    : 'rest/lista-espera';
 
   constructor(private http: HttpClient) { }
 
