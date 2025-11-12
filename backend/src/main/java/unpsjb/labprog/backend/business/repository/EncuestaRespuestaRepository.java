@@ -19,65 +19,210 @@ public interface EncuestaRespuestaRepository extends JpaRepository<EncuestaRespu
 	 */
 	boolean existsByTurno_Id(Integer turnoId);
 
+	// ========== QUERIES PARA PROMEDIOS - CON RANGO DE FECHAS ==========
+
 	/**
-	 * Promedio de valores numéricos para tipos de pregunta (CSAT, NPS, RATING_*)
-	 * Usa COALESCE para manejar fechas null de forma segura
+	 * Promedio con rango de fechas COMPLETO
 	 */
 	@Query("SELECT AVG(CAST(er.valorNumerico AS double)) FROM EncuestaRespuesta er " +
 			"JOIN er.pregunta p " +
 			"WHERE p.tipo IN :tipos " +
 			"AND er.valorNumerico IS NOT NULL " +
-			"AND (:desde IS NULL OR er.fechaCreacion >= :desde) " +
-			"AND (:hasta IS NULL OR er.fechaCreacion <= :hasta)")
-	Double averageValorNumericoByTipoInAndFechaBetween(
+			"AND er.fechaCreacion >= :desde " +
+			"AND er.fechaCreacion <= :hasta")
+	Double averageValorNumericoByTipoInAndFechasBetween(
 			@Param("tipos") List<TipoPregunta> tipos,
 			@Param("desde") LocalDateTime desde,
 			@Param("hasta") LocalDateTime hasta);
 
 	/**
-	 * Conteo de respuestas de texto libre (comentarios no nulos)
+	 * Promedio sin filtro de fechas (todos los registros)
+	 */
+	@Query("SELECT AVG(CAST(er.valorNumerico AS double)) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo IN :tipos " +
+			"AND er.valorNumerico IS NOT NULL")
+	Double averageValorNumericoByTipoIn(@Param("tipos") List<TipoPregunta> tipos);
+
+	/**
+	 * Promedio con fecha DESDE solamente
+	 */
+	@Query("SELECT AVG(CAST(er.valorNumerico AS double)) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo IN :tipos " +
+			"AND er.valorNumerico IS NOT NULL " +
+			"AND er.fechaCreacion >= :desde")
+	Double averageValorNumericoByTipoInAndFechaDesde(
+			@Param("tipos") List<TipoPregunta> tipos,
+			@Param("desde") LocalDateTime desde);
+
+	/**
+	 * Promedio con fecha HASTA solamente
+	 */
+	@Query("SELECT AVG(CAST(er.valorNumerico AS double)) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo IN :tipos " +
+			"AND er.valorNumerico IS NOT NULL " +
+			"AND er.fechaCreacion <= :hasta")
+	Double averageValorNumericoByTipoInAndFechaHasta(
+			@Param("tipos") List<TipoPregunta> tipos,
+			@Param("hasta") LocalDateTime hasta);
+
+	// ========== QUERIES PARA CONTAR TEXTO LIBRE ==========
+
+	/**
+	 * Conteo de texto libre con rango completo
 	 */
 	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
 			"JOIN er.pregunta p " +
 			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
 			"AND er.valorTexto IS NOT NULL " +
 			"AND TRIM(er.valorTexto) <> '' " +
-			"AND (:desde IS NULL OR er.fechaCreacion >= :desde) " +
-			"AND (:hasta IS NULL OR er.fechaCreacion <= :hasta)")
-	Long countTextoLibreByFechaBetween(
+			"AND er.fechaCreacion >= :desde " +
+			"AND er.fechaCreacion <= :hasta")
+	Long countTextoLibreByFechasBetween(
 			@Param("desde") LocalDateTime desde,
 			@Param("hasta") LocalDateTime hasta);
 
 	/**
-	 * Conteo de respuestas numéricas por debajo o igual a un umbral (p.ej. CSAT <=
-	 * 2)
+	 * Conteo de texto libre sin filtro de fechas
+	 */
+	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
+			"AND er.valorTexto IS NOT NULL " +
+			"AND TRIM(er.valorTexto) <> ''")
+	Long countTextoLibre();
+
+	/**
+	 * Conteo de texto libre desde fecha
+	 */
+	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
+			"AND er.valorTexto IS NOT NULL " +
+			"AND TRIM(er.valorTexto) <> '' " +
+			"AND er.fechaCreacion >= :desde")
+	Long countTextoLibreByFechaDesde(@Param("desde") LocalDateTime desde);
+
+	/**
+	 * Conteo de texto libre hasta fecha
+	 */
+	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
+			"AND er.valorTexto IS NOT NULL " +
+			"AND TRIM(er.valorTexto) <> '' " +
+			"AND er.fechaCreacion <= :hasta")
+	Long countTextoLibreByFechaHasta(@Param("hasta") LocalDateTime hasta);
+
+	// ========== QUERIES PARA PUNTUACIONES BAJAS ==========
+
+	/**
+	 * Conteo de puntuaciones bajas con rango completo
 	 */
 	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
 			"JOIN er.pregunta p " +
 			"WHERE p.tipo IN :tiposNumericos " +
 			"AND er.valorNumerico IS NOT NULL " +
 			"AND er.valorNumerico <= :threshold " +
-			"AND (:desde IS NULL OR er.fechaCreacion >= :desde) " +
-			"AND (:hasta IS NULL OR er.fechaCreacion <= :hasta)")
-	Long countLowScoreByTiposAndFechaBetween(
+			"AND er.fechaCreacion >= :desde " +
+			"AND er.fechaCreacion <= :hasta")
+	Long countLowScoreByTiposAndFechasBetween(
 			@Param("tiposNumericos") List<TipoPregunta> tiposNumericos,
 			@Param("threshold") Integer threshold,
 			@Param("desde") LocalDateTime desde,
 			@Param("hasta") LocalDateTime hasta);
 
 	/**
-	 * Obtener comentarios de texto libre dentro de un rango
+	 * Conteo de puntuaciones bajas sin filtro de fechas
+	 */
+	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo IN :tiposNumericos " +
+			"AND er.valorNumerico IS NOT NULL " +
+			"AND er.valorNumerico <= :threshold")
+	Long countLowScoreByTipos(
+			@Param("tiposNumericos") List<TipoPregunta> tiposNumericos,
+			@Param("threshold") Integer threshold);
+
+	/**
+	 * Conteo de puntuaciones bajas desde fecha
+	 */
+	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo IN :tiposNumericos " +
+			"AND er.valorNumerico IS NOT NULL " +
+			"AND er.valorNumerico <= :threshold " +
+			"AND er.fechaCreacion >= :desde")
+	Long countLowScoreByTiposAndFechaDesde(
+			@Param("tiposNumericos") List<TipoPregunta> tiposNumericos,
+			@Param("threshold") Integer threshold,
+			@Param("desde") LocalDateTime desde);
+
+	/**
+	 * Conteo de puntuaciones bajas hasta fecha
+	 */
+	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo IN :tiposNumericos " +
+			"AND er.valorNumerico IS NOT NULL " +
+			"AND er.valorNumerico <= :threshold " +
+			"AND er.fechaCreacion <= :hasta")
+	Long countLowScoreByTiposAndFechaHasta(
+			@Param("tiposNumericos") List<TipoPregunta> tiposNumericos,
+			@Param("threshold") Integer threshold,
+			@Param("hasta") LocalDateTime hasta);
+
+	// ========== QUERIES PARA COMENTARIOS ==========
+
+	/**
+	 * Obtener comentarios con rango completo
 	 */
 	@Query("SELECT er.valorTexto FROM EncuestaRespuesta er " +
 			"JOIN er.pregunta p " +
 			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
 			"AND er.valorTexto IS NOT NULL " +
 			"AND TRIM(er.valorTexto) <> '' " +
-			"AND (:desde IS NULL OR er.fechaCreacion >= :desde) " +
-			"AND (:hasta IS NULL OR er.fechaCreacion <= :hasta) " +
+			"AND er.fechaCreacion >= :desde " +
+			"AND er.fechaCreacion <= :hasta " +
 			"ORDER BY er.fechaCreacion DESC")
-	List<String> findComentariosByFechaBetween(
+	List<String> findComentariosByFechasBetween(
 			@Param("desde") LocalDateTime desde,
 			@Param("hasta") LocalDateTime hasta);
 
+	/**
+	 * Obtener comentarios sin filtro de fechas
+	 */
+	@Query("SELECT er.valorTexto FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
+			"AND er.valorTexto IS NOT NULL " +
+			"AND TRIM(er.valorTexto) <> '' " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<String> findComentarios();
+
+	/**
+	 * Obtener comentarios desde fecha
+	 */
+	@Query("SELECT er.valorTexto FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
+			"AND er.valorTexto IS NOT NULL " +
+			"AND TRIM(er.valorTexto) <> '' " +
+			"AND er.fechaCreacion >= :desde " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<String> findComentariosByFechaDesde(@Param("desde") LocalDateTime desde);
+
+	/**
+	 * Obtener comentarios hasta fecha
+	 */
+	@Query("SELECT er.valorTexto FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
+			"AND er.valorTexto IS NOT NULL " +
+			"AND TRIM(er.valorTexto) <> '' " +
+			"AND er.fechaCreacion <= :hasta " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<String> findComentariosByFechaHasta(@Param("hasta") LocalDateTime hasta);
 }

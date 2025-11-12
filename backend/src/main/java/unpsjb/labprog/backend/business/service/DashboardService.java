@@ -346,20 +346,56 @@ public class DashboardService {
 
             System.out.println("   Tipos a consultar: " + tiposNumericos);
 
-            // Calcular satisfacción promedio
-            Double avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoInAndFechaBetween(
-                    tiposNumericos, desde, hasta);
+            // ===== CALCULAR SATISFACCIÓN PROMEDIO =====
+            Double avgSatisf = null;
+            if (desde != null && hasta != null) {
+                // Ambas fechas presentes
+                avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoInAndFechasBetween(
+                        tiposNumericos, desde, hasta);
+            } else if (desde != null) {
+                // Solo fecha desde
+                avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoInAndFechaDesde(
+                        tiposNumericos, desde);
+            } else if (hasta != null) {
+                // Solo fecha hasta
+                avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoInAndFechaHasta(
+                        tiposNumericos, hasta);
+            } else {
+                // Sin filtros de fecha
+                avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoIn(tiposNumericos);
+            }
 
             System.out.println("   ✅ Satisfacción promedio: " + avgSatisf);
             dto.setSatisfaccionPromedio(avgSatisf != null ? avgSatisf : 0.0);
 
-            // Contar comentarios de texto libre
-            Long countTexto = encuestaRespuestaRepository.countTextoLibreByFechaBetween(desde, hasta);
+            // ===== CONTAR COMENTARIOS DE TEXTO LIBRE =====
+            Long countTexto = null;
+            if (desde != null && hasta != null) {
+                countTexto = encuestaRespuestaRepository.countTextoLibreByFechasBetween(desde, hasta);
+            } else if (desde != null) {
+                countTexto = encuestaRespuestaRepository.countTextoLibreByFechaDesde(desde);
+            } else if (hasta != null) {
+                countTexto = encuestaRespuestaRepository.countTextoLibreByFechaHasta(hasta);
+            } else {
+                countTexto = encuestaRespuestaRepository.countTextoLibre();
+            }
             System.out.println("   ✅ Comentarios de texto: " + countTexto);
 
-            // Contar respuestas con puntuación baja (quejas potenciales)
-            Long countLow = encuestaRespuestaRepository.countLowScoreByTiposAndFechaBetween(
-                    Arrays.asList(TipoPregunta.CSAT), 2, desde, hasta);
+            // ===== CONTAR PUNTUACIONES BAJAS (QUEJAS) =====
+            Long countLow = null;
+            if (desde != null && hasta != null) {
+                countLow = encuestaRespuestaRepository.countLowScoreByTiposAndFechasBetween(
+                        Arrays.asList(TipoPregunta.CSAT), 2, desde, hasta);
+            } else if (desde != null) {
+                countLow = encuestaRespuestaRepository.countLowScoreByTiposAndFechaDesde(
+                        Arrays.asList(TipoPregunta.CSAT), 2, desde);
+            } else if (hasta != null) {
+                countLow = encuestaRespuestaRepository.countLowScoreByTiposAndFechaHasta(
+                        Arrays.asList(TipoPregunta.CSAT), 2, hasta);
+            } else {
+                countLow = encuestaRespuestaRepository.countLowScoreByTipos(
+                        Arrays.asList(TipoPregunta.CSAT), 2);
+            }
             System.out.println("   ✅ Puntuaciones bajas (<=2): " + countLow);
 
             long totalQuejas = (countTexto != null ? countTexto : 0L) + (countLow != null ? countLow : 0L);
@@ -369,9 +405,8 @@ public class DashboardService {
 
         } catch (Exception ex) {
             System.err.println("❌ Error al calcular métricas de encuestas: " + ex.getMessage());
-            ex.printStackTrace(); // IMPORTANTE: Ver stack trace completo
+            ex.printStackTrace();
 
-            // Valores por defecto en caso de error
             dto.setSatisfaccionPromedio(0.0);
             dto.setConteoQuejas(0L);
         }
@@ -409,6 +444,16 @@ public class DashboardService {
             if (filtros.getFechaHasta() != null)
                 hasta = filtros.getFechaHasta().atTime(23, 59, 59);
         }
-        return encuestaRespuestaRepository.findComentariosByFechaBetween(desde, hasta);
+
+        // Seleccionar query según filtros
+        if (desde != null && hasta != null) {
+            return encuestaRespuestaRepository.findComentariosByFechasBetween(desde, hasta);
+        } else if (desde != null) {
+            return encuestaRespuestaRepository.findComentariosByFechaDesde(desde);
+        } else if (hasta != null) {
+            return encuestaRespuestaRepository.findComentariosByFechaHasta(hasta);
+        } else {
+            return encuestaRespuestaRepository.findComentarios();
+        }
     }
 }
