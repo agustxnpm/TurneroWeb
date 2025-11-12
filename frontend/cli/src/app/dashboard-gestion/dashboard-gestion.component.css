@@ -51,6 +51,44 @@
 }
 
 /* ================================================
+   SECCIÓN 2.5: BOTONES DE EXPORTACIÓN
+   ================================================ */
+
+.export-buttons-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.export-buttons {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.export-buttons .btn {
+  flex-shrink: 0;
+}
+
+/* Responsive: En dispositivos móviles, botones en fila completa */
+@media (max-width: 768px) {
+  .export-buttons-container {
+    justify-content: stretch;
+  }
+
+  .export-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .export-buttons .btn {
+    width: 100%;
+  }
+}
+
+/* ================================================
    SECCIÓN 3: LOADING STATE
    ================================================ */
 

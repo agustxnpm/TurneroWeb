@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../services/dashboard.service';
 import { CentroAtencionService } from '../centrosAtencion/centroAtencion.service';
+import { ExportService } from '../services/export.service';
 import { CentroAtencion } from '../centrosAtencion/centroAtencion';
 import { OcupacionConsultorio } from './ocupacion-consultorio';
 import { KpiCardComponent } from '../components/kpi-card/kpi-card.component';
@@ -30,6 +31,7 @@ export class DashboardGestionComponent implements OnInit {
   constructor(
     private dashboardService: DashboardService,
     private centroAtencionService: CentroAtencionService,
+    private exportService: ExportService,
     private modalService: ModalService
   ) { }
 
@@ -111,5 +113,78 @@ export class DashboardGestionComponent implements OnInit {
         this.ocupacionEntries = this.ocupacion.ocupacionDetallada || [];
       }, error: () => { }
     });
+  }
+
+  /**
+   * Exportar datos a CSV
+   * Construye el filtro basado en los filtros actuales y llama al servicio
+   */
+  exportarCSV() {
+    if (this.loading) return;
+
+    this.loading = true;
+
+    // Obtener los filtros actuales desde el último estado de filtros aplicados
+    const filtros = this.construirFiltroExportacion();
+
+    this.exportService.exportarTurnosCSV(filtros).subscribe({
+      next: (response) => {
+        const content = response.body || '';
+        const filename = `turnos_${new Date().toISOString().split('T')[0]}.csv`;
+        this.exportService.descargarCSV(content, filename);
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al exportar CSV:', error);
+        alert('Error al exportar CSV. Por favor intente de nuevo.');
+        this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * Exportar datos a PDF
+   * Construye el filtro basado en los filtros actuales y llama al servicio
+   */
+  exportarPDF() {
+    if (this.loading) return;
+
+    this.loading = true;
+
+    // Obtener los filtros actuales desde el último estado de filtros aplicados
+    const filtros = this.construirFiltroExportacion();
+
+    this.exportService.exportarTurnosPDF(filtros).subscribe({
+      next: async (response) => {
+        const htmlContent = response.body || '';
+        try {
+          const filename = `turnos_${new Date().toISOString().split('T')[0]}.pdf`;
+          await this.exportService.descargarPDF(htmlContent, filename);
+        } catch (error) {
+          console.error('Error al generar PDF:', error);
+          alert('Error al generar PDF. Por favor intente de nuevo.');
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al exportar PDF:', error);
+        alert('Error al exportar PDF. Por favor intente de nuevo.');
+        this.loading = false;
+      }
+    });
+  }
+
+  /**
+   * Construye el objeto de filtro para exportación
+   * Toma los valores actuales del dashboard
+   */
+  private construirFiltroExportacion(): any {
+    return {
+      // Los filtros se enviarán tal como estén en el estado actual del dashboard
+      // Si no hay filtros específicos, el backend retornará todos los datos
+      fechaDesde: null,
+      fechaHasta: null,
+      centroId: null
+    };
   }
 }

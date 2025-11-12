@@ -12,6 +12,19 @@
       <app-filtros-dashboard [centrosAtencion]="centrosAtencion" (aplicar)="onAplicarFiltros($event)">
       </app-filtros-dashboard>
 
+      <!-- Botones de Exportación -->
+      <div class="export-buttons-container mb-lg">
+        <div class="export-buttons">
+          <button class="btn btn-primary" (click)="exportarCSV()" [disabled]="loading">
+            <span class="material-symbols-outlined">download</span>
+            <span>Exportar CSV</span>
+          </button>
+          <button class="btn btn-secondary" (click)="exportarPDF()" [disabled]="loading">
+            <span class="material-symbols-outlined">picture_as_pdf</span>
+            <span>Exportar PDF</span>
+          </button>
+        </div>
+      </div>
 
       <!-- Loading state -->
       <div *ngIf="loading" class="loading-state">

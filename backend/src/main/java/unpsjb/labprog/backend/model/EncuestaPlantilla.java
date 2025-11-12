@@ -28,9 +28,7 @@ public class EncuestaPlantilla {
     private String nombre;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "plantilla_pregunta",
-        joinColumns = @JoinColumn(name = "plantilla_id"),
-        inverseJoinColumns = @JoinColumn(name = "pregunta_id"))
+    @JoinTable(name = "plantilla_pregunta", joinColumns = @JoinColumn(name = "plantilla_id"), inverseJoinColumns = @JoinColumn(name = "pregunta_id"))
     private Set<Pregunta> preguntas;
 
     // Opcional: se puede asignar a centro y/o especialidad
