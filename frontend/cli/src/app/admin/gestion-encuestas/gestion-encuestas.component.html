@@ -168,7 +168,7 @@
         <div class="assign-actions">
           <h5 class="mb-3">🔗 Asignar Plantilla Seleccionada</h5>
 
-          <div class="mb-3">
+          <div class="mb-4">
             <label class="form-label"><strong>Plantilla a configurar:</strong></label>
             <select [(ngModel)]="selectedPlantillaId" class="form-select">
               <option [ngValue]="null">-- Seleccionar plantilla --</option>
@@ -178,29 +178,51 @@
                 <span *ngIf="pl.especialidad"> - Esp: {{ pl.especialidad.nombre }}</span>
               </option>
             </select>
+
+            <!-- Mostrar asignaciones actuales -->
+            <div *ngIf="selectedPlantillaId" class="mt-2">
+              <small class="text-muted d-block">
+                <strong>Asignaciones actuales:</strong>
+              </small>
+              <div *ngIf="getPlantillaSeleccionada() as plantilla">
+                <span *ngIf="plantilla.centroAtencion" class="badge bg-info me-1">
+                  🏥 {{ plantilla.centroAtencion.nombre }}
+                </span>
+                <span *ngIf="plantilla.especialidad" class="badge bg-info me-1">
+                  🩺 {{ plantilla.especialidad.nombre }}
+                </span>
+                <span *ngIf="!plantilla.centroAtencion && !plantilla.especialidad" class="text-muted">
+                  Sin asignaciones
+                </span>
+              </div>
+            </div>
           </div>
 
           <!-- ASIGNAR CENTRO DE ATENCIÓN -->
           <div class="mb-3 assignment-box">
-            <label class="form-label"><strong>🏥 Centro de Atención:</strong></label>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label mb-0"><strong>🏥 Centro de Atención:</strong></label>
+              <button *ngIf="getPlantillaSeleccionada()?.centroAtencion" class="btn btn-sm btn-outline-danger"
+                (click)="desasignarCentro()" title="Quitar centro asignado">
+                🗑️ Quitar
+              </button>
+            </div>
 
             <!-- Campo de búsqueda -->
             <input type="text" class="form-control mb-2" [(ngModel)]="searchCentro"
               placeholder="🔍 Buscar centro por nombre..." (ngModelChange)="onSearchCentro($event)" />
-            <!-- Cambiado: agrega ngModelChange, remueve (input) -->
 
             <!-- Centro seleccionado -->
             <div *ngIf="selectedCentro" class="alert alert-success py-2 mb-2">
-              <!-- Este div se muestra, pero estaba vacío -->
-              ✅ Seleccionado: <strong>{{ selectedCentro.nombre }}</strong> <!-- Agrega esto: el binding del nombre -->
+              ✅ Seleccionado: <strong>{{ selectedCentro.nombre }}</strong>
               <button class="btn btn-sm btn-outline-secondary float-end py-0" (click)="selectedCentro = null">✖</button>
             </div>
+
             <!-- Lista de centros filtrados -->
             <div *ngIf="!selectedCentro && (searchCentro || centrosFiltrados.length > 0)"
               class="list-group max-height-200 mb-2">
               <button *ngFor="let centro of centrosFiltrados.slice(0, 5)" type="button"
                 class="list-group-item list-group-item-action" (click)="seleccionarCentro(centro)">
-                <!-- Cambiado: pasa 'centro' entero, no 'centro.id' -->
                 <strong>{{ centro.nombre }}</strong>
                 <br>
                 <small class="text-muted">{{ centro.direccion || 'Sin dirección' }}</small>
@@ -208,27 +230,39 @@
               <div *ngIf="centrosFiltrados.length === 0 && searchCentro" class="list-group-item text-muted">
                 No se encontraron centros con "{{ searchCentro }}"
               </div>
+              <div *ngIf="centrosFiltrados.length > 5" class="list-group-item text-muted text-center">
+                ... y {{ centrosFiltrados.length - 5 }} más (sigue escribiendo)
+              </div>
             </div>
 
-            <button class="btn btn-secondary w-100" (click)="asignarCentro()"
+            <button class="btn btn-success w-100" (click)="asignarCentro()"
               [disabled]="!selectedPlantillaId || !selectedCentro">
-              ✅ Asignar Centro Seleccionado
+              <span *ngIf="!selectedCentro">🔍 Busca y selecciona un centro</span>
+              <span *ngIf="selectedCentro">✅ Asignar "{{ selectedCentro.nombre }}"</span>
             </button>
           </div>
 
+          <hr class="my-3">
+
           <!-- ASIGNAR ESPECIALIDAD -->
           <div class="mb-3 assignment-box">
-            <label class="form-label"><strong>🩺 Especialidad:</strong></label>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label mb-0"><strong>🩺 Especialidad:</strong></label>
+              <button *ngIf="getPlantillaSeleccionada()?.especialidad" class="btn btn-sm btn-outline-danger"
+                (click)="desasignarEspecialidad()" title="Quitar especialidad asignada">
+                🗑️ Quitar
+              </button>
+            </div>
 
             <!-- Campo de búsqueda -->
             <input type="text" class="form-control mb-2" [(ngModel)]="searchEspecialidad"
               placeholder="🔍 Buscar especialidad por nombre..." (ngModelChange)="onSearchEspecialidad($event)" />
 
             <!-- Especialidad seleccionada -->
-            <div *ngIf="selectedEspecialidad" class="alert alert-success py-2 mb-2"> <!-- Cambiado -->
-              ✅ Seleccionado: <strong>{{ selectedEspecialidad.nombre }}</strong> <!-- Cambiado -->
+            <div *ngIf="selectedEspecialidad" class="alert alert-success py-2 mb-2">
+              ✅ Seleccionado: <strong>{{ selectedEspecialidad.nombre }}</strong>
               <button class="btn btn-sm btn-outline-secondary float-end py-0"
-                (click)="selectedEspecialidad = null">✖</button> <!-- Cambiado -->
+                (click)="selectedEspecialidad = null">✖</button>
             </div>
 
             <!-- Lista de especialidades filtradas -->
@@ -236,27 +270,37 @@
               class="list-group max-height-200 mb-2">
               <button *ngFor="let esp of especialidadesFiltradas.slice(0, 5)" type="button"
                 class="list-group-item list-group-item-action" (click)="seleccionarEspecialidad(esp)">
-                <!-- Cambiado: pasa esp entero -->
                 <strong>{{ esp.nombre }}</strong>
               </button>
-              <div *ngIf="especialidadesFiltradas.length === 0" class="list-group-item text-muted">
-                No se encontraron especialidades
+              <div *ngIf="especialidadesFiltradas.length === 0 && searchEspecialidad"
+                class="list-group-item text-muted">
+                No se encontraron especialidades con "{{ searchEspecialidad }}"
               </div>
               <div *ngIf="especialidadesFiltradas.length > 5" class="list-group-item text-muted text-center">
-                ... y {{ especialidadesFiltradas.length - 5 }} más (sigue escribiendo para filtrar)
+                ... y {{ especialidadesFiltradas.length - 5 }} más (sigue escribiendo)
               </div>
             </div>
 
-            <button class="btn btn-secondary w-100" (click)="asignarEspecialidad()"
+            <button class="btn btn-success w-100" (click)="asignarEspecialidad()"
               [disabled]="!selectedPlantillaId || !selectedEspecialidad">
-              ✅ Asignar Especialidad Seleccionada
+              <span *ngIf="!selectedEspecialidad">🔍 Busca y selecciona una especialidad</span>
+              <span *ngIf="selectedEspecialidad">✅ Asignar "{{ selectedEspecialidad.nombre }}"</span>
             </button>
           </div>
 
-          <!-- DESASIGNAR -->
-          <button class="btn btn-warning w-100" (click)="desasignarPlantilla()" [disabled]="!selectedPlantillaId">
-            🔓 Desasignar Centro y Especialidad
-          </button>
+          <!-- BOTÓN DE DESASIGNAR TODO (Movido a un lugar más visible pero separado) -->
+          <div *ngIf="getPlantillaSeleccionada()?.centroAtencion || getPlantillaSeleccionada()?.especialidad"
+            class="mt-4">
+            <hr>
+            <div class="alert alert-warning">
+              <h6 class="alert-heading">⚠️ Desasignar todo</h6>
+              <p class="mb-2">Esta acción removerá TODAS las asignaciones (centro y especialidad) de la plantilla.</p>
+              <button class="btn btn-warning w-100" (click)="desasignarPlantillaCompleta()"
+                [disabled]="!selectedPlantillaId">
+                🔓 Desasignar Centro y Especialidad
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

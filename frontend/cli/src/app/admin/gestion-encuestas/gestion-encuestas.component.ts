@@ -128,53 +128,6 @@ export class GestionEncuestasComponent implements OnInit {
     });
   }
 
-  // cargarCatalogos() {
-  //   // Cargar centros de atención
-  //   this.adminService.listarCentrosAtencion().subscribe({
-  //     next: (res) => {
-  //       this.centrosAtencion = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
-  //       console.log('🏥 Centros de atención cargados:', this.centrosAtencion);
-  //     },
-  //     error: (err) => {
-  //       console.error('❌ Error cargando centros:', err);
-  //       this.centrosAtencion = [];
-  //     }
-  //   });
-
-  //   // Cargar especialidades
-  //   this.adminService.listarEspecialidades().subscribe({
-  //     next: (res) => {
-  //       this.especialidades = (res && res.data) ? res.data : (Array.isArray(res) ? res : []);
-  //       console.log('🩺 Especialidades cargadas:', this.especialidades);
-  //     },
-  //     error: (err) => {
-  //       console.error('❌ Error cargando especialidades:', err);
-  //       this.especialidades = [];
-  //     }
-  //   });
-  // }
-
-  // // Filtrado de centros y especialidades
-  // get centrosFiltrados() {
-  //   if (!this.searchCentro.trim()) {
-  //     return this.centrosAtencion;
-  //   }
-  //   const search = this.searchCentro.toLowerCase();
-  //   return this.centrosAtencion.filter(c =>
-  //     c.nombre?.toLowerCase().includes(search) ||
-  //     c.direccion?.toLowerCase().includes(search)
-  //   );
-  // }
-
-  // get especialidadesFiltradas() {
-  //   if (!this.searchEspecialidad.trim()) {
-  //     return this.especialidades;
-  //   }
-  //   const search = this.searchEspecialidad.toLowerCase();
-  //   return this.especialidades.filter(e =>
-  //     e.nombre?.toLowerCase().includes(search)
-  //   );
-  // }
 
   // === PREGUNTA CRUD ===
 
@@ -429,17 +382,6 @@ export class GestionEncuestasComponent implements OnInit {
       error: () => alert('❌ Error al desasignar')
     });
   }
-
-  // getCentroNombre(centroId: number): string {
-  //   const centro = this.centrosAtencion.find(c => c.id === centroId);
-  //   return centro ? centro.nombre : `Centro ${centroId}`;
-  // }
-
-  // getEspecialidadNombre(espId: number): string {
-  //   const esp = this.especialidades.find(e => e.id === espId);
-  //   return esp ? esp.nombre : `Especialidad ${espId}`;
-  // }
-
   // === PREVIEW ===
 
   abrirPreview(pl: any) {
@@ -471,5 +413,88 @@ export class GestionEncuestasComponent implements OnInit {
   getTipoLabel(tipo: string): string {
     const tipoObj = this.tiposDisponibles.find(t => t.value === tipo);
     return tipoObj ? tipoObj.label : tipo;
+  }
+
+
+  // Método auxiliar para obtener la plantilla seleccionada
+  getPlantillaSeleccionada(): any {
+    if (!this.selectedPlantillaId) return null;
+    return this.plantillas.find(p => p.id === this.selectedPlantillaId);
+  }
+
+  // Desasignar solo el centro
+  desasignarCentro() {
+    if (!this.selectedPlantillaId) {
+      alert('⚠️ Seleccione una plantilla primero');
+      return;
+    }
+
+    if (!confirm('¿Está seguro de quitar el centro de atención de esta plantilla?')) {
+      return;
+    }
+
+    const plantilla = this.getPlantillaSeleccionada();
+    if (!plantilla?.centroAtencion) {
+      alert('⚠️ Esta plantilla no tiene un centro asignado');
+      return;
+    }
+
+    // Llamar al backend para desasignar solo el centro
+    // Por ahora usamos el método general, pero podrías crear uno específico
+    this.adminService.desasignarPlantilla(this.selectedPlantillaId).subscribe({
+      next: () => {
+        alert('✅ Centro desasignado exitosamente');
+        this.reload();
+      },
+      error: () => alert('❌ Error al desasignar centro')
+    });
+  }
+
+  // Desasignar solo la especialidad
+  desasignarEspecialidad() {
+    if (!this.selectedPlantillaId) {
+      alert('⚠️ Seleccione una plantilla primero');
+      return;
+    }
+
+    if (!confirm('¿Está seguro de quitar la especialidad de esta plantilla?')) {
+      return;
+    }
+
+    const plantilla = this.getPlantillaSeleccionada();
+    if (!plantilla?.especialidad) {
+      alert('⚠️ Esta plantilla no tiene una especialidad asignada');
+      return;
+    }
+
+    this.adminService.desasignarPlantilla(this.selectedPlantillaId).subscribe({
+      next: () => {
+        alert('✅ Especialidad desasignada exitosamente');
+        this.reload();
+      },
+      error: () => alert('❌ Error al desasignar especialidad')
+    });
+  }
+
+  // Desasignar todo (el método anterior renombrado)
+  desasignarPlantillaCompleta() {
+    if (!this.selectedPlantillaId) {
+      alert('⚠️ Seleccione una plantilla');
+      return;
+    }
+
+    if (!confirm('¿Está seguro de desasignar TODAS las asignaciones (centro y especialidad) de esta plantilla?')) {
+      return;
+    }
+
+    this.adminService.desasignarPlantilla(this.selectedPlantillaId).subscribe({
+      next: () => {
+        alert('✅ Plantilla desasignada completamente');
+        this.selectedCentro = null;
+        this.selectedEspecialidad = null;
+        this.reload();
+      },
+      error: () => alert('❌ Error al desasignar')
+    });
   }
 }
