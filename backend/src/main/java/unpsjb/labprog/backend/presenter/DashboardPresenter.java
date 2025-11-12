@@ -64,4 +64,60 @@ public class DashboardPresenter {
         }
     }
 
+    @GetMapping("/metricas-calidad")
+    public ResponseEntity<Object> getMetricasCalidad(
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
+            @RequestParam(required = false) Integer centroId,
+            @RequestParam(required = false) Integer consultorioId,
+            @RequestParam(required = false) Integer staffMedicoId,
+            @RequestParam(required = false) Integer especialidadId) {
+        try {
+            FiltrosDashboardDTO filtros = new FiltrosDashboardDTO();
+            filtros.setFechaDesde(fechaDesde != null && !fechaDesde.isEmpty() ? LocalDate.parse(fechaDesde) : null);
+            filtros.setFechaHasta(fechaHasta != null && !fechaHasta.isEmpty() ? LocalDate.parse(fechaHasta) : null);
+            filtros.setCentroId(centroId);
+            filtros.setConsultorioId(consultorioId);
+            filtros.setStaffMedicoId(staffMedicoId);
+            filtros.setEspecialidadId(especialidadId);
+
+            var metrics = dashboardService.getMetricasCalidad(filtros);
+            return Response.ok(metrics, "Métricas de calidad calculadas correctamente");
+        } catch (Exception e) {
+            return Response.error(null, "Error al calcular métricas de calidad: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/metricas-predictivas")
+    public ResponseEntity<Object> getMetricasPredictivas(
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta) {
+        try {
+            FiltrosDashboardDTO filtros = new FiltrosDashboardDTO();
+            filtros.setFechaDesde(fechaDesde != null && !fechaDesde.isEmpty() ? LocalDate.parse(fechaDesde) : null);
+            filtros.setFechaHasta(fechaHasta != null && !fechaHasta.isEmpty() ? LocalDate.parse(fechaHasta) : null);
+
+            var metrics = dashboardService.getMetricasPredictivas(filtros);
+            return Response.ok(metrics, "Métricas predictivas calculadas correctamente");
+        } catch (Exception e) {
+            return Response.error(null, "Error al calcular métricas predictivas: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/detalle/comentarios")
+    public ResponseEntity<Object> getDetalleComentarios(
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta) {
+        try {
+            FiltrosDashboardDTO filtros = new FiltrosDashboardDTO();
+            filtros.setFechaDesde(fechaDesde != null && !fechaDesde.isEmpty() ? LocalDate.parse(fechaDesde) : null);
+            filtros.setFechaHasta(fechaHasta != null && !fechaHasta.isEmpty() ? LocalDate.parse(fechaHasta) : null);
+
+            var comentarios = dashboardService.getComentarios(filtros);
+            return Response.ok(comentarios, "Comentarios obtenidos correctamente");
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener comentarios: " + e.getMessage());
+        }
+    }
+
 }

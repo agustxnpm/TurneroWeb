@@ -2,6 +2,9 @@ import { Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { Router } from "@angular/router";
 import { AuthService } from "../inicio-sesion/auth.service";
+import { DashboardService } from "../services/dashboard.service";
+import { ModalService } from "../modal/modal.service";
+import { ComentariosModalComponent } from "../modal/comentarios-modal.component";
 
 @Component({
   selector: "app-admin-dashboard",
@@ -15,11 +18,42 @@ export class AdminDashboardComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private dashboardService: DashboardService,
+    private modalService: ModalService
   ) { }
 
   ngOnInit() {
     this.generateParticles();
+    this.loadMetricasCalidad();
+  }
+
+  // ==== Calidad =====
+  calidad: any = null;
+
+  openComentariosModal() {
+    const filtros = { fechaDesde: undefined, fechaHasta: undefined };
+    this.dashboardService.getComentarios(filtros).subscribe({
+      next: (resp) => {
+        const comentarios = resp.data || [];
+        this.modalService.open(ComentariosModalComponent, { size: 'lg' }).componentInstance.comentarios = comentarios;
+      },
+      error: (err) => {
+        console.error('Error cargando comentarios', err);
+      }
+    });
+  }
+
+  loadMetricasCalidad() {
+    const filtros = { fechaDesde: undefined, fechaHasta: undefined };
+    this.dashboardService.getMetricasCalidad(filtros).subscribe({
+      next: (resp) => {
+        this.calidad = resp.data;
+      },
+      error: (err) => {
+        console.error('Error cargando métricas de calidad', err);
+      }
+    });
   }
 
   generateParticles() {

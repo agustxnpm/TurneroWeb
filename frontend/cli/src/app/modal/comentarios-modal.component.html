@@ -1,0 +1,18 @@
+<div class="comentarios-modal">
+  <div class="modal-header">
+    <h4 class="modal-title">{{ title }}</h4>
+    <button type="button" class="btn-close" aria-label="Close" (click)="close()"></button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="!comentarios || comentarios.length === 0" class="empty">
+      No hay comentarios disponibles para el período seleccionado.
+    </div>
+
+    <ul class="comentarios-list" *ngIf="comentarios && comentarios.length > 0">
+      <li *ngFor="let c of comentarios">{{ c }}</li>
+    </ul>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="close()">Cerrar</button>
+  </div>
+</div>

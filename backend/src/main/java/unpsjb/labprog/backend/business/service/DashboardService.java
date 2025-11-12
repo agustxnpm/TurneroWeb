@@ -1,9 +1,13 @@
 package unpsjb.labprog.backend.business.service;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,12 +18,17 @@ import org.springframework.stereotype.Service;
 
 import unpsjb.labprog.backend.business.repository.ConsultorioRepository;
 import unpsjb.labprog.backend.business.repository.TurnoRepository;
+import unpsjb.labprog.backend.business.repository.EncuestaRespuestaRepository;
+import unpsjb.labprog.backend.business.repository.AuditLogRepository;
+import unpsjb.labprog.backend.business.repository.ListaEsperaRepository;
 import unpsjb.labprog.backend.dto.FiltrosDashboardDTO;
 import unpsjb.labprog.backend.dto.MetricasDashboardDTO;
 import unpsjb.labprog.backend.dto.OcupacionConsultorioDTO;
+import unpsjb.labprog.backend.model.AuditLog;
 import unpsjb.labprog.backend.model.Consultorio;
 import unpsjb.labprog.backend.model.Turno;
 import unpsjb.labprog.backend.model.EstadoTurno;
+import unpsjb.labprog.backend.model.TipoPregunta;
 
 @Service
 public class DashboardService {
@@ -29,6 +38,15 @@ public class DashboardService {
 
     @Autowired
     private ConsultorioRepository consultorioRepository;
+
+    @Autowired
+    private EncuestaRespuestaRepository encuestaRespuestaRepository;
+
+    @Autowired
+    private AuditLogRepository auditLogRepository;
+
+    @Autowired
+    private ListaEsperaRepository listaEsperaRepository;
 
     /**
      * Calcula métricas básicas (conteos y tasas) aplicando filtros de fechas y
@@ -230,5 +248,167 @@ public class DashboardService {
         }
 
         return total;
+    }
+
+    /**
+     * Calcula métricas de calidad usando encuestas y auditoría
+     */
+    public MetricasDashboardDTO getMetricasCalidad(FiltrosDashboardDTO filtros) {
+        MetricasDashboardDTO dto = new MetricasDashboardDTO();
+
+        LocalDateTime desde = null;
+        LocalDateTime hasta = null;
+        if (filtros != null) {
+            if (filtros.getFechaDesde() != null) {
+                desde = filtros.getFechaDesde().atStartOfDay();
+            }
+            if (filtros.getFechaHasta() != null) {
+                hasta = filtros.getFechaHasta().atTime(23, 59, 59);
+            }
+        }
+
+        // Obtener logs de auditoría de turnos
+        List<AuditLog> logs;
+        if (desde == null && hasta == null) {
+            logs = auditLogRepository.findByEntityTypeOrderByPerformedAtDesc("TURNO");
+        } else {
+            logs = auditLogRepository.findByEntityTypeAndPerformedAtBetweenOrderByPerformedAtDesc("TURNO", desde,
+                    hasta);
+        }
+
+        // Agrupar por turno (entityId)
+        var byTurno = logs.stream().filter(l -> l.getEntityId() != null).collect(
+                Collectors.groupingBy(l -> l.getEntityId(), Collectors.toList()));
+
+        List<Long> asignacionDurations = new ArrayList<>();
+        List<Long> reagendamientoDurations = new ArrayList<>();
+
+        for (var entry : byTurno.entrySet()) {
+            List<AuditLog> lista = entry.getValue().stream()
+                    .sorted(Comparator.comparing(AuditLog::getPerformedAt))
+                    .collect(Collectors.toList());
+
+            // Buscar CREATE y ASSIGN
+            LocalDateTime createTime = null;
+            LocalDateTime assignTime = null;
+            for (var a : lista) {
+                if (AuditLog.Actions.CREATE.equals(a.getAction())) {
+                    if (createTime == null)
+                        createTime = a.getPerformedAt();
+                }
+                if (AuditLog.Actions.ASSIGN.equals(a.getAction())) {
+                    if (assignTime == null)
+                        assignTime = a.getPerformedAt();
+                }
+            }
+            if (createTime != null && assignTime != null && !assignTime.isBefore(createTime)) {
+                long mins = Duration.between(createTime, assignTime).toMinutes();
+                asignacionDurations.add(mins);
+            }
+
+            // Reagendamientos
+            for (int i = 0; i < lista.size(); i++) {
+                var a = lista.get(i);
+                if (AuditLog.Actions.RESCHEDULE.equals(a.getAction())) {
+                    if (i > 0) {
+                        var prev = lista.get(i - 1);
+                        long mins = Duration.between(prev.getPerformedAt(), a.getPerformedAt()).toMinutes();
+                        reagendamientoDurations.add(mins);
+                    }
+                }
+            }
+        }
+
+        double avgAsignacion = 0.0;
+        if (!asignacionDurations.isEmpty()) {
+            avgAsignacion = asignacionDurations.stream().mapToLong(Long::longValue).average().orElse(0.0);
+        }
+
+        double avgReagenda = 0.0;
+        if (!reagendamientoDurations.isEmpty()) {
+            avgReagenda = reagendamientoDurations.stream().mapToLong(Long::longValue).average().orElse(0.0);
+        }
+
+        dto.setTiempoPromedioSolicitudAsignacionMinutos(avgAsignacion);
+        dto.setTiempoPromedioReagendamientoMinutos(avgReagenda);
+
+        // ----- Satisfacción y quejas usando encuestas -----
+        System.out.println("📊 Calculando métricas de encuestas...");
+        System.out.println("   Rango de fechas: " + desde + " - " + hasta);
+
+        try {
+            // Tipos de preguntas numéricas para satisfacción
+            List<TipoPregunta> tiposNumericos = Arrays.asList(
+                    TipoPregunta.CSAT,
+                    TipoPregunta.NPS,
+                    TipoPregunta.RATING_TRATO,
+                    TipoPregunta.RATING_ESPERA);
+
+            System.out.println("   Tipos a consultar: " + tiposNumericos);
+
+            // Calcular satisfacción promedio
+            Double avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoInAndFechaBetween(
+                    tiposNumericos, desde, hasta);
+
+            System.out.println("   ✅ Satisfacción promedio: " + avgSatisf);
+            dto.setSatisfaccionPromedio(avgSatisf != null ? avgSatisf : 0.0);
+
+            // Contar comentarios de texto libre
+            Long countTexto = encuestaRespuestaRepository.countTextoLibreByFechaBetween(desde, hasta);
+            System.out.println("   ✅ Comentarios de texto: " + countTexto);
+
+            // Contar respuestas con puntuación baja (quejas potenciales)
+            Long countLow = encuestaRespuestaRepository.countLowScoreByTiposAndFechaBetween(
+                    Arrays.asList(TipoPregunta.CSAT), 2, desde, hasta);
+            System.out.println("   ✅ Puntuaciones bajas (<=2): " + countLow);
+
+            long totalQuejas = (countTexto != null ? countTexto : 0L) + (countLow != null ? countLow : 0L);
+            dto.setConteoQuejas(totalQuejas);
+
+            System.out.println("   ✅ Total quejas detectadas: " + totalQuejas);
+
+        } catch (Exception ex) {
+            System.err.println("❌ Error al calcular métricas de encuestas: " + ex.getMessage());
+            ex.printStackTrace(); // IMPORTANTE: Ver stack trace completo
+
+            // Valores por defecto en caso de error
+            dto.setSatisfaccionPromedio(0.0);
+            dto.setConteoQuejas(0L);
+        }
+
+        return dto;
+    }
+
+    /**
+     * Métricas predictivas: demanda insatisfecha por especialidad usando
+     * ListaEspera
+     */
+    public List<Map<String, Object>> getMetricasPredictivas(FiltrosDashboardDTO filtros) {
+        var stats = listaEsperaRepository.getEstadisticasPorEspecialidad();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Object[] row : stats) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("especialidad", row[0]);
+            m.put("pendientes", row[1]);
+            m.put("urgentes", row[2]);
+            m.put("avgDiasEspera", row[3]);
+            out.add(m);
+        }
+        return out;
+    }
+
+    /**
+     * Devuelve comentarios de encuestas (texto libre)
+     */
+    public List<String> getComentarios(FiltrosDashboardDTO filtros) {
+        LocalDateTime desde = null;
+        LocalDateTime hasta = null;
+        if (filtros != null) {
+            if (filtros.getFechaDesde() != null)
+                desde = filtros.getFechaDesde().atStartOfDay();
+            if (filtros.getFechaHasta() != null)
+                hasta = filtros.getFechaHasta().atTime(23, 59, 59);
+        }
+        return encuestaRespuestaRepository.findComentariosByFechaBetween(desde, hasta);
     }
 }

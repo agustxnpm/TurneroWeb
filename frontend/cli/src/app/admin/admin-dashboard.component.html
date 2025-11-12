@@ -122,4 +122,30 @@
       </div>
     </div>
   </section>
+
+  <!-- Sección Métricas de Calidad -->
+  <section class="calidad-section card">
+    <div class="section-header">
+      <h2><span class="material-symbols-outlined">thumb_up</span> Calidad y Satisfacción</h2>
+      <p class="section-description">KPIs de satisfacción y comentarios de pacientes</p>
+    </div>
+
+    <div class="calidad-grid">
+      <div class="card kpi-card">
+        <h3>CSAT / Satisfacción</h3>
+        <p class="kpi-value">{{ calidad?.satisfaccionPromedio ? (calidad.satisfaccionPromedio | number:'1.1-2') : 'N/A' }}</p>
+      </div>
+
+      <div class="card kpi-card">
+        <h3>Tiempo asignación (min)</h3>
+        <p class="kpi-value">{{ calidad?.tiempoPromedioSolicitudAsignacionMinutos ? (calidad.tiempoPromedioSolicitudAsignacionMinutos | number:'1.0-0') : 'N/A' }}</p>
+      </div>
+
+      <div class="card kpi-card clickable" role="button" (click)="openComentariosModal()">
+        <h3>Comentarios de Pacientes</h3>
+        <p class="kpi-value">{{ calidad?.conteoQuejas != null ? calidad.conteoQuejas : '0' }}</p>
+        <small>Haz click para ver detalles</small>
+      </div>
+    </div>
+  </section>
 </div>

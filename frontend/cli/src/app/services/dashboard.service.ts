@@ -41,4 +41,43 @@ export class DashboardService {
     }
     return this.http.get<DataPackage<any>>(`${this.base}/metricas-ocupacion`, { params: httpParams });
   }
+
+  getMetricasCalidad(params?: { fechaDesde?: string, fechaHasta?: string, centroId?: number, consultorioId?: number, staffMedicoId?: number, especialidadId?: number }): Observable<DataPackage<any>> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(k => {
+        const v = (params as any)[k];
+        if (v !== undefined && v !== null && v !== '' && v !== 'null') {
+          httpParams = httpParams.set(k, String(v));
+        }
+      });
+    }
+    return this.http.get<DataPackage<any>>(`${this.base}/metricas-calidad`, { params: httpParams });
+  }
+
+  getMetricasPredictivas(params?: { fechaDesde?: string, fechaHasta?: string }): Observable<DataPackage<any>> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(k => {
+        const v = (params as any)[k];
+        if (v !== undefined && v !== null && v !== '' && v !== 'null') {
+          httpParams = httpParams.set(k, String(v));
+        }
+      });
+    }
+    return this.http.get<DataPackage<any>>(`${this.base}/metricas-predictivas`, { params: httpParams });
+  }
+
+  getComentarios(params?: { fechaDesde?: string, fechaHasta?: string }): Observable<DataPackage<string[]>> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(k => {
+        const v = (params as any)[k];
+        if (v !== undefined && v !== null && v !== '' && v !== 'null') {
+          httpParams = httpParams.set(k, String(v));
+        }
+      });
+    }
+    return this.http.get<DataPackage<string[]>>(`${this.base}/detalle/comentarios`, { params: httpParams });
+  }
 }

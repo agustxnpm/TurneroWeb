@@ -26,4 +26,18 @@ public class MetricasDashboardDTO {
     private List<OcupacionConsultorioDTO> ocupacionDetallada; // Lista detallada con info completa
     private Integer turnosSinConsultorio; // count
     private Double eficienciaAsignacion; // 0..100, heurística usando ConsultorioDistribucionService
+
+    // ----- Métricas de calidad -----
+    // Tiempo promedio (minutos) desde creación/solicitud hasta asignación
+    private Double tiempoPromedioSolicitudAsignacionMinutos;
+
+    // Tiempo promedio (minutos) de reagendamiento (duración desde solicitud de reagenda hasta acción)
+    private Double tiempoPromedioReagendamientoMinutos;
+
+    // Satisfacción promedio (AVG valorNumerico para preguntas tipo CSAT/NPS/RATING_*)
+    private Double satisfaccionPromedio;
+
+    // Conteo de quejas/reclamos detectados (texto libre no vacío o puntuaciones bajas)
+    private Long conteoQuejas;
+
 }
