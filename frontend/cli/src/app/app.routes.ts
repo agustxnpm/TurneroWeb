@@ -63,6 +63,7 @@ import { AdminConfigComponent } from "./admin/admin-config.component";
 import { AdminListComponent } from "./admin-management/admin-list.component";
 import { AdminDetailComponent } from "./admin-management/admin-detail.component";
 import { DashboardGestionComponent } from "./dashboard-gestion/dashboard-gestion.component";
+import { ReporteAtencionComponent } from "./reporte-atencion/reporte-atencion.component";
 import { HistorialTurnosComponent } from "./turnos/historial-turnos.component";
 import { ListaEsperaComponent } from "./lista-espera/lista-espera.component";
 import { PreferenciasPacienteComponent } from "./pacientes/preferencias-paciente/preferencias-paciente.component";
@@ -400,6 +401,11 @@ export const routes: Routes = [
   {
     path: "dashboard-gestion",
     component: DashboardGestionComponent,
+    canActivate: [AdminGuard],
+  },
+  {
+    path: "admin-reporte-atencion",
+    component: ReporteAtencionComponent,
     canActivate: [AdminGuard],
   },
   // Admin management (admins list / create / edit)

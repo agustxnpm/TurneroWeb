@@ -301,6 +301,12 @@ export const MENU_CONFIG: MenuSection[] = [
         description: 'Métricas y análisis de gestión'
       },
       {
+        label: 'Reporte de Atención',
+        route: '/admin-reporte-atencion',
+        icon: 'assessment',
+        description: 'Reporte de atenciones completadas'
+      },
+      {
         label: 'Encuestas',
         route: '/admin/gestion-encuestas',
         icon: 'assignment',

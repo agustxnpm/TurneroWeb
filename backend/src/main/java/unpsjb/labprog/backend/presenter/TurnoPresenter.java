@@ -143,6 +143,71 @@ public class TurnoPresenter {
         }
     }
 
+    /**
+     * Endpoint para obtener turnos completados con filtros (para reporte de
+     * atención)
+     * GET
+     * /turno/completados?staffMedicoId=1&centroAtencionId=1&fechaDesde=2024-01-01&fechaHasta=2024-12-31&page=0&size=10
+     * 
+     * Requiere permisos de ADMINISTRADOR
+     */
+    @GetMapping("/completados")
+    public ResponseEntity<Object> getTurnosCompletados(
+            @RequestParam(required = false) Integer staffMedicoId,
+            @RequestParam(required = false) Integer centroAtencionId,
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        try {
+            // Parsear fechas si vienen como string
+            LocalDate fechaDesdeParsed = null;
+            LocalDate fechaHastaParsed = null;
+
+            if (fechaDesde != null && !fechaDesde.trim().isEmpty()) {
+                try {
+                    fechaDesdeParsed = LocalDate.parse(fechaDesde.trim());
+                } catch (Exception e) {
+                    return Response.error(null, "Formato de fechaDesde inválido. Use: yyyy-MM-dd");
+                }
+            }
+
+            if (fechaHasta != null && !fechaHasta.trim().isEmpty()) {
+                try {
+                    fechaHastaParsed = LocalDate.parse(fechaHasta.trim());
+                } catch (Exception e) {
+                    return Response.error(null, "Formato de fechaHasta inválido. Use: yyyy-MM-dd");
+                }
+            }
+
+            Page<TurnoDTO> pageResult = service.getTurnosCompletadosFiltrados(
+                    staffMedicoId,
+                    centroAtencionId,
+                    fechaDesdeParsed,
+                    fechaHastaParsed,
+                    page,
+                    size,
+                    sortBy,
+                    sortDir);
+
+            var response = Map.of(
+                    "content", pageResult.getContent(),
+                    "totalPages", pageResult.getTotalPages(),
+                    "totalElements", pageResult.getTotalElements(),
+                    "currentPage", pageResult.getNumber(),
+                    "size", pageResult.getSize(),
+                    "first", pageResult.isFirst(),
+                    "last", pageResult.isLast(),
+                    "numberOfElements", pageResult.getNumberOfElements());
+
+            return Response.ok(response, "Turnos completados recuperados correctamente");
+        } catch (Exception e) {
+            return Response.error(null, "Error al recuperar turnos completados: " + e.getMessage());
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> delete(@PathVariable Integer id, HttpServletRequest request) {
         String currentUserEmail = getCurrentUser(request);

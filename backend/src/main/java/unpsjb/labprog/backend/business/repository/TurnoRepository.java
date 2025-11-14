@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -427,6 +428,74 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer>, JpaSpeci
     }
 
     /**
+     * Busca turnos completados (estado COMPLETO) con filtros opcionales
+     * 
+     * @param staffMedicoId ID del médico (opcional, null para omitir)
+     * @param centroId      ID del centro de atención (opcional, null para omitir)
+     * @param fechaDesde    Fecha desde (opcional, null para omitir)
+     * @param fechaHasta    Fecha hasta (opcional, null para omitir)
+     * @param pageable      Configuración de paginación y ordenamiento
+     * @return Página de turnos completados filtrados
+     */
+    default Page<Turno> findTurnosCompletados(
+            Integer staffMedicoId,
+            Integer centroId,
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            org.springframework.data.domain.Pageable pageable) {
+
+        Specification<Turno> spec = TurnoRepository.buildSpecification(
+                EstadoTurno.COMPLETO, // Obligatoriamente estado COMPLETO
+                null, // pacienteId - no filtrar
+                staffMedicoId, // staffMedicoId - filtro opcional
+                null, // especialidadId - no filtrar
+                centroId, // centroId - filtro opcional
+                null, // consultorioId - no filtrar
+                fechaDesde, // fechaDesde - filtro opcional
+                fechaHasta, // fechaHasta - filtro opcional
+                null, // fechaExacta - no usar
+                null, // nombrePaciente - no filtrar
+                null, // nombreMedico - no filtrar
+                null, // nombreEspecialidad - no filtrar
+                null); // nombreCentro - no filtrar
+
+        return findAll(spec, pageable);
+    }
+
+    /**
+     * Busca turnos completados sin paginación (para exportación)
+     * 
+     * @param staffMedicoId ID del médico (opcional, null para omitir)
+     * @param centroId      ID del centro de atención (opcional, null para omitir)
+     * @param fechaDesde    Fecha desde (opcional, null para omitir)
+     * @param fechaHasta    Fecha hasta (opcional, null para omitir)
+     * @return Lista de turnos completados filtrados
+     */
+    default List<Turno> findTurnosCompletadosList(
+            Integer staffMedicoId,
+            Integer centroId,
+            LocalDate fechaDesde,
+            LocalDate fechaHasta) {
+
+        Specification<Turno> spec = TurnoRepository.buildSpecification(
+                EstadoTurno.COMPLETO, // Obligatoriamente estado COMPLETO
+                null, // pacienteId - no filtrar
+                staffMedicoId, // staffMedicoId - filtro opcional
+                null, // especialidadId - no filtrar
+                centroId, // centroId - filtro opcional
+                null, // consultorioId - no filtrar
+                fechaDesde, // fechaDesde - filtro opcional
+                fechaHasta, // fechaHasta - filtro opcional
+                null, // fechaExacta - no usar
+                null, // nombrePaciente - no filtrar
+                null, // nombreMedico - no filtrar
+                null, // nombreEspecialidad - no filtrar
+                null); // nombreCentro - no filtrar
+
+        return findAll(spec, Sort.by("fecha").descending());
+    }
+
+    /**
      * Encuentra turnos PROGRAMADOS que deben ser cancelados automáticamente
      * Busca turnos cuya fecha/hora esté a MENOS de 48 horas de la fecha actual
      * y que aún no hayan ocurrido (no se confirmaron a tiempo)
@@ -477,9 +546,12 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer>, JpaSpeci
     // === GESTIÓN DE STAFFMEDICO (para permitir eliminación con auditoría) ===
 
     /**
-     * Desvincula un StaffMedico de todos los turnos asociados (setea staffMedico a NULL)
-     * Esto permite eliminar el StaffMedico manteniendo el registro histórico del turno
-     * con la información del médico, especialidad y centro en los campos de auditoría
+     * Desvincula un StaffMedico de todos los turnos asociados (setea staffMedico a
+     * NULL)
+     * Esto permite eliminar el StaffMedico manteniendo el registro histórico del
+     * turno
+     * con la información del médico, especialidad y centro en los campos de
+     * auditoría
      *
      * @param staffMedicoId ID del StaffMedico a desvincular
      * @return Cantidad de turnos actualizados

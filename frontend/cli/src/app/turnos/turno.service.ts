@@ -212,6 +212,41 @@ export class TurnoService {
     return this.http.get<DataPackage>(`${this.url}/page`, { params });
   }
 
+  /** Obtiene turnos completados con filtros opcionales y paginación */
+  getTurnosCompletados(
+    staffMedicoId?: number,
+    centroAtencionId?: number,
+    fechaDesde?: string,
+    fechaHasta?: string,
+    page: number = 0,
+    size: number = 10,
+    sortBy?: string,
+    sortDir: string = 'desc'
+  ): Observable<DataPackage<any>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sortDir', sortDir);
+
+    if (staffMedicoId) {
+      params = params.set('staffMedicoId', staffMedicoId.toString());
+    }
+    if (centroAtencionId) {
+      params = params.set('centroAtencionId', centroAtencionId.toString());
+    }
+    if (fechaDesde && fechaDesde.trim()) {
+      params = params.set('fechaDesde', fechaDesde.trim());
+    }
+    if (fechaHasta && fechaHasta.trim()) {
+      params = params.set('fechaHasta', fechaHasta.trim());
+    }
+    if (sortBy && sortBy.trim()) {
+      params = params.set('sortBy', sortBy.trim());
+    }
+
+    return this.http.get<DataPackage<any>>(`${this.url}/completados`, { params });
+  }
+
   /** Búsqueda de turnos */
   search(term: string): Observable<DataPackage<Turno[]>> {
     return this.http.get<DataPackage<Turno[]>>(`${this.url}/search/${term}`);

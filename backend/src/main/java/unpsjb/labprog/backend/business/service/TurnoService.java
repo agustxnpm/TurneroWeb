@@ -1354,6 +1354,80 @@ public class TurnoService {
     }
 
     /**
+     * Busca turnos completados (estado COMPLETO) con filtros opcionales
+     * Retorna paginado para listado en el reporte de atención
+     * 
+     * @param staffMedicoId    ID del médico (opcional, null para omitir)
+     * @param centroAtencionId ID del centro de atención (opcional, null para
+     *                         omitir)
+     * @param fechaDesde       Fecha desde (opcional, null para omitir)
+     * @param fechaHasta       Fecha hasta (opcional, null para omitir)
+     * @param page             Número de página (0-based)
+     * @param size             Tamaño de página
+     * @param sortBy           Campo para ordenar
+     * @param sortDir          Dirección de ordenamiento (asc/desc)
+     * @return Página de turnos completados
+     */
+    public Page<TurnoDTO> getTurnosCompletadosFiltrados(
+            Integer staffMedicoId,
+            Integer centroAtencionId,
+            LocalDate fechaDesde,
+            LocalDate fechaHasta,
+            int page,
+            int size,
+            String sortBy,
+            String sortDir) {
+
+        // Configurar ordenamiento
+        Sort sort = Sort.unsorted();
+        if (sortBy != null && !sortBy.trim().isEmpty()) {
+            Sort.Direction direction = "desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC;
+            sort = Sort.by(direction, sortBy);
+        } else {
+            // Por defecto, ordenar por fecha descendente
+            sort = Sort.by(Sort.Direction.DESC, "fecha");
+        }
+
+        PageRequest pageable = PageRequest.of(page, size, sort);
+
+        Page<Turno> result = repository.findTurnosCompletados(
+                staffMedicoId,
+                centroAtencionId,
+                fechaDesde,
+                fechaHasta,
+                pageable);
+
+        return result.map(this::toDTO);
+    }
+
+    /**
+     * Busca turnos completados sin paginación para exportación
+     * 
+     * @param staffMedicoId    ID del médico (opcional, null para omitir)
+     * @param centroAtencionId ID del centro de atención (opcional, null para
+     *                         omitir)
+     * @param fechaDesde       Fecha desde (opcional, null para omitir)
+     * @param fechaHasta       Fecha hasta (opcional, null para omitir)
+     * @return Lista de turnos completados
+     */
+    public List<TurnoDTO> getTurnosCompletadosParaExportar(
+            Integer staffMedicoId,
+            Integer centroAtencionId,
+            LocalDate fechaDesde,
+            LocalDate fechaHasta) {
+
+        List<Turno> turnos = repository.findTurnosCompletadosList(
+                staffMedicoId,
+                centroAtencionId,
+                fechaDesde,
+                fechaHasta);
+
+        return turnos.stream()
+                .map(this::toDTOWithAuditInfo)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Convierte Turno a TurnoDTO incluyendo información de auditoría
      */
     private TurnoDTO toDTOWithAuditInfo(Turno turno) {
@@ -1504,7 +1578,8 @@ public class TurnoService {
             System.err.println("Error al crear notificación de turno completado: " + e.getMessage());
         }
 
-        // Crear notificación para invitar al paciente a completar la encuesta (ENCUESTA_PENDIENTE)
+        // Crear notificación para invitar al paciente a completar la encuesta
+        // (ENCUESTA_PENDIENTE)
         try {
             notificacionService.crearNotificacion(
                     savedTurno.getPaciente().getId(),

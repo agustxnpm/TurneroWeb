@@ -1,0 +1,170 @@
+<div class="reporte-atencion-container">
+    <div class="card p-xl mb-xl">
+        <!-- Header del Reporte -->
+        <div class="reporte-header">
+            <div class="header-title">
+                <span class="material-symbols-outlined header-icon">assessment</span>
+                <h2>Reporte de Atención Completada</h2>
+            </div>
+            <p class="header-subtitle">Consulta turnos con estado completado, filtra por médico, centro y fechas</p>
+        </div>
+
+        <!-- Formulario de Filtros -->
+        <form [formGroup]="filterForm" class="filter-form mb-lg">
+            <div class="filter-grid">
+                <!-- Filtro Médico con Búsqueda -->
+                <div class="form-group">
+                    <label for="nombreMedicoInput" class="form-label">
+                        <span class="material-symbols-outlined">person</span>
+                        Médico
+                    </label>
+                    <div class="medico-search-container">
+                        <input id="nombreMedicoInput" type="text" formControlName="nombreMedicoInput"
+                            class="form-control medico-search-input" placeholder="Buscar por nombre o apellido..."
+                            (keyup)="filtrarMedicos(filterForm.get('nombreMedicoInput')?.value || '')"
+                            (focus)="mostrarListaMedicos = staffMedicosFiltrados.length > 0" autocomplete="off" />
+                        <!-- Botón limpiar si hay médico seleccionado -->
+                        <button *ngIf="filterForm.get('staffMedicoId')?.value" type="button" class="btn-clear-medico"
+                            (click)="limpiarMedico()" title="Limpiar selección">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+
+                        <!-- Lista de búsqueda desplegable -->
+                        <div class="medicos-dropdown" *ngIf="mostrarListaMedicos && staffMedicosFiltrados.length > 0">
+                            <div class="medicos-list">
+                                <div *ngFor="let medico of staffMedicosFiltrados" class="medico-item"
+                                    (click)="seleccionarMedico(medico)">
+                                    <div class="medico-info">
+                                        <strong>{{ medico.nombre }} {{ medico.apellido }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mostrar médico seleccionado -->
+                        <div class="medico-seleccionado" *ngIf="filterForm.get('staffMedicoId')?.value">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            {{ getNombreMedicoSeleccionado() }}
+                        </div>
+                    </div>
+                </div> <!-- Filtro Centro de Atención -->
+                <div class="form-group">
+                    <label for="centroAtencionId" class="form-label">
+                        <span class="material-symbols-outlined">local_hospital</span>
+                        Centro de Atención
+                    </label>
+                    <select id="centroAtencionId" formControlName="centroAtencionId" class="form-control">
+                        <option value="">-- Seleccionar Centro --</option>
+                        <option *ngFor="let centro of centrosAtencion" [value]="centro.id">
+                            {{ centro.nombre }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Filtro Fecha Desde -->
+                <div class="form-group">
+                    <label for="fechaDesde" class="form-label">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        Desde
+                    </label>
+                    <input id="fechaDesde" type="date" formControlName="fechaDesde" class="form-control" />
+                </div>
+
+                <!-- Filtro Fecha Hasta -->
+                <div class="form-group">
+                    <label for="fechaHasta" class="form-label">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        Hasta
+                    </label>
+                    <input id="fechaHasta" type="date" formControlName="fechaHasta" class="form-control" />
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="filter-buttons">
+                <button type="button" class="btn btn-primary" (click)="buscar()" [disabled]="loading">
+                    <span class="material-symbols-outlined">search</span>
+                    <span>Buscar</span>
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="limpiarFiltros()">
+                    <span class="material-symbols-outlined">clear</span>
+                    <span>Limpiar Filtros</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Botones de Exportación -->
+        <div class="export-buttons-container mb-lg" *ngIf="turnosCompletados.length > 0">
+            <div class="export-buttons">
+                <button type="button" class="btn btn-primary" (click)="exportarCSV()" [disabled]="loading">
+                    <span class="material-symbols-outlined">download</span>
+                    <span>Exportar CSV</span>
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="exportarPDF()" [disabled]="loading">
+                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                    <span>Exportar PDF</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-state mb-lg">
+            <div class="loading-content">
+                <span class="material-symbols-outlined spinning">progress_activity</span>
+                <h6>Cargando resultados...</h6>
+            </div>
+        </div>
+
+        <!-- Tabla de Resultados -->
+        <div class="results-section" *ngIf="!loading && turnosCompletados.length > 0">
+            <div class="results-info mb-md">
+                <p><strong>Total de registros encontrados:</strong> {{ totalElements }}</p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Hora Inicio</th>
+                            <th>Hora Fin</th>
+                            <th>Paciente</th>
+                            <th>Médico</th>
+                            <th>Especialidad</th>
+                            <th>Centro</th>
+                            <th>Consultorio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let turno of turnosCompletados" class="result-row">
+                            <td>{{ turno.id }}</td>
+                            <td>{{ turno.fecha }}</td>
+                            <td>{{ turno.horaInicio }}</td>
+                            <td>{{ turno.horaFin }}</td>
+                            <td>{{ turno.nombrePaciente }} {{ turno.apellidoPaciente }}</td>
+                            <td>{{ turno.staffMedicoNombre }} {{ turno.staffMedicoApellido }}</td>
+                            <td>{{ turno.especialidadStaffMedico }}</td>
+                            <td>{{ turno.nombreCentro }}</td>
+                            <td>{{ turno.consultorioNombre }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <app-pagination [currentPage]="currentPage" [totalPages]="totalPages"
+                (pageChangeRequested)="onPageChange($event)">
+            </app-pagination>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="!loading && turnosCompletados.length === 0">
+            <div class="empty-state-content">
+                <span class="material-symbols-outlined">search_off</span>
+                <h5>No se encontraron resultados</h5>
+                <p>Intenta ajustar los filtros o haz clic en "Buscar" para ver los turnos completados</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpResponse, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
 import { jsPDF } from 'jspdf';
@@ -85,14 +85,92 @@ export class ExportService {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', filename);
     link.style.visibility = 'hidden';
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  /**
+   * Exporta reporte de atención completada a CSV
+   * @param staffMedicoId ID del médico (opcional)
+   * @param centroAtencionId ID del centro de atención (opcional)
+   * @param fechaDesde Fecha inicial (opcional) en formato YYYY-MM-DD
+   * @param fechaHasta Fecha final (opcional) en formato YYYY-MM-DD
+   */
+  exportarReporteAtencionCSV(
+    staffMedicoId?: number,
+    centroAtencionId?: number,
+    fechaDesde?: string,
+    fechaHasta?: string
+  ): Observable<HttpResponse<string>> {
+    let params = new HttpParams();
+
+    if (staffMedicoId) {
+      params = params.set('staffMedicoId', staffMedicoId.toString());
+    }
+    if (centroAtencionId) {
+      params = params.set('centroAtencionId', centroAtencionId.toString());
+    }
+    if (fechaDesde) {
+      params = params.set('fechaDesde', fechaDesde);
+    }
+    if (fechaHasta) {
+      params = params.set('fechaHasta', fechaHasta);
+    }
+
+    return this.http.get<string>(
+      `${this.url}/reporte-atencion/csv`,
+      {
+        params,
+        responseType: 'text' as 'json',
+        reportProgress: true,
+        observe: 'response'
+      }
+    );
+  }
+
+  /**
+   * Exporta reporte de atención completada a PDF (vía HTML)
+   * @param staffMedicoId ID del médico (opcional)
+   * @param centroAtencionId ID del centro de atención (opcional)
+   * @param fechaDesde Fecha inicial (opcional) en formato YYYY-MM-DD
+   * @param fechaHasta Fecha final (opcional) en formato YYYY-MM-DD
+   */
+  exportarReporteAtencionPDF(
+    staffMedicoId?: number,
+    centroAtencionId?: number,
+    fechaDesde?: string,
+    fechaHasta?: string
+  ): Observable<HttpResponse<string>> {
+    let params = new HttpParams();
+
+    if (staffMedicoId) {
+      params = params.set('staffMedicoId', staffMedicoId.toString());
+    }
+    if (centroAtencionId) {
+      params = params.set('centroAtencionId', centroAtencionId.toString());
+    }
+    if (fechaDesde) {
+      params = params.set('fechaDesde', fechaDesde);
+    }
+    if (fechaHasta) {
+      params = params.set('fechaHasta', fechaHasta);
+    }
+
+    return this.http.get<string>(
+      `${this.url}/reporte-atencion/html`,
+      {
+        params,
+        responseType: 'text' as 'json',
+        reportProgress: true,
+        observe: 'response'
+      }
+    );
   }
 
   /**
