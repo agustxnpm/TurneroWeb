@@ -19,8 +19,13 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import unpsjb.labprog.backend.business.service.UserService;
+
+import java.util.Arrays;
 
 /**
  * Configuración de seguridad con JWT y autenticación stateless
@@ -131,6 +136,45 @@ public class SecurityConfig {
     private boolean devMode;
 
     /**
+     * Orígenes permitidos para CORS (separados por comas)
+     * Por defecto: http://localhost:4200 para desarrollo
+     * En producción: agregar URL de Netlify/frontend desplegado
+     * 
+     * Ejemplo en Render:
+     * APP_ALLOWED_ORIGINS=http://localhost:4200,https://tu-app.netlify.app
+     */
+    @Value("${app.allowed.origins:http://localhost:4200}")
+    private String allowedOrigins;
+
+    /**
+     * Configuración de CORS (Cross-Origin Resource Sharing)
+     * Permite que el frontend (Angular) se comunique con el backend desde diferentes dominios
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        
+        // Convertir string separado por comas en lista de orígenes permitidos
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        
+        // Métodos HTTP permitidos
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        
+        // Headers permitidos (Authorization para JWT, Content-Type, etc.)
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // Permitir envío de credenciales (cookies, headers de autorización)
+        configuration.setAllowCredentials(true);
+        
+        // Tiempo de cache de la respuesta preflight (OPTIONS)
+        configuration.setMaxAge(3600L);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+    /**
      * Configuración de la cadena de filtros de seguridad
      * 
      * MODO DESARROLLO (devMode=true):
@@ -144,7 +188,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.disable()) // Deshabilitar CORS temporalmente para debugging
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Habilitar CORS con configuración
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
                     if (devMode) {
