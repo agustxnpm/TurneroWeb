@@ -10,6 +10,10 @@ import { environment } from '../../environments/environment';
 })
 export class TurnoService {
   private url = environment.production ? `${environment.apiUrl}/turno` : 'rest/turno';
+  private agendaUrl = environment.production ? `${environment.apiUrl}/agenda` : 'rest/agenda';
+  private auditUrl = environment.production ? `${environment.apiUrl}/audit` : 'rest/audit';
+  private exportUrl = environment.production ? `${environment.apiUrl}/export` : 'rest/export';
+  private estadisticasUrl = environment.production ? `${environment.apiUrl}/estadisticas` : 'rest/estadisticas';
 
   constructor(private http: HttpClient) { }
 
@@ -243,7 +247,7 @@ export class TurnoService {
 
   /** Crea un día excepcional genérico */
   crearDiaExcepcional(params: any): Observable<DataPackage<any>> {
-    return this.http.post<DataPackage<any>>(`rest/agenda/dia-excepcional`, params);
+    return this.http.post<DataPackage<any>>(`${this.agendaUrl}/dia-excepcional`, params);
   }
 
   /** Marca un día como feriado para todo el sistema */
@@ -254,7 +258,7 @@ export class TurnoService {
       descripcion,
       tipoAgenda: 'FERIADO'
     };
-    return this.http.post<DataPackage<any>>(`rest/agenda/dia-excepcional`, params);
+    return this.http.post<DataPackage<any>>(`${this.agendaUrl}/dia-excepcional`, params);
   }
 
   /** Configura mantenimiento para un consultorio */
@@ -268,7 +272,7 @@ export class TurnoService {
       horaInicio,
       horaFin
     };
-    return this.http.post<DataPackage<any>>(`rest/agenda/dia-excepcional`, params);
+    return this.http.post<DataPackage<any>>(`${this.agendaUrl}/dia-excepcional`, params);
   }
 
   /** Configura atención especial para una fecha específica */
@@ -282,7 +286,7 @@ export class TurnoService {
       horaInicio,
       horaFin
     };
-    return this.http.post<DataPackage<any>>(`rest/agenda/dia-excepcional`, params);
+    return this.http.post<DataPackage<any>>(`${this.agendaUrl}/dia-excepcional`, params);
   }
 
 
@@ -297,7 +301,7 @@ export class TurnoService {
       params = params.set('centroId', centroId.toString());
     }
 
-    return this.http.get<DataPackage<any[]>>(`rest/agenda/dias-excepcionales`, { params });
+    return this.http.get<DataPackage<any[]>>(`${this.agendaUrl}/dias-excepcionales`, { params });
   }
 
   /** Valida disponibilidad considerando días excepcionales y sanitización */
@@ -309,17 +313,17 @@ export class TurnoService {
       .set('consultorioId', consultorioId.toString())
       .set('staffMedicoId', staffMedicoId.toString());
 
-    return this.http.get<DataPackage<{ disponible: boolean, motivo?: string }>>(`rest/agenda/validar-disponibilidad`, { params });
+    return this.http.get<DataPackage<{ disponible: boolean, motivo?: string }>>(`${this.agendaUrl}/validar-disponibilidad`, { params });
   }
 
   /** Elimina un día excepcional */
   eliminarDiaExcepcional(agendaId: number): Observable<DataPackage<any>> {
-    return this.http.delete<DataPackage<any>>(`rest/agenda/dia-excepcional/${agendaId}`);
+    return this.http.delete<DataPackage<any>>(`${this.agendaUrl}/dia-excepcional/${agendaId}`);
   }
 
   /** Actualiza un día excepcional existente */
   actualizarDiaExcepcional(configId: number, params: any): Observable<DataPackage<any>> {
-    return this.http.put<DataPackage<any>>(`rest/agenda/dia-excepcional/${configId}`, params);
+    return this.http.put<DataPackage<any>>(`${this.agendaUrl}/dia-excepcional/${configId}`, params);
   }
 
   // === MÉTODOS DE AUDITORÍA ===
@@ -344,17 +348,17 @@ export class TurnoService {
 
   /** Obtiene estadísticas generales de auditoría */
   getAuditStatistics(): Observable<DataPackage<any[]>> {
-    return this.http.get<DataPackage<any[]>>(`rest/audit/statistics`);
+    return this.http.get<DataPackage<any[]>>(`${this.auditUrl}/statistics`);
   }
 
   /** Obtiene estadísticas del dashboard de auditoría */
   getDashboardStatistics(): Observable<DataPackage<any>> {
-    return this.http.get<DataPackage<any>>(`rest/audit/dashboard`);
+    return this.http.get<DataPackage<any>>(`${this.auditUrl}/dashboard`);
   }
 
   /** Obtiene logs recientes del sistema */
   getRecentAuditLogs(): Observable<DataPackage<AuditLog[]>> {
-    return this.http.get<DataPackage<AuditLog[]>>(`rest/audit/recent`);
+    return this.http.get<DataPackage<AuditLog[]>>(`${this.auditUrl}/recent`);
   }
 
   /** Obtiene logs de auditoría paginados con filtros avanzados */
@@ -387,7 +391,7 @@ export class TurnoService {
       httpParams = httpParams.set('entidad', filter.entityType);
     }
 
-    return this.http.get<DataPackage<AuditPage>>(`rest/audit/page`, { params: httpParams });
+    return this.http.get<DataPackage<AuditPage>>(`${this.auditUrl}/page`, { params: httpParams });
   }
 
   // === MÉTODOS DE CONSULTA AVANZADA ===
@@ -505,14 +509,14 @@ export class TurnoService {
   exportToCSVDownload(filter: TurnoFilter): Observable<Blob> {
     // Usar POST en lugar de GET para enviar filtros complejos
     const convertedFilter = this.convertDateFormat(filter);
-    return this.http.post(`rest/turno/export/csv`, convertedFilter, { responseType: 'blob' });
+    return this.http.post(`${this.url}/export/csv`, convertedFilter, { responseType: 'blob' });
   }
 
   /** Exporta turnos a PDF (descarga archivo) */
   exportToPDFDownload(filter: TurnoFilter): Observable<Blob> {
     // Usar POST en lugar de GET para enviar filtros complejos
     const convertedFilter = this.convertDateFormat(filter);
-    return this.http.post(`rest/turno/export/pdf`, convertedFilter, { responseType: 'blob' });
+    return this.http.post(`${this.url}/export/pdf`, convertedFilter, { responseType: 'blob' });
   }
 
   /** Exporta turnos a PDF usando GET (alternativo) */
@@ -527,13 +531,13 @@ export class TurnoService {
     if (filter.nombrePaciente) params.nombrePaciente = filter.nombrePaciente;
     if (filter.nombreMedico) params.nombreMedico = filter.nombreMedico;
     if (filter.nombreCentro) params.nombreCentro = filter.nombreCentro;
-    return this.http.get(`rest/turno/export/pdf`, { params, responseType: 'blob' });
+    return this.http.get(`${this.url}/export/pdf`, { params, responseType: 'blob' });
   }
 
   /** Obtiene estadísticas para exportación */
   getExportStatistics(filter: TurnoFilter): Observable<DataPackage<any>> {
     const convertedFilter = this.convertDateFormat(filter);
-    return this.http.post<DataPackage<any>>(`rest/export/turnos/statistics`, convertedFilter);
+    return this.http.post<DataPackage<any>>(`${this.exportUrl}/turnos/statistics`, convertedFilter);
   }
 
   // === MÉTODOS DE GESTIÓN CON AUDITORÍA ===
@@ -594,7 +598,7 @@ export class TurnoService {
     const params = new HttpParams()
       .set('medicoId', medicoId.toString())
       .set('periodo', periodo);
-    return this.http.get<DataPackage<any>>(`rest/estadisticas/medico`, { params });
+    return this.http.get<DataPackage<any>>(`${this.estadisticasUrl}/medico`, { params });
   }
 
   /** Obtiene evolución temporal de turnos del médico */
@@ -602,7 +606,7 @@ export class TurnoService {
     const params = new HttpParams()
       .set('medicoId', medicoId.toString())
       .set('periodo', periodo);
-    return this.http.get<DataPackage<any[]>>(`rest/estadisticas/medico/evolucion`, { params });
+    return this.http.get<DataPackage<any[]>>(`${this.estadisticasUrl}/medico/evolucion`, { params });
   }
 
   /** Obtiene estadísticas por especialidad del médico */
@@ -610,7 +614,7 @@ export class TurnoService {
     const params = new HttpParams()
       .set('medicoId', medicoId.toString())
       .set('periodo', periodo);
-    return this.http.get<DataPackage<any[]>>(`rest/estadisticas/medico/especialidades`, { params });
+    return this.http.get<DataPackage<any[]>>(`${this.estadisticasUrl}/medico/especialidades`, { params });
   }
 
   /** Obtiene rendimiento mensual del médico */
@@ -618,7 +622,7 @@ export class TurnoService {
     const params = new HttpParams()
       .set('medicoId', medicoId.toString())
       .set('anio', anio.toString());
-    return this.http.get<DataPackage<any[]>>(`rest/estadisticas/medico/rendimiento-mensual`, { params });
+    return this.http.get<DataPackage<any[]>>(`${this.estadisticasUrl}/medico/rendimiento-mensual`, { params });
   }
 
   /** Obtiene comparativas con período anterior */
@@ -627,7 +631,7 @@ export class TurnoService {
       .set('medicoId', medicoId.toString())
       .set('periodoActual', periodoActual)
       .set('periodoAnterior', periodoAnterior);
-    return this.http.get<DataPackage<any>>(`rest/estadisticas/medico/comparativas`, { params });
+    return this.http.get<DataPackage<any>>(`${this.estadisticasUrl}/medico/comparativas`, { params });
   }
 
 }
