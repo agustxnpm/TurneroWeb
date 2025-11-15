@@ -1,424 +1,154 @@
-<div class="home-container">
-  <!-- Banner de Búsqueda de CAP - AHORA PRIMERO -->
-  <div class="cap-search-banner">
-    <div class="cap-search-container">
-      <div class="cap-search-header">
-        <i class="fas fa-map-marker-alt"></i>
-        <h2>Busca tu Centro de Atención (CAP) más cercano</h2>
+<div class="landing-page">
+  <!-- SECCIÓN 1: BUSCADOR GEOGRÁFICO (PRINCIPAL) -->
+  <section class="landing-section buscador-section" id="buscador">
+    <div class="section-container">
+      <div class="section-header-centered">
+        <span class="material-symbols-outlined section-icon-large">location_on</span>
+        <h1>Encuentra tu Centro de Atención</h1>
+        <p class="section-subtitle">Busca el CAP más cercano a tu ubicación y solicita tu turno</p>
       </div>
-      <form class="cap-search-form" (ngSubmit)="buscarCAPS()" #capForm="ngForm">
-        <div class="search-fields">
-          <div class="field-group tipo-atencion">
-            <label for="tipoAtencion">Tipo de atención</label>
-            <select 
-              id="tipoAtencion" 
-              name="tipoAtencion" 
-              [(ngModel)]="capSearchData.tipoAtencion" 
-              class="form-control"
-              required>
-              <option value="">Selecciona tipo de atención</option>
-              <option value="MEDICO_CLINICO">Médico Clínico</option>
-              <option value="VACUNACION">Vacunación</option>
-              <option value="NINO_SANO">Niño Sano</option>
-              <option value="MADRE_SANA">Madre Sana</option>
-            </select>
+
+      <div class="card buscador-card">
+        <form (ngSubmit)="buscarCAPS()" #capForm="ngForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">
+                <span class="material-symbols-outlined">medical_services</span>
+                Tipo de atención
+              </label>
+              <select 
+                id="tipoAtencion" 
+                name="tipoAtencion" 
+                [(ngModel)]="capSearchData.tipoAtencion" 
+                class="form-control"
+                required>
+                <option value="">Selecciona el tipo de atención</option>
+                <option value="MEDICO_CLINICO">Médico Clínico</option>
+                <option value="VACUNACION">Vacunación</option>
+                <option value="NINO_SANO">Niño Sano</option>
+                <option value="MADRE_SANA">Madre Sana</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">
+                <span class="material-symbols-outlined">description</span>
+                Síntomas u observaciones (opcional)
+              </label>
+              <input 
+                type="text" 
+                id="sintomas" 
+                name="sintomas" 
+                [(ngModel)]="capSearchData.sintomas" 
+                class="form-control"
+                placeholder="Describe tus síntomas o necesidades"
+                maxlength="200">
+            </div>
           </div>
-          
-          <div class="field-group sintomas">
-            <label for="sintomas">Síntomas / Observaciones</label>
-            <input 
-              type="text" 
-              id="sintomas" 
-              name="sintomas" 
-              [(ngModel)]="capSearchData.sintomas" 
-              class="form-control"
-              placeholder="Describe tus síntomas o necesidades específicas"
-              maxlength="200">
-          </div>
-          
-          <div class="field-group search-btn">
-            <button type="submit" class="btn btn-search-cap" [disabled]="!capForm.valid">
-              <i class="fas fa-search"></i>
-              Buscar CAPS por cercanía
+
+          <div class="buscador-actions">
+            <button type="submit" class="btn btn-primary btn-large" [disabled]="!capForm.valid">
+              <span class="material-symbols-outlined">search</span>
+              Buscar centros cercanos
             </button>
-            <button type="button" class="btn btn-view-all-turnos" routerLink="/paciente-agenda">
-              <i class="fas fa-calendar-alt"></i>
+            <button type="button" class="btn btn-secondary btn-large" routerLink="/paciente-agenda">
+              <span class="material-symbols-outlined">calendar_today</span>
               Ver todos los turnos
             </button>
           </div>
+        </form>
+
+        <div class="info-badge">
+          <span class="material-symbols-outlined">info</span>
+          <span>Los centros se ordenarán por cercanía a tu ubicación actual</span>
         </div>
-      </form>
-      
-      <!-- Mensaje informativo -->
-      <div class="cap-info">
-        <i class="fas fa-info-circle"></i>
-        <span>Encuentra el centro de atención más cercano a tu ubicación y solicita tu turno de manera rápida y sencilla</span>
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Hero Section - AHORA SEGUNDO -->
-  <div class="hero-section">
-    <div class="hero-content">
-      <div class="brand-logo">
-        <i class="fas fa-calendar-check"></i>
+  <!-- SECCIÓN 2: HERO / PRESENTACIÓN -->
+  <section class="landing-section hero-section">
+    <div class="section-container">
+      <div class="hero-content-centered">
+        <span class="material-symbols-outlined brand-icon">calendar_month</span>
         <h1 class="brand-title">CheTurno</h1>
-      </div>
-      <p class="hero-subtitle">
-        Gestión inteligente de turnos médicos para centros de atención
-      </p>
-    </div>
-  </div>
-
-  <!-- Login Section -->
-  <div class="login-section">
-    <div class="login-card">
-      <h2 class="login-title">Acceso al Sistema</h2>
-
-      <!-- Role Selection -->
-      <div class="role-selection" *ngIf="!selectedRole">
-        <h3>Selecciona tu tipo de acceso:</h3>
-        <div class="role-buttons">
-          <button class="role-btn admin-btn" (click)="selectRole('admin')">
-            <i class="fas fa-user-shield"></i>
-            <span>Administrador</span>
-            <small>Gestión completa del sistema</small>
+        <p class="hero-description">Sistema de gestión de turnos para centros de atención primaria de salud</p>
+        
+        <div class="hero-actions-group">
+          <button class="btn btn-primary btn-large" (click)="scrollToSection('buscador')">
+            <span class="material-symbols-outlined">search</span>
+            Buscar centro
           </button>
-          <button
-            class="role-btn operador-btn"
-            (click)="selectRole('operador')"
-          >
-            <i class="fas fa-user-cog"></i>
-            <span>Operador</span>
-            <small>Gestión de turnos y operaciones</small>
-          </button>
-          <button class="role-btn medico-btn" (click)="selectRole('medico')">
-            <i class="fas fa-user-md"></i>
-            <span>Médico</span>
-            <small>Gestión de turnos y horarios</small>
-          </button>
-          <button class="role-btn patient-btn" (click)="selectRole('patient')">
-            <i class="fas fa-user"></i>
-            <span>Paciente</span>
-            <small>Consulta y gestión de turnos</small>
+          <button class="btn btn-secondary btn-large" routerLink="/ingresar">
+            <span class="material-symbols-outlined">login</span>
+            Ingresar al sistema
           </button>
         </div>
-      </div>
-
-      <!-- Admin Login Form -->
-      <div class="login-form" *ngIf="selectedRole === 'admin'">
-        <h3>Acceso Administrador</h3>
-        <div class="dev-notice">
-          <i class="fas fa-code"></i>
-          <p>Modo desarrollo - Acceso directo habilitado</p>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn btn-login" (click)="loginAdmin()">
-            <i class="fas fa-sign-in-alt"></i>
-            Ingresar como Admin
-          </button>
-          <button type="button" class="btn btn-back" (click)="goBack()">
-            <i class="fas fa-arrow-left"></i>
-            Volver
-          </button>
-        </div>
-      </div>
-
-      <!-- Operador Login Form -->
-      <div class="login-form" *ngIf="selectedRole === 'operador'">
-        <h3>Acceso Operador</h3>
-        <form (ngSubmit)="loginOperador()" #operadorForm="ngForm">
-          <div class="form-group">
-            <label for="dni">DNI:</label>
-            <input
-              type="text"
-              id="dni"
-              name="dni"
-              [(ngModel)]="operadorCredentials.dni"
-              class="form-control"
-              required
-              placeholder="Ingresa tu DNI (sin puntos)"
-              pattern="[0-9]+"
-              maxlength="12"
-            />
-            <small class="form-text"
-              >Ingresa tu DNI sin puntos ni espacios</small
-            >
-          </div>
-          <div class="form-actions">
-            <button
-              type="submit"
-              class="btn btn-login"
-              [disabled]="!operadorForm.valid"
-            >
-              <i class="fas fa-sign-in-alt"></i>
-              Ingresar
-            </button>
-            <button type="button" class="btn btn-back" (click)="goBack()">
-              <i class="fas fa-arrow-left"></i>
-              Volver
-            </button>
-          </div>
-        </form>
-
-        <!-- Error Message -->
-        <div class="error-message" *ngIf="errorMessage">
-          <i class="fas fa-exclamation-triangle"></i>
-          {{ errorMessage }}
-        </div>
-
-        <!-- Loading State -->
-        <div class="loading" *ngIf="isLoading">
-          <i class="fas fa-spinner fa-spin"></i>
-          Verificando credenciales...
-        </div>
-      </div>
-      <!-- TERMINO LA SECCION  Operador Login Form -->
-
-      <!-- Medico Login Form -->
-      <div class="login-form" *ngIf="selectedRole === 'medico'">
-        <h3>Acceso Médico</h3>
-        <form (ngSubmit)="loginMedico()" #medicoForm="ngForm">
-          <div class="form-group">
-            <label for="matricula">Matrícula:</label>
-            <input
-              type="text"
-              id="matricula"
-              name="matricula"
-              [(ngModel)]="medicoCredentials.matricula"
-              class="form-control"
-              required
-              placeholder="Ingresa tu número de matrícula"
-              pattern="[0-9]{5}-[0-9]{1}"
-              maxlength="7"
-            />
-            <small class="form-text">Formato: 12345-6</small>
-          </div>
-          <div class="form-actions">
-            <button
-              type="submit"
-              class="btn btn-login"
-              [disabled]="!medicoForm.valid"
-            >
-              <i class="fas fa-sign-in-alt"></i>
-              Ingresar
-            </button>
-            <button type="button" class="btn btn-back" (click)="goBack()">
-              <i class="fas fa-arrow-left"></i>
-              Volver
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Patient Login Form -->
-      <div class="login-form" *ngIf="selectedRole === 'patient'">
-        <h3>Acceso Paciente</h3>
-        <form (ngSubmit)="loginPatient()" #patientForm="ngForm">
-          <div class="form-group">
-            <label for="dni">DNI:</label>
-            <input
-              type="text"
-              id="dni"
-              name="dni"
-              [(ngModel)]="patientCredentials.dni"
-              class="form-control"
-              required
-              placeholder="Ingresa tu DNI (sin puntos)"
-              pattern="[0-9]+"
-              maxlength="12"
-            />
-            <small class="form-text"
-              >Ingresa tu DNI sin puntos ni espacios</small
-            >
-          </div>
-          <div class="form-actions">
-            <button
-              type="submit"
-              class="btn btn-login"
-              [disabled]="!patientForm.valid"
-            >
-              <i class="fas fa-sign-in-alt"></i>
-              Ingresar
-            </button>
-            <button type="button" class="btn btn-back" (click)="goBack()">
-              <i class="fas fa-arrow-left"></i>
-              Volver
-            </button>
-          </div>
-        </form>
-
-        <!-- Registration prompt -->
-        <div class="registration-prompt" *ngIf="showRegistrationPrompt">
-          <p>No encontramos tu DNI en el sistema.</p>
-          <button
-            class="btn btn-register"
-            (click)="showRegistrationForm = true"
-          >
-            <i class="fas fa-user-plus"></i>
-            Registrarse como Paciente
-          </button>
-        </div>
-      </div>
-
-      <!-- Patient Registration Form -->
-      <div class="login-form" *ngIf="showRegistrationForm">
-        <h3>Registro de Paciente</h3>
-        <form (ngSubmit)="submitRegistration()" #registrationForm="ngForm">
-          <div class="form-group">
-            <label for="regDni">DNI:</label>
-            <input
-              type="text"
-              id="regDni"
-              name="regDni"
-              [(ngModel)]="registrationData.dni"
-              class="form-control"
-              required
-              [value]="patientCredentials.dni"
-            />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="nombre">Nombre:</label>
-              <input
-                type="text"
-                id="nombre"
-                name="nombre"
-                [(ngModel)]="registrationData.nombre"
-                class="form-control"
-                required
-                placeholder="Tu nombre"
-              />
-            </div>
-            <div class="form-group">
-              <label for="apellido">Apellido:</label>
-              <input
-                type="text"
-                id="apellido"
-                name="apellido"
-                [(ngModel)]="registrationData.apellido"
-                class="form-control"
-                required
-                placeholder="Tu apellido"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="email">Email:</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              [(ngModel)]="registrationData.email"
-              class="form-control"
-              required
-              placeholder="tu@email.com"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="telefono">Teléfono:</label>
-            <input
-              type="tel"
-              id="telefono"
-              name="telefono"
-              [(ngModel)]="registrationData.telefono"
-              class="form-control"
-              required
-              placeholder="Tu número de teléfono"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="fechaNacimiento">Fecha de Nacimiento:</label>
-            <input
-              type="date"
-              id="fechaNacimiento"
-              name="fechaNacimiento"
-              [(ngModel)]="registrationData.fechaNacimiento"
-              class="form-control"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="obraSocial">Obra Social (opcional):</label>
-            <select
-              id="obraSocial"
-              name="obraSocial"
-              [(ngModel)]="registrationData.obraSocialId"
-              class="form-control"
-            >
-              <option value="">Sin obra social</option>
-              <option *ngFor="let obra of obrasSociales" [value]="obra.id">
-                {{ obra.nombre }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-actions">
-            <button
-              type="submit"
-              class="btn btn-register"
-              [disabled]="!registrationForm.valid || isRegistering"
-            >
-              <i class="fas fa-user-plus" *ngIf="!isRegistering"></i>
-              <i class="fas fa-spinner fa-spin" *ngIf="isRegistering"></i>
-              {{ isRegistering ? 'Registrando...' : 'Registrar' }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-back"
-              (click)="cancelRegistration()"
-            >
-              <i class="fas fa-arrow-left"></i>
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- Error Messages -->
-      <div class="error-message" *ngIf="errorMessage">
-        <i class="fas fa-exclamation-triangle"></i>
-        {{ errorMessage }}
-      </div>
-
-      <!-- Loading State -->
-      <div class="loading" *ngIf="isLoading">
-        <i class="fas fa-spinner fa-spin"></i>
-        Verificando credenciales...
       </div>
     </div>
-  </div>
+  </section>
 
-  <!-- Features Section -->
-  <div class="features-section" *ngIf="!selectedRole">
-    <div class="features-grid">
-      <div class="feature-card">
-        <i class="fas fa-calendar-alt"></i>
-        <h3>Gestión de Turnos</h3>
-        <p>Programa y administra turnos de manera eficiente</p>
+  <!-- SECCIÓN 3: CARACTERÍSTICAS / BENEFICIOS -->
+  <section class="landing-section features-section">
+    <div class="section-container">
+      <div class="section-header-centered">
+        <h2>¿Cómo funciona?</h2>
+        <p class="section-subtitle">Gestión simple y eficiente de tus consultas médicas</p>
       </div>
-      <div class="feature-card">
-        <i class="fas fa-user-md"></i>
-        <h3>Control de Médicos</h3>
-        <p>Administra horarios y disponibilidad del personal médico</p>
-      </div>
-      <div class="feature-card">
-        <i class="fas fa-chart-line"></i>
-        <h3>Reportes</h3>
-        <p>Visualiza estadísticas y métricas del centro</p>
-      </div>
-      <div class="feature-card">
-        <i class="fas fa-mobile-alt"></i>
-        <h3>Acceso Fácil</h3>
-        <p>Interfaz intuitiva y accesible desde cualquier dispositivo</p>
+
+      <div class="features-grid">
+        <div class="card feature-card">
+          <span class="material-symbols-outlined feature-icon">calendar_add_on</span>
+          <h3>Reserva de turnos</h3>
+          <p>Solicita turnos en cualquier momento sin necesidad de llamadas telefónicas</p>
+        </div>
+
+        <div class="card feature-card">
+          <span class="material-symbols-outlined feature-icon">map</span>
+          <h3>Búsqueda geográfica</h3>
+          <p>Encuentra el centro más cercano con mapa interactivo</p>
+        </div>
+
+        <div class="card feature-card">
+          <span class="material-symbols-outlined feature-icon">notifications_active</span>
+          <h3>Recordatorios</h3>
+          <p>Recibe notificaciones por email sobre tus turnos próximos</p>
+        </div>
+
+        <div class="card feature-card">
+          <span class="material-symbols-outlined feature-icon">history</span>
+          <h3>Historial médico</h3>
+          <p>Accede a tu historial de consultas en cualquier momento</p>
+        </div>
+
+        <div class="card feature-card">
+          <span class="material-symbols-outlined feature-icon">smartphone</span>
+          <h3>Acceso multiplataforma</h3>
+          <p>Disponible en computadoras, tablets y smartphones</p>
+        </div>
+
+        <div class="card feature-card">
+          <span class="material-symbols-outlined feature-icon">verified_user</span>
+          <h3>Seguridad garantizada</h3>
+          <p>Datos protegidos con estándares de seguridad médica</p>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
+
+
+  <!-- FOOTER -->
+  <footer class="landing-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="material-symbols-outlined">calendar_month</span>
+        <span class="footer-brand-text">CheTurno</span>
+      </div>
+      <p class="footer-description">Sistema de gestión de turnos médicos</p>
+      <p class="footer-institution">Universidad Nacional de la Patagonia San Juan Bosco</p>
+      <p class="footer-version">Versión 1.0.0 | 2025</p>
+    </div>
+  </footer>
 
   <!-- MODAL DE MAPA DE CENTROS -->
   <app-centros-mapa-modal
