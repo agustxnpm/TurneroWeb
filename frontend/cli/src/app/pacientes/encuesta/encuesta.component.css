@@ -1,7 +1,320 @@
-.encuesta-wrapper { padding: 1rem; }
-.encuesta-question { margin-bottom: 1rem; }
-.nps-options { display:flex; gap:0.5rem; flex-wrap:wrap; }
-.nps-option { display:flex; flex-direction:column; align-items:center; }
-.rating-control { display:flex; gap:0.5rem; }
-.form-actions { margin-top:1rem; display:flex; gap:0.5rem; }
-.loading { padding:1rem; }
+/* ============================================
+   ENCUESTA COMPONENT - DESIGN SYSTEM
+============================================ */
+
+/* Contenedor principal */
+.encuesta-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+}
+
+/* Card de encuesta */
+.encuesta-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow-soft);
+  padding: var(--space-xl);
+}
+
+/* Encabezado */
+.encuesta-header {
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.encuesta-title {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.encuesta-subtitle {
+  font-size: var(--font-size-body);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Formulario */
+.encuesta-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/* Contenedor de pregunta */
+.pregunta-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.pregunta-label {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+  margin: 0;
+}
+
+/* Wrapper para controles */
+.control-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* ==================== ESCALAS NPS ==================== */
+.nps-scale {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.nps-option {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.nps-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.nps-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-surface);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.nps-option:hover .nps-value {
+  border-color: var(--color-accent);
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+.nps-option input[type="radio"]:checked + .nps-value {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+/* ==================== ESCALAS RATING ==================== */
+.rating-scale {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.rating-option {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.rating-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.rating-star {
+  font-size: 32px;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  filter: grayscale(100%);
+}
+
+.rating-value {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.rating-option:hover .rating-star {
+  transform: scale(1.1);
+  filter: grayscale(0%);
+}
+
+.rating-option input[type="radio"]:checked + .rating-star {
+  filter: grayscale(0%);
+  transform: scale(1.2);
+}
+
+.rating-option input[type="radio"]:checked ~ .rating-value {
+  color: var(--text-main);
+  font-weight: var(--font-weight-bold);
+}
+
+/* ==================== ESCALAS CSAT ==================== */
+.csat-scale {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.csat-option {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.csat-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.csat-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-surface);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-main);
+  transition: all 0.2s ease;
+}
+
+.csat-option:hover .csat-value {
+  border-color: var(--color-accent);
+  background-color: rgba(13, 110, 253, 0.05);
+  transform: scale(1.05);
+}
+
+.csat-option input[type="radio"]:checked + .csat-value {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--text-on-accent);
+  transform: scale(1.1);
+}
+
+/* ==================== ETIQUETAS DE ESCALA ==================== */
+.scale-labels {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--space-sm);
+}
+
+.scale-label-start,
+.scale-label-end {
+  font-size: var(--font-size-small);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-regular);
+}
+
+/* ==================== ACCIONES DEL FORMULARIO ==================== */
+.form-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: flex-end;
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-color);
+  margin-top: var(--space-lg);
+}
+
+/* ==================== ESTADOS ==================== */
+
+/* Estado de carga */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xxl);
+  gap: var(--space-md);
+}
+
+.loading-message {
+  font-size: var(--font-size-body);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Estado vacío */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xxl);
+  gap: var(--space-md);
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  opacity: 0.5;
+}
+
+.empty-state-message {
+  font-size: var(--font-size-body);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+  .encuesta-container {
+    padding: var(--space-md);
+  }
+
+  .encuesta-card {
+    padding: var(--space-lg);
+  }
+
+  .nps-scale,
+  .rating-scale,
+  .csat-scale {
+    gap: var(--space-xs);
+  }
+
+  .nps-value {
+    width: 40px;
+    height: 40px;
+    font-size: var(--font-size-small);
+  }
+
+  .csat-value {
+    width: 48px;
+    height: 48px;
+    font-size: var(--font-size-body);
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+}

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { EncuestaService } from '../../services/encuesta.service';
 import { AuthService } from '../../inicio-sesion/auth.service';
+import { ModalService } from '../../modal/modal.service';
 
 @Component({
   selector: 'app-encuesta',
@@ -22,7 +23,8 @@ export class EncuestaComponent implements OnInit {
     private route: ActivatedRoute,
     private encuestaService: EncuestaService,
     private router: Router,
-    private auth: AuthService
+    private auth: AuthService,
+    private modalService: ModalService
   ) { }
 
   goBack() {
@@ -113,7 +115,7 @@ export class EncuestaComponent implements OnInit {
 
     // Validación: al menos una respuesta
     if (respuestasPayload.length === 0) {
-      alert('⚠️ Por favor responda al menos una pregunta antes de enviar la encuesta.');
+      this.modalService.alert('Validación', 'Por favor responda al menos una pregunta antes de enviar la encuesta.');
       return;
     }
 
@@ -127,14 +129,16 @@ export class EncuestaComponent implements OnInit {
     this.encuestaService.enviarRespuestas(payload).subscribe({
       next: (res) => {
         console.log('✅ Respuestas enviadas exitosamente:', res);
-        alert('✅ Encuesta enviada correctamente. ¡Gracias por tu tiempo!');
         this.submitted = false;
-        this.router.navigate(['/paciente-dashboard']);
+        this.modalService.alert('¡Gracias!', 'Encuesta enviada correctamente. Tu opinión es muy importante para nosotros.');
+        setTimeout(() => {
+          this.router.navigate(['/paciente-dashboard']);
+        }, 2000);
       },
       error: (err) => {
         console.error('❌ Error enviando respuestas:', err);
-        alert('❌ Error al enviar la encuesta. Por favor intente nuevamente.');
         this.submitted = false;
+        this.modalService.alert('Error', 'No se pudo enviar la encuesta. Por favor intente nuevamente.');
       }
     });
   }
