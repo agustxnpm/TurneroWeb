@@ -1157,7 +1157,8 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
 
     console.log("Enviando turno DTO:", turnoDTO);
 
-    this.http.post(`/rest/turno/asignar`, turnoDTO).subscribe({
+    // Usar el servicio TurnoService en lugar de llamada HTTP directa
+    this.turnoService.asignarTurno(turnoDTO).subscribe({
       next: () => {
         alert("¡Turno reservado exitosamente!");
 
