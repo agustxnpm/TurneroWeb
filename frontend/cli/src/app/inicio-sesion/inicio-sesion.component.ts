@@ -348,9 +348,10 @@ export class InicioSesionComponent implements OnInit {
           },
           error: (err: any) => {
             console.error('❌ Error al reservar el turno automáticamente:', err);
+            const errorMessage = err?.error?.status_text || 'No se pudo reservar el turno automáticamente. Por favor, intente reservarlo manualmente desde su panel de control.';
             this.modalService.alert(
               'Error en la Reserva',
-              'No se pudo reservar el turno automáticamente. Por favor, intente reservarlo manualmente desde su panel de control.'
+              errorMessage
             );
             localStorage.removeItem('turnoSeleccionadoId');
             this.router.navigate(['/paciente-dashboard']);

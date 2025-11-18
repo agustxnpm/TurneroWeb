@@ -567,7 +567,8 @@ export class AdminAgendaComponent implements OnInit {
       },
       error: (err: any) => {
         // console.error('Error al asignar el turno:', err);
-        alert('No se pudo asignar el turno. Intente nuevamente.');
+        const errorMessage = err?.error?.status_text || 'No se pudo asignar el turno. Intente nuevamente.';
+        alert(errorMessage);
         this.isAssigning = false;
       },
     });

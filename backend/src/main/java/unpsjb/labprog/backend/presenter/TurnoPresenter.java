@@ -91,9 +91,15 @@ public class TurnoPresenter {
 
     @PostMapping
     public ResponseEntity<Object> create(@RequestBody TurnoDTO turnoDTO, HttpServletRequest request) {
-        String currentUserEmail = getCurrentUser(request);
-        TurnoDTO saved = service.save(turnoDTO, currentUserEmail);
-        return Response.ok(saved, "Turno creado correctamente");
+        try {
+            String currentUserEmail = getCurrentUser(request);
+            TurnoDTO saved = service.save(turnoDTO, currentUserEmail);
+            return Response.ok(saved, "Turno creado correctamente");
+        } catch (IllegalArgumentException e) {
+            return Response.dbError(e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al crear el turno: " + e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")

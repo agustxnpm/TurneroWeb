@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityNotFoundException;
 import unpsjb.labprog.backend.business.repository.ConsultorioRepository;
+import unpsjb.labprog.backend.business.repository.EsquemaTurnoRepository;
 import unpsjb.labprog.backend.business.repository.PacienteRepository;
 import unpsjb.labprog.backend.business.repository.StaffMedicoRepository;
 import unpsjb.labprog.backend.business.repository.TurnoRepository;
@@ -36,6 +37,7 @@ import unpsjb.labprog.backend.dto.ValidacionContactoDTO;
 import unpsjb.labprog.backend.model.AuditLog;
 
 import unpsjb.labprog.backend.model.Consultorio;
+import unpsjb.labprog.backend.model.EsquemaTurno;
 import unpsjb.labprog.backend.model.EstadoTurno;
 import unpsjb.labprog.backend.model.Paciente;
 import unpsjb.labprog.backend.model.Role;
@@ -46,7 +48,6 @@ import unpsjb.labprog.backend.model.User;
 import unpsjb.labprog.backend.business.repository.OperadorRepository;
 import unpsjb.labprog.backend.business.repository.UserRepository;
 
-import unpsjb.labprog.backend.business.service.EncuestaInvitacionService;
 
 @Service
 public class TurnoService {
@@ -61,10 +62,10 @@ public class TurnoService {
     private StaffMedicoRepository staffMedicoRepository;
 
     @Autowired
-    private ListaEsperaService listaEsperaService;
+    private ConsultorioRepository consultorioRepository;
 
     @Autowired
-    private ConsultorioRepository consultorioRepository;
+    private EsquemaTurnoRepository esquemaTurnoRepository;
 
     @Autowired
     private AuditLogService auditLogService;
@@ -89,6 +90,7 @@ public class TurnoService {
 
     @Autowired
     private EncuestaInvitacionService encuestaInvitacionService;
+
 
     // === VALIDACIONES DE TRANSICIÓN DE ESTADO ===
 
@@ -1121,42 +1123,90 @@ public class TurnoService {
         if (turno.getEstado() == null) {
             throw new IllegalArgumentException("El estado del turno es obligatorio");
         }
+
+        // Validar que el médico atiende en la fecha del turno
+        validarDisponibilidadMedico(turno);
+
+        // Validar que no haya solapamiento con otros turnos del mismo médico
+        validarSolapamiento(turno);
     }
 
-    // public TurnoDTO asignarTurno(TurnoDTO turnoDTO) {
-    // if (turnoDTO == null) {
-    // throw new IllegalArgumentException("El turnoDTO no puede ser nulo.");
-    // }
+    private void validarDisponibilidadMedico(Turno turno) {
+        // Obtener el día de la semana de la fecha del turno y convertirlo a español
+        String diaSemanaIngles = turno.getFecha().getDayOfWeek().name();
+        String diaSemana = convertirDiaSemanaASpanol(diaSemanaIngles);
 
-    // // Crear un nuevo turno utilizando los datos del TurnoDTO
-    // Turno turno = new Turno();
-    // turno.setFecha(turnoDTO.getFecha());
-    // turno.setHoraInicio(turnoDTO.getHoraInicio());
-    // turno.setHoraFin(turnoDTO.getHoraFin());
-    // turno.setEstado(EstadoTurno.PROGRAMADO); // Estado inicial
+        // Buscar esquemas de turno para este médico
+        List<EsquemaTurno> esquemas = esquemaTurnoRepository.findByStaffMedicoId(turno.getStaffMedico().getId());
 
-    // // Asignar el paciente
-    // if (turnoDTO.getPacienteId() != null) {
-    // Paciente paciente = pacienteRepository.findById(turnoDTO.getPacienteId())
-    // .orElseThrow(() -> new IllegalArgumentException(
-    // "Paciente no encontrado con ID: " + turnoDTO.getPacienteId()));
-    // turno.setPaciente(paciente);
-    // }
+        // Verificar si alguno de los esquemas tiene horario para este día
+        boolean medicoAtiendeEsteDia = esquemas.stream()
+            .anyMatch(esquema -> esquema.getHorarios().stream()
+                .anyMatch(horario -> horario.getDia().equalsIgnoreCase(diaSemana)));
 
-    // // Asignar datos del esquema directamente desde el TurnoDTO
-    // turno.setStaffMedico(new StaffMedico(turnoDTO.getStaffMedicoId(),
-    // turnoDTO.getStaffMedicoNombre));
-    // turno.setConsultorio(new Consultorio(turnoDTO.getConsultorioId(),
-    // turnoDTO.getConsultorioNombre));
-    // turno.setCentroAtencion(new CentroAtencion(turnoDTO.getCentroId(),
-    // turnoDTO.getNombreCentro));
+        if (!medicoAtiendeEsteDia) {
+            throw new IllegalArgumentException(
+                String.format("El médico %s %s no atiende los días %s",
+                    turno.getStaffMedico().getMedico().getNombre(),
+                    turno.getStaffMedico().getMedico().getApellido(),
+                    diaSemana.toLowerCase()));
+        }
+    }
 
-    // // Guardar el turno
-    // Turno savedTurno = repository.save(turno);
+    private void validarSolapamiento(Turno turno) {
+        // Buscar turnos existentes del mismo médico en la misma fecha
+        List<Turno> turnosExistentes = repository.findByFechaAndStaffMedico_Id(
+            turno.getFecha(),
+            turno.getStaffMedico().getId()
+        );
 
-    // // Retornar el turno como DTO
-    // return toDTO(savedTurno);
-    // }
+        // Filtrar turnos que no estén cancelados
+        turnosExistentes = turnosExistentes.stream()
+            .filter(t -> t.getEstado() != EstadoTurno.CANCELADO)
+            .collect(Collectors.toList());
+
+        // Verificar si hay solapamiento de horarios
+        for (Turno turnoExistente : turnosExistentes) {
+            // Excluir el turno actual si es una edición (tiene ID)
+            if (turno.getId() != null && turno.getId().equals(turnoExistente.getId())) {
+                continue;
+            }
+
+            // Verificar solapamiento: dos intervalos se solapan si el inicio de uno
+            // está antes del fin del otro Y el fin de uno está después del inicio del otro
+            boolean haySolapamiento = turno.getHoraInicio().isBefore(turnoExistente.getHoraFin()) &&
+                                    turno.getHoraFin().isAfter(turnoExistente.getHoraInicio());
+
+            if (haySolapamiento) {
+                throw new IllegalArgumentException(
+                    String.format("Ya existe un turno programado para el médico %s %s en el horario %s - %s del día %s",
+                        turno.getStaffMedico().getMedico().getNombre(),
+                        turno.getStaffMedico().getMedico().getApellido(),
+                        turnoExistente.getHoraInicio().toString(),
+                        turnoExistente.getHoraFin().toString(),
+                        turno.getFecha().toString())
+                );
+            }
+        }
+    }
+
+    /**
+     * Convierte el nombre del día de la semana de inglés a español
+     */
+    private String convertirDiaSemanaASpanol(String diaIngles) {
+        switch (diaIngles.toUpperCase()) {
+            case "MONDAY": return "LUNES";
+            case "TUESDAY": return "MARTES";
+            case "WEDNESDAY": return "MIÉRCOLES";
+            case "THURSDAY": return "JUEVES";
+            case "FRIDAY": return "VIERNES";
+            case "SATURDAY": return "SÁBADO";
+            case "SUNDAY": return "DOMINGO";
+            default: return diaIngles; // Retornar el original si no se reconoce
+        }
+    }
+
+
 
     // === MÉTODOS DE AUDITORÍA ===
 

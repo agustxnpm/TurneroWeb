@@ -1173,7 +1173,8 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         console.error("Error al reservar el turno:", err);
-        alert("No se pudo reservar el turno. Intente nuevamente.");
+        const errorMessage = err?.error?.status_text || "No se pudo reservar el turno. Intente nuevamente.";
+        alert(errorMessage);
         this.isBooking = false;
       },
     });

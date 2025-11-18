@@ -193,7 +193,13 @@ export class TurnoDetailComponent {
       : this.turnoService.create(this.turno);
 
     op.subscribe({
-      next: () => {
+      next: (response: DataPackage<Turno>) => {
+        // Verificar si la respuesta contiene un error de negocio (status_code 409)
+        if (response.status_code !== 200) {
+          this.modalService.alert("Error", response.status_text || "No se pudo guardar el turno.");
+          return;
+        }
+
         this.modalService.alert(
           "Éxito",
           this.esSobreturno
@@ -204,26 +210,55 @@ export class TurnoDetailComponent {
       },
       error: (error) => {
         console.error("Error al guardar el turno:", error);
-        const mensaje = error?.error?.message || "No se pudo guardar el turno.";
+        // El backend retorna errores con DataPackage, acceder al mensaje correcto
+        const mensaje = error?.error?.status_text || error?.error?.message || "No se pudo guardar el turno.";
         this.modalService.alert("Error", mensaje);
       },
     });
   }
 
   private async verificarSolapamiento(): Promise<boolean> {
-    // TODO: Implementar verificación real con el backend
-    // Por ahora, simular verificación
+    // Verificar solapamientos reales consultando turnos existentes
     return new Promise((resolve) => {
-      setTimeout(() => {
-        // Simular que hay solapamiento (esto debería venir del backend)
-        const haySolapamiento = Math.random() > 0.7;
-        if (haySolapamiento) {
-          this.advertenciaSolapamiento = true;
-          this.mensajeAdvertencia = `Ya existe un turno programado para el mismo médico en este horario. 
-          Este sobreturno se registrará de todas formas, pero puede causar conflictos de agenda.`;
+      // Obtener turnos del mismo médico en la misma fecha
+      this.turnoService.all().subscribe({
+        next: (response: DataPackage<Turno[]>) => {
+          if (response.status_code !== 200) {
+            resolve(false);
+            return;
+          }
+
+          const turnosExistentes = response.data || [];
+          const turnosMismoMedicoFecha = turnosExistentes.filter(turno =>
+            turno.staffMedicoId === this.turno.staffMedicoId &&
+            turno.fecha === this.turno.fecha &&
+            turno.id !== this.turno.id // Excluir el turno actual si es edición
+          );
+
+          // Verificar si hay solapamiento de horarios
+          const haySolapamiento = turnosMismoMedicoFecha.some(turno => {
+            const inicioExistente = turno.horaInicio;
+            const finExistente = turno.horaFin;
+            const inicioNuevo = this.turno.horaInicio;
+            const finNuevo = this.turno.horaFin;
+
+            // Hay solapamiento si los intervalos se superponen
+            return (inicioNuevo < finExistente && finNuevo > inicioExistente);
+          });
+
+          if (haySolapamiento) {
+            this.advertenciaSolapamiento = true;
+            this.mensajeAdvertencia = `Ya existe un turno programado para el mismo médico en este horario.
+            Este sobreturno se registrará de todas formas, pero puede causar conflictos de agenda.`;
+          }
+
+          resolve(haySolapamiento);
+        },
+        error: (error: any) => {
+          console.error("Error al verificar solapamientos:", error);
+          resolve(false); // En caso de error, asumir no hay solapamiento
         }
-        resolve(haySolapamiento);
-      }, 300);
+      });
     });
   }
   private isValidId(id: any): boolean {
