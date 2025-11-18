@@ -8,6 +8,7 @@ import java.util.Map;
 
 import unpsjb.labprog.backend.Response;
 import unpsjb.labprog.backend.business.service.UserService;
+import unpsjb.labprog.backend.business.service.EncuestaInvitacionService;
 import unpsjb.labprog.backend.dto.RegisterRequest;
 import unpsjb.labprog.backend.dto.RegisterSuccessResponse;
 import unpsjb.labprog.backend.model.User;
@@ -20,6 +21,9 @@ public class AdminPresenter {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private EncuestaInvitacionService encuestaInvitacionService;
 
     /**
      * Obtiene la lista de todos los administradores
@@ -105,6 +109,21 @@ public class AdminPresenter {
                     isAvailable ? "Email disponible" : "Email ya registrado");
         } catch (Exception e) {
             return Response.error(null, "Error al verificar email: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Endpoint temporal para probar el envío de invitaciones a encuestas
+     * Procesa TODAS las invitaciones pendientes FORZANDO el envío (ignora timing programado)
+     */
+    @PostMapping("/test-encuesta-invitaciones")
+    public ResponseEntity<Object> testProcesarInvitaciones() {
+        try {
+            encuestaInvitacionService.procesarInvitacionesPendientesForzandoEnvio();
+            Map<String, Object> stats = encuestaInvitacionService.obtenerEstadisticas();
+            return Response.ok(stats, "Invitaciones procesadas exitosamente (envío forzado)");
+        } catch (Exception e) {
+            return Response.error(null, "Error al procesar invitaciones: " + e.getMessage());
         }
     }
 }

@@ -488,6 +488,29 @@ public class EmailService {
     }
 
     /**
+     * Envía una invitación a completar la encuesta de satisfacción después de un turno completado.
+     * 
+     * @param to            Dirección de correo del paciente
+     * @param patientName   Nombre del paciente
+     * @param turnoDetails  Detalles formateados del turno completado
+     * @param turnoId       ID del turno para generar enlace a la encuesta
+     * @param pacienteId    ID del paciente para generar deep-link token
+     * @return CompletableFuture<Void> para manejo asíncrono
+     */
+    @Async
+    public CompletableFuture<Void> sendSurveyInvitationEmail(String to, String patientName, String turnoDetails, Integer turnoId, Integer pacienteId) {
+        String subject = appName + " - Invitación a encuesta de satisfacción";
+        
+        // Generar deep-link token para acceso directo a la encuesta
+        String deepLinkToken = deepLinkService.generarDeepLinkToken(pacienteId, turnoId, "ENCUESTA");
+        String surveyUrl = appUrl + "/link-verificacion?token=" + deepLinkToken;
+        
+        String htmlBody = buildSurveyInvitationEmailBody(patientName, turnoDetails, surveyUrl);
+
+        return sendHtmlEmailAsync(to, subject, htmlBody);
+    }
+
+    /**
      * Construye el cuerpo HTML para el email de recordatorio de turno.
      * 
      * @param patientName     Nombre del paciente
@@ -527,6 +550,49 @@ public class EmailService {
                         </html>
                         """,
                 appName, patientName, reminderDetails, confirmUrl);
+    }
+
+    /**
+     * Construye el cuerpo HTML para el email de invitación a encuesta de satisfacción.
+     * 
+     * @param patientName   Nombre del paciente
+     * @param turnoDetails  Detalles formateados del turno completado
+     * @param surveyUrl     URL para acceder a la encuesta
+     * @return String con el HTML del cuerpo del email
+     */
+    private String buildSurveyInvitationEmailBody(String patientName, String turnoDetails, String surveyUrl) {
+        return String.format(
+                """
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>Invitación a encuesta de satisfacción</title>
+                        </head>
+                        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                                <h2 style="color: #17a2b8;">¡Tu opinión es importante! - %s</h2>
+                                <p>Hola %s,</p>
+                                <p>Esperamos que hayas tenido una buena experiencia en tu visita reciente. Tu opinión nos ayuda a mejorar nuestros servicios.</p>
+                                <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <h4 style="margin-top: 0; color: #0c5460;">Detalles de tu turno completado:</h4>
+                                    %s
+                                </div>
+                                <p><strong>¿Nos ayudarías con una breve encuesta?</strong> Solo tomará 2 minutos de tu tiempo y nos permitirá conocer mejor tu experiencia.</p>
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="%s" style="background-color: #17a2b8; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Completar Encuesta</a>
+                                </div>
+                                <p style="font-size: 14px; color: #666;">
+                                    Tu respuesta es completamente anónima y confidencial. Nos ayuda a mejorar la calidad de nuestros servicios médicos.
+                                </p>
+                                <p>¡Gracias por tu tiempo y confianza!</p>
+                                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                                <p style="font-size: 12px; color: #666;">Este es un correo automático, por favor no respondas.</p>
+                            </div>
+                        </body>
+                        </html>
+                        """,
+                appName, patientName, turnoDetails, surveyUrl);
     }
 
     private String buildAutomaticCancellationEmailBody(String patientName, String appointmentDetails,

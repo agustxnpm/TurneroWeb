@@ -46,6 +46,8 @@ import unpsjb.labprog.backend.model.User;
 import unpsjb.labprog.backend.business.repository.OperadorRepository;
 import unpsjb.labprog.backend.business.repository.UserRepository;
 
+import unpsjb.labprog.backend.business.service.EncuestaInvitacionService;
+
 @Service
 public class TurnoService {
 
@@ -84,6 +86,11 @@ public class TurnoService {
 
     @Autowired
     private ConfiguracionService configuracionService;
+
+    @Autowired
+    private EncuestaInvitacionService encuestaInvitacionService;
+
+    // === VALIDACIONES DE TRANSICIÓN DE ESTADO ===
 
     // Parámetro de configuración: días máximos para confirmar un turno antes de la
     // fecha
@@ -417,9 +424,15 @@ public class TurnoService {
         // Enviar notificación por email si el paciente tiene email verificado
         enviarNotificacionCancelacionEmail(savedTurno, cancelacionData, validacionContacto, performedBy);
 
-        // Buscar pacientes en lista de espera que coincidan con el turno cancelado
-        boolean buscarPacienteParaReasignar = listaEsperaService.buscarPacienteParaReasignar(savedTurno);
-        System.out.println("Estado buscarPacienteParaReasignar: " + buscarPacienteParaReasignar);
+        // Cancelar invitaciones a encuesta pendientes para este turno
+        try {
+            encuestaInvitacionService.cancelarInvitacionesPorTurno(savedTurno.getId());
+            System.out.println("✅ DEBUG TurnoService.cancelarTurno: Invitaciones a encuesta canceladas para turno ID: "
+                    + savedTurno.getId());
+        } catch (Exception e) {
+            System.err.println("❌ ERROR TurnoService.cancelarTurno: Falló cancelación de invitaciones a encuesta: " + e.getMessage());
+            // No re-lanzar para no romper la cancelación
+        }
 
         return toDTO(savedTurno);
     }
@@ -1591,6 +1604,16 @@ public class TurnoService {
         } catch (Exception e) {
             // No interrumpir el flujo principal si la notificación falla
             System.err.println("Error al crear notificación de encuesta pendiente: " + e.getMessage());
+        }
+
+        // Programar invitación automática a la encuesta por email
+        try {
+            encuestaInvitacionService.programarInvitacionEncuesta(savedTurno.getId());
+            System.out.println("✅ DEBUG TurnoService.completarTurno: Invitación a encuesta programada para turno ID: "
+                    + savedTurno.getId());
+        } catch (Exception e) {
+            System.err.println("❌ ERROR TurnoService.completarTurno: Falló programación de invitación a encuesta: " + e.getMessage());
+            // No re-lanzar para no romper el completado
         }
 
         return toDTO(savedTurno);

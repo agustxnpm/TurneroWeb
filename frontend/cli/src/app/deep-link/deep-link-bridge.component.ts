@@ -11,7 +11,8 @@ import { TurnoService } from '../turnos/turno.service';
  * 2. Valida el token con el backend
  * 3. Establece una sesión automática si el token es válido
  * 4. Si el tipo es "CONFIRMACION", confirma automáticamente el turno
- * 5. Redirige al usuario a la página de agenda con mensaje de confirmación
+ * 5. Si el tipo es "ENCUESTA", redirige a la pantalla de encuesta
+ * 6. Para otros tipos, redirige al usuario a la página de agenda con mensaje de confirmación
  */
 @Component({
   selector: 'app-deep-link-bridge',
@@ -61,6 +62,11 @@ export class DeepLinkBridgeComponent implements OnInit {
           // Si el tipo es "CONFIRMACION", confirmar el turno automáticamente
           if (context && context.tipo === 'CONFIRMACION' && context.turnoId) {
             this.confirmarTurno(context.turnoId);
+          } else if (context && context.tipo === 'ENCUESTA' && context.turnoId) {
+            // Para encuestas, redirigir directamente a la pantalla de encuesta
+            setTimeout(() => {
+              this.router.navigate(['/paciente/encuesta', context.turnoId]);
+            }, 1500);
           } else {
             // Para otros tipos, simplemente redirigir a la agenda
             this.showSuccess();
