@@ -15,7 +15,14 @@ export class TurnoService {
   private exportUrl = environment.production ? `${environment.apiUrl}/export` : 'rest/export';
   private estadisticasUrl = environment.production ? `${environment.apiUrl}/estadisticas` : 'rest/estadisticas';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    // DEBUG: Verificar configuración de environment en runtime
+    console.log('🔧 DEBUG TurnoService - Environment config:');
+    console.log('   - production:', environment.production);
+    console.log('   - apiUrl:', environment.apiUrl);
+    console.log('   - url:', this.url);
+    console.log('   - agendaUrl:', this.agendaUrl);
+  }
 
   // === MÉTODOS UTILITARIOS ===
 
@@ -149,7 +156,10 @@ export class TurnoService {
 
   /** Asigna un turno a un paciente (usado en reserva automática tras login) */
   asignarTurno(turnoDTO: any): Observable<DataPackage<Turno>> {
-    return this.http.post<DataPackage<Turno>>(`${this.url}/asignar`, turnoDTO);
+    const requestUrl = `${this.url}/asignar`;
+    console.log('📤 DEBUG asignarTurno - URL de request:', requestUrl);
+    console.log('📤 DEBUG asignarTurno - turnoDTO:', turnoDTO);
+    return this.http.post<DataPackage<Turno>>(requestUrl, turnoDTO);
   }
 
   /** Actualiza un turno existente */
