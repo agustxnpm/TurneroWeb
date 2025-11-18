@@ -64,7 +64,7 @@ export class DashboardGestionComponent implements OnInit {
   onAplicarFiltros(filters: any) {
     // Guardar filtros actuales para reutilizar en otros lugares
     this.filtrosActuales = filters;
-    
+
     this.cargarMetricas(filters);
     this.cargarOcupacion(filters);
     this.cargarCalidad(filters);
@@ -95,9 +95,9 @@ export class DashboardGestionComponent implements OnInit {
         const modalRef = this.modalService.open(ComentariosModalComponent, { size: 'lg' });
         modalRef.componentInstance.encuestas = encuestas;
         modalRef.componentInstance.title = 'Encuestas de Pacientes';
-      }, 
-      error: () => { 
-        console.error('Error cargando encuestas'); 
+      },
+      error: () => {
+        console.error('Error cargando encuestas');
         this.modalService.alert('Error', 'No se pudieron cargar las encuestas. Por favor intente nuevamente.');
       }
     });
@@ -148,7 +148,7 @@ export class DashboardGestionComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al exportar CSV:', error);
-        alert('Error al exportar CSV. Por favor intente de nuevo.');
+        this.modalService.alert('Error de Exportación', 'No se pudo generar el archivo CSV. Por favor intente de nuevo.');
         this.loading = false;
       }
     });
@@ -174,13 +174,13 @@ export class DashboardGestionComponent implements OnInit {
           await this.exportService.descargarPDF(htmlContent, filename);
         } catch (error) {
           console.error('Error al generar PDF:', error);
-          alert('Error al generar PDF. Por favor intente de nuevo.');
+          this.modalService.alert('Error de Generación', 'Falló la generación del PDF. Por favor intente de nuevo.');
         }
         this.loading = false;
       },
       error: (error) => {
         console.error('Error al exportar PDF:', error);
-        alert('Error al exportar PDF. Por favor intente de nuevo.');
+        this.modalService.alert('Error de Exportación', 'No se pudo exportar el archivo PDF. Por favor intente de nuevo.');
         this.loading = false;
       }
     });

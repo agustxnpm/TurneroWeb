@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EncuestaAdminService } from '../../services/encuesta-admin.service';
 import { debounceTime, distinctUntilChanged, Subject, switchMap } from 'rxjs';
+import { ModalService } from '../../modal/modal.service';
 
 interface TipoPregunta {
   value: string;
@@ -62,7 +63,10 @@ export class GestionEncuestasComponent implements OnInit {
   previewPlantilla: any = null;
   previewRespuestas: { [preguntaId: number]: any } = {};
 
-  constructor(private adminService: EncuestaAdminService) { }
+  constructor(
+    private adminService: EncuestaAdminService,
+    private modalService: ModalService
+  ) { }
 
   ngOnInit(): void {
     this.reload();
@@ -133,7 +137,7 @@ export class GestionEncuestasComponent implements OnInit {
 
   crearPregunta() {
     if (!this.nuevaPreguntaTexto.trim()) {
-      alert('⚠️ Por favor ingrese el texto de la pregunta');
+      this.modalService.alert('Validación', 'Por favor ingrese el texto de la pregunta');
       return;
     }
 
@@ -146,27 +150,27 @@ export class GestionEncuestasComponent implements OnInit {
       console.log('📝 Actualizando pregunta:', this.editandoPreguntaId, payload);
       this.adminService.actualizarPregunta(this.editandoPreguntaId, payload).subscribe({
         next: () => {
-          alert('✅ Pregunta actualizada exitosamente');
+          this.modalService.alert('Éxito', 'Pregunta actualizada exitosamente');
           this.cancelarEdicionPregunta();
           this.reload();
         },
         error: (err) => {
           console.error('❌ Error actualizando pregunta:', err);
-          alert('❌ Error al actualizar la pregunta');
+          this.modalService.alert('Error', 'No se pudo actualizar la pregunta');
         }
       });
     } else {
       console.log('📝 Creando pregunta:', payload);
       this.adminService.crearPregunta(payload).subscribe({
         next: () => {
-          alert('✅ Pregunta creada exitosamente');
+          this.modalService.alert('Éxito', 'Pregunta creada exitosamente');
           this.nuevaPreguntaTexto = '';
           this.nuevaPreguntaTipo = 'TEXTO_LIBRE';
           this.reload();
         },
         error: (err) => {
           console.error('❌ Error creando pregunta:', err);
-          alert('❌ Error al crear la pregunta');
+          this.modalService.alert('Error', 'No se pudo crear la pregunta');
         }
       });
     }
@@ -193,12 +197,12 @@ export class GestionEncuestasComponent implements OnInit {
     console.log('🗑️ Eliminando pregunta:', p.id);
     this.adminService.eliminarPregunta(p.id).subscribe({
       next: () => {
-        alert('✅ Pregunta eliminada exitosamente');
+        this.modalService.alert('Éxito', 'Pregunta eliminada exitosamente');
         this.reload();
       },
       error: (err) => {
         console.error('❌ Error eliminando pregunta:', err);
-        alert('❌ Error al eliminar la pregunta. Puede que esté siendo usada en una plantilla.');
+        this.modalService.alert('Error', 'No se pudo eliminar la pregunta. Puede que esté siendo usada en una plantilla.');
       }
     });
   }
@@ -207,7 +211,7 @@ export class GestionEncuestasComponent implements OnInit {
 
   crearPlantilla() {
     if (!this.nuevaPlantillaNombre.trim()) {
-      alert('⚠️ Por favor ingrese el nombre de la plantilla');
+      this.modalService.alert('Validación', 'Por favor ingrese el nombre de la plantilla');
       return;
     }
 
@@ -217,26 +221,26 @@ export class GestionEncuestasComponent implements OnInit {
       console.log('📝 Actualizando plantilla:', this.editandoPlantillaId, payload);
       this.adminService.actualizarPlantilla(this.editandoPlantillaId, payload).subscribe({
         next: () => {
-          alert('✅ Plantilla actualizada exitosamente');
+          this.modalService.alert('Éxito', 'Plantilla actualizada exitosamente');
           this.cancelarEdicionPlantilla();
           this.reload();
         },
         error: (err) => {
           console.error('❌ Error actualizando plantilla:', err);
-          alert('❌ Error al actualizar la plantilla');
+          this.modalService.alert('Error', 'No se pudo actualizar la plantilla');
         }
       });
     } else {
       console.log('📝 Creando plantilla:', payload);
       this.adminService.crearPlantilla(payload).subscribe({
         next: () => {
-          alert('✅ Plantilla creada exitosamente');
+          this.modalService.alert('Éxito', 'Plantilla creada exitosamente');
           this.nuevaPlantillaNombre = '';
           this.reload();
         },
         error: (err) => {
           console.error('❌ Error creando plantilla:', err);
-          alert('❌ Error al crear la plantilla');
+          this.modalService.alert('Error', 'No se pudo crear la plantilla');
         }
       });
     }
@@ -261,12 +265,12 @@ export class GestionEncuestasComponent implements OnInit {
     console.log('🗑️ Eliminando plantilla:', pl.id);
     this.adminService.eliminarPlantilla(pl.id).subscribe({
       next: () => {
-        alert('✅ Plantilla eliminada exitosamente');
+        this.modalService.alert('Éxito', 'Plantilla eliminada exitosamente');
         this.reload();
       },
       error: (err) => {
         console.error('❌ Error eliminando plantilla:', err);
-        alert('❌ Error al eliminar la plantilla');
+        this.modalService.alert('Error', 'No se pudo eliminar la plantilla');
       }
     });
   }
@@ -278,12 +282,12 @@ export class GestionEncuestasComponent implements OnInit {
 
     this.adminService.removerPreguntaDePlantilla(plantillaId, preguntaId).subscribe({
       next: () => {
-        alert('✅ Pregunta removida de la plantilla');
+        this.modalService.alert('Éxito', 'Pregunta removida de la plantilla');
         this.reload();
       },
       error: (err) => {
         console.error('❌ Error removiendo pregunta:', err);
-        alert('❌ Error al remover la pregunta');
+        this.modalService.alert('Error', 'No se pudo remover la pregunta');
       }
     });
   }
@@ -302,12 +306,12 @@ export class GestionEncuestasComponent implements OnInit {
 
   agregarPreguntasSeleccionadas() {
     if (!this.selectedPlantillaId) {
-      alert('⚠️ Seleccione una plantilla primero');
+      this.modalService.alert('Validación', 'Seleccione una plantilla primero');
       return;
     }
 
     if (this.selectedPreguntaIds.length === 0) {
-      alert('⚠️ Seleccione al menos una pregunta');
+      this.modalService.alert('Validación', 'Seleccione al menos una pregunta');
       return;
     }
 
@@ -316,12 +320,12 @@ export class GestionEncuestasComponent implements OnInit {
     );
 
     Promise.all(ops).then(() => {
-      alert('✅ Preguntas agregadas exitosamente');
+      this.modalService.alert('Éxito', 'Preguntas agregadas exitosamente');
       this.selectedPreguntaIds = [];
       this.reload();
     }).catch(err => {
       console.error('❌ Error:', err);
-      alert('❌ Error al agregar preguntas');
+      this.modalService.alert('Error', 'No se pudieron agregar las preguntas');
     });
   }
   seleccionarCentro(centro: any) {
@@ -338,48 +342,48 @@ export class GestionEncuestasComponent implements OnInit {
   }
   asignarCentro() {
     if (!this.selectedPlantillaId || !this.selectedCentro) {
-      alert('⚠️ Seleccione una plantilla y un centro');
+      this.modalService.alert('Validación', 'Seleccione una plantilla y un centro');
       return;
     }
     console.log(`📝 Asignando plantilla ${this.selectedPlantillaId} a centro ${this.selectedCentro.id}`);
     this.adminService.asignarPlantillaACentro(this.selectedPlantillaId, this.selectedCentro.id).subscribe({
       next: () => {
-        alert('✅ Centro asignado exitosamente');
+        this.modalService.alert('Éxito', 'Centro asignado exitosamente');
         this.selectedCentro = null;
         this.reload();
       },
-      error: () => alert('❌ Error al asignar centro')
+      error: () => this.modalService.alert('Error', 'No se pudo asignar el centro')
     });
   }
 
   asignarEspecialidad() {
     if (!this.selectedPlantillaId || !this.selectedEspecialidad) {
-      alert('⚠️ Seleccione una plantilla y una especialidad');
+      this.modalService.alert('Validación', 'Seleccione una plantilla y una especialidad');
       return;
     }
     console.log(`📝 Asignando plantilla ${this.selectedPlantillaId} a especialidad ${this.selectedEspecialidad.id}`);
     this.adminService.asignarPlantillaAEspecialidad(this.selectedPlantillaId, this.selectedEspecialidad.id).subscribe({
       next: () => {
-        alert('✅ Especialidad asignada exitosamente');
+        this.modalService.alert('Éxito', 'Especialidad asignada exitosamente');
         this.selectedEspecialidad = null;
         this.reload();
       },
-      error: () => alert('❌ Error al asignar especialidad')
+      error: () => this.modalService.alert('Error', 'No se pudo asignar la especialidad')
     });
   }
 
   desasignarPlantilla() {
     if (!this.selectedPlantillaId) {
-      alert('⚠️ Seleccione una plantilla');
+      this.modalService.alert('Validación', 'Seleccione una plantilla');
       return;
     }
 
     this.adminService.desasignarPlantilla(this.selectedPlantillaId).subscribe({
       next: () => {
-        alert('✅ Plantilla desasignada');
+        this.modalService.alert('Éxito', 'Plantilla desasignada');
         this.reload();
       },
-      error: () => alert('❌ Error al desasignar')
+      error: () => this.modalService.alert('Error', 'No se pudo desasignar')
     });
   }
   // === PREVIEW ===
@@ -425,7 +429,7 @@ export class GestionEncuestasComponent implements OnInit {
   // Desasignar solo el centro
   desasignarCentro() {
     if (!this.selectedPlantillaId) {
-      alert('⚠️ Seleccione una plantilla primero');
+      this.modalService.alert('Validación', 'Seleccione una plantilla primero');
       return;
     }
 
@@ -435,7 +439,7 @@ export class GestionEncuestasComponent implements OnInit {
 
     const plantilla = this.getPlantillaSeleccionada();
     if (!plantilla?.centroAtencion) {
-      alert('⚠️ Esta plantilla no tiene un centro asignado');
+      this.modalService.alert('Validación', 'Esta plantilla no tiene un centro asignado');
       return;
     }
 
@@ -443,17 +447,17 @@ export class GestionEncuestasComponent implements OnInit {
     // Por ahora usamos el método general, pero podrías crear uno específico
     this.adminService.desasignarPlantilla(this.selectedPlantillaId).subscribe({
       next: () => {
-        alert('✅ Centro desasignado exitosamente');
+        this.modalService.alert('Éxito', 'Centro desasignado exitosamente');
         this.reload();
       },
-      error: () => alert('❌ Error al desasignar centro')
+      error: () => this.modalService.alert('Error', 'No se pudo desasignar el centro')
     });
   }
 
   // Desasignar solo la especialidad
   desasignarEspecialidad() {
     if (!this.selectedPlantillaId) {
-      alert('⚠️ Seleccione una plantilla primero');
+      this.modalService.alert('Validación', 'Seleccione una plantilla primero');
       return;
     }
 
@@ -463,23 +467,23 @@ export class GestionEncuestasComponent implements OnInit {
 
     const plantilla = this.getPlantillaSeleccionada();
     if (!plantilla?.especialidad) {
-      alert('⚠️ Esta plantilla no tiene una especialidad asignada');
+      this.modalService.alert('Validación', 'Esta plantilla no tiene una especialidad asignada');
       return;
     }
 
     this.adminService.desasignarPlantilla(this.selectedPlantillaId).subscribe({
       next: () => {
-        alert('✅ Especialidad desasignada exitosamente');
+        this.modalService.alert('Éxito', 'Especialidad desasignada exitosamente');
         this.reload();
       },
-      error: () => alert('❌ Error al desasignar especialidad')
+      error: () => this.modalService.alert('Error', 'No se pudo desasignar la especialidad')
     });
   }
 
   // Desasignar todo (el método anterior renombrado)
   desasignarPlantillaCompleta() {
     if (!this.selectedPlantillaId) {
-      alert('⚠️ Seleccione una plantilla');
+      this.modalService.alert('Validación', 'Seleccione una plantilla');
       return;
     }
 
@@ -489,12 +493,12 @@ export class GestionEncuestasComponent implements OnInit {
 
     this.adminService.desasignarPlantilla(this.selectedPlantillaId).subscribe({
       next: () => {
-        alert('✅ Plantilla desasignada completamente');
+        this.modalService.alert('Éxito', 'Plantilla desasignada completamente');
         this.selectedCentro = null;
         this.selectedEspecialidad = null;
         this.reload();
       },
-      error: () => alert('❌ Error al desasignar')
+      error: () => this.modalService.alert('Error', 'No se pudo desasignar')
     });
   }
 }
