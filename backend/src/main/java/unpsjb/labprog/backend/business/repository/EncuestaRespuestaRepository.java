@@ -225,4 +225,31 @@ public interface EncuestaRespuestaRepository extends JpaRepository<EncuestaRespu
 			"AND er.fechaCreacion <= :hasta " +
 			"ORDER BY er.fechaCreacion DESC")
 	List<String> findComentariosByFechaHasta(@Param("hasta") LocalDateTime hasta);
+
+	// ========== QUERIES PARA ENCUESTAS DETALLADAS (con filtros de centro) ==========
+
+	/**
+	 * Obtener todas las respuestas agrupadas por turno, con filtros opcionales de fecha y centro de atención
+	 */
+	@Query("SELECT er.turno.id FROM EncuestaRespuesta er " +
+			"WHERE (:centroId IS NULL OR er.turno.centroAtencion.id = :centroId) " +
+			"AND er.fechaCreacion >= COALESCE(:desde, er.fechaCreacion) " +
+			"AND er.fechaCreacion <= COALESCE(:hasta, er.fechaCreacion) " +
+			"GROUP BY er.turno.id " +
+			"ORDER BY MAX(er.fechaCreacion) DESC")
+	List<Integer> findTurnosConEncuestas(
+			@Param("centroId") Integer centroId,
+			@Param("desde") LocalDateTime desde,
+			@Param("hasta") LocalDateTime hasta);
+
+	/**
+	 * Obtener todas las respuestas de un turno específico
+	 */
+	@Query("SELECT er FROM EncuestaRespuesta er " +
+			"JOIN FETCH er.pregunta " +
+			"JOIN FETCH er.turno t " +
+			"JOIN FETCH t.paciente " +
+			"WHERE er.turno.id = :turnoId " +
+			"ORDER BY er.pregunta.id ASC")
+	List<EncuestaRespuesta> findAllByTurnoIdWithDetails(@Param("turnoId") Integer turnoId);
 }

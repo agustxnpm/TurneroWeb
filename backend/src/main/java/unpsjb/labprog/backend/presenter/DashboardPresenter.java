@@ -120,4 +120,22 @@ public class DashboardPresenter {
         }
     }
 
+    @GetMapping("/detalle/encuestas")
+    public ResponseEntity<Object> getDetalleEncuestas(
+            @RequestParam(required = false) String fechaDesde,
+            @RequestParam(required = false) String fechaHasta,
+            @RequestParam(required = false) Integer centroId) {
+        try {
+            FiltrosDashboardDTO filtros = new FiltrosDashboardDTO();
+            filtros.setFechaDesde(fechaDesde != null && !fechaDesde.isEmpty() ? LocalDate.parse(fechaDesde) : null);
+            filtros.setFechaHasta(fechaHasta != null && !fechaHasta.isEmpty() ? LocalDate.parse(fechaHasta) : null);
+            filtros.setCentroId(centroId);
+
+            var encuestas = dashboardService.getEncuestasDetalladas(filtros);
+            return Response.ok(encuestas, "Encuestas obtenidas correctamente");
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener encuestas: " + e.getMessage());
+        }
+    }
+
 }

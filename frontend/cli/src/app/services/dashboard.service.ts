@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
+import { EncuestaDetalle } from '../models/encuesta-detalle';
 
 @Injectable({
   providedIn: 'root'
@@ -79,5 +80,18 @@ export class DashboardService {
       });
     }
     return this.http.get<DataPackage<string[]>>(`${this.base}/detalle/comentarios`, { params: httpParams });
+  }
+
+  getEncuestasDetalladas(params?: { fechaDesde?: string, fechaHasta?: string, centroId?: number }): Observable<DataPackage<EncuestaDetalle[]>> {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(k => {
+        const v = (params as any)[k];
+        if (v !== undefined && v !== null && v !== '' && v !== 'null') {
+          httpParams = httpParams.set(k, String(v));
+        }
+      });
+    }
+    return this.http.get<DataPackage<EncuestaDetalle[]>>(`${this.base}/detalle/encuestas`, { params: httpParams });
   }
 }

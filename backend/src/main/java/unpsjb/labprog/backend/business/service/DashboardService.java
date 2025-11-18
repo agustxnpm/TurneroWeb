@@ -24,11 +24,13 @@ import unpsjb.labprog.backend.business.repository.ListaEsperaRepository;
 import unpsjb.labprog.backend.dto.FiltrosDashboardDTO;
 import unpsjb.labprog.backend.dto.MetricasDashboardDTO;
 import unpsjb.labprog.backend.dto.OcupacionConsultorioDTO;
+import unpsjb.labprog.backend.dto.EncuestaDetalleDTO;
 import unpsjb.labprog.backend.model.AuditLog;
 import unpsjb.labprog.backend.model.Consultorio;
 import unpsjb.labprog.backend.model.Turno;
 import unpsjb.labprog.backend.model.EstadoTurno;
 import unpsjb.labprog.backend.model.TipoPregunta;
+import unpsjb.labprog.backend.model.EncuestaRespuesta;
 
 @Service
 public class DashboardService {
@@ -455,5 +457,90 @@ public class DashboardService {
         } else {
             return encuestaRespuestaRepository.findComentarios();
         }
+    }
+
+    /**
+     * Obtener encuestas completas con toda la información (respuestas, turno, médico, centro)
+     * Filtrado por centro de atención y rango de fechas
+     */
+    public List<EncuestaDetalleDTO> getEncuestasDetalladas(FiltrosDashboardDTO filtros) {
+        LocalDateTime desde = null;
+        LocalDateTime hasta = null;
+        Integer centroId = null;
+
+        if (filtros != null) {
+            if (filtros.getFechaDesde() != null)
+                desde = filtros.getFechaDesde().atStartOfDay();
+            if (filtros.getFechaHasta() != null)
+                hasta = filtros.getFechaHasta().atTime(23, 59, 59);
+            centroId = filtros.getCentroId();
+        }
+
+        // Obtener IDs de turnos con encuestas respondidas
+        List<Integer> turnosConEncuesta = encuestaRespuestaRepository.findTurnosConEncuestas(
+                centroId, desde, hasta);
+
+        // Construir DTOs con información completa
+        List<EncuestaDetalleDTO> resultados = new ArrayList<>();
+
+        for (Integer turnoId : turnosConEncuesta) {
+            List<EncuestaRespuesta> respuestas = encuestaRespuestaRepository.findAllByTurnoIdWithDetails(turnoId);
+
+            if (respuestas.isEmpty())
+                continue;
+
+            // Tomar la primera respuesta para obtener datos del turno
+            EncuestaRespuesta primeraRespuesta = respuestas.get(0);
+            Turno turno = primeraRespuesta.getTurno();
+
+            EncuestaDetalleDTO dto = new EncuestaDetalleDTO();
+
+            // Información del turno
+            dto.setTurnoId(turno.getId());
+            dto.setFechaTurno(turno.getFecha());
+
+            // Información del paciente
+            dto.setPacienteId(turno.getPaciente().getId());
+            dto.setPacienteNombre(turno.getPaciente().getApellido() + " " + turno.getPaciente().getNombre());
+
+            // Información del médico y centro (usar campos de auditoría del turno)
+            dto.setMedicoId(turno.getMedico().getId());
+            dto.setMedicoNombre(turno.getMedico().getApellido() + " " + turno.getMedico().getNombre());
+            dto.setCentroAtencionId(turno.getCentroAtencion().getId());
+            dto.setCentroAtencionNombre(turno.getCentroAtencion().getNombre());
+
+            // Especialidad (del campo de auditoría)
+            if (turno.getEspecialidad() != null) {
+                dto.setEspecialidadNombre(turno.getEspecialidad().getNombre());
+            }
+
+            // Fecha de respuesta (tomar la más reciente)
+            LocalDateTime fechaRespuesta = respuestas.stream()
+                    .map(EncuestaRespuesta::getFechaCreacion)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+            dto.setFechaRespuesta(fechaRespuesta);
+
+            // Procesar respuestas y agrupar por tipo de pregunta
+            Map<String, Object> respuestasMap = new HashMap<>();
+            String comentario = null;
+
+            for (EncuestaRespuesta resp : respuestas) {
+                String tipoPregunta = resp.getPregunta().getTipo().name();
+
+                if (resp.getPregunta().getTipo() == TipoPregunta.TEXTO_LIBRE) {
+                    comentario = resp.getValorTexto();
+                } else if (resp.getValorNumerico() != null) {
+                    respuestasMap.put(tipoPregunta, resp.getValorNumerico());
+                }
+            }
+
+            dto.setRespuestas(respuestasMap);
+            dto.setComentario(comentario);
+
+            resultados.add(dto);
+        }
+
+        return resultados;
     }
 }

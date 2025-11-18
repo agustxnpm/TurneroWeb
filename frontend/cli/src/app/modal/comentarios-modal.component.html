@@ -1,18 +1,152 @@
-<div class="comentarios-modal">
+<div class="encuestas-modal">
   <div class="modal-header">
-    <h4 class="modal-title">{{ title }}</h4>
+    <div class="header-content">
+      <span class="material-symbols-outlined header-icon">assignment</span>
+      <h4 class="modal-title">{{ title }}</h4>
+    </div>
     <button type="button" class="btn-close" aria-label="Close" (click)="close()"></button>
   </div>
+  
   <div class="modal-body">
-    <div *ngIf="!comentarios || comentarios.length === 0" class="empty">
-      No hay comentarios disponibles para el período seleccionado.
+    <div *ngIf="!encuestas || encuestas.length === 0" class="empty-state">
+      <span class="material-symbols-outlined empty-icon">sentiment_neutral</span>
+      <p>No hay encuestas disponibles para los filtros seleccionados.</p>
     </div>
 
-    <ul class="comentarios-list" *ngIf="comentarios && comentarios.length > 0">
-      <li *ngFor="let c of comentarios">{{ c }}</li>
-    </ul>
+    <div class="encuestas-container" *ngIf="encuestas && encuestas.length > 0">
+      <div class="encuesta-card" *ngFor="let enc of encuestas">
+        <!-- Header de la encuesta -->
+        <div class="encuesta-header">
+          <div class="encuesta-meta">
+            <div class="meta-row">
+              <span class="material-symbols-outlined meta-icon">person</span>
+              <span class="meta-label">Paciente:</span>
+              <span class="meta-value">{{ enc.pacienteNombre }}</span>
+            </div>
+            <div class="meta-row">
+              <span class="material-symbols-outlined meta-icon">medical_services</span>
+              <span class="meta-label">Médico:</span>
+              <span class="meta-value">{{ enc.medicoNombre }}</span>
+            </div>
+            <div class="meta-row" *ngIf="enc.especialidadNombre">
+              <span class="material-symbols-outlined meta-icon">local_hospital</span>
+              <span class="meta-label">Especialidad:</span>
+              <span class="meta-value">{{ enc.especialidadNombre }}</span>
+            </div>
+            <div class="meta-row">
+              <span class="material-symbols-outlined meta-icon">location_on</span>
+              <span class="meta-label">Centro:</span>
+              <span class="meta-value">{{ enc.centroAtencionNombre }}</span>
+            </div>
+            <div class="meta-row">
+              <span class="material-symbols-outlined meta-icon">calendar_today</span>
+              <span class="meta-label">Fecha turno:</span>
+              <span class="meta-value">{{ enc.fechaTurno }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Respuestas de la encuesta -->
+        <div class="encuesta-body">
+          <h6 class="section-title">
+            <span class="material-symbols-outlined">poll</span>
+            Respuestas
+          </h6>
+
+          <!-- NPS Score -->
+          <div class="respuesta-item" *ngIf="tieneRespuesta(enc, 'NPS')">
+            <div class="respuesta-label">
+              <span class="material-symbols-outlined">thumb_up</span>
+              <span>NPS (Net Promoter Score)</span>
+            </div>
+            <div class="respuesta-valor">
+              <span class="badge-score" [ngClass]="getColorClass(getRespuesta(enc, 'NPS'), 10)">
+                {{ getRespuesta(enc, 'NPS') }}/10
+              </span>
+            </div>
+          </div>
+
+          <!-- CSAT Score -->
+          <div class="respuesta-item" *ngIf="tieneRespuesta(enc, 'CSAT')">
+            <div class="respuesta-label">
+              <span class="material-symbols-outlined">sentiment_satisfied</span>
+              <span>CSAT (Satisfacción)</span>
+            </div>
+            <div class="respuesta-valor">
+              <span class="badge-score" [ngClass]="getColorClass(getRespuesta(enc, 'CSAT'), 5)">
+                {{ getRespuesta(enc, 'CSAT') }}/5
+              </span>
+            </div>
+          </div>
+
+          <!-- RATING (estrellas) -->
+          <div class="respuesta-item" *ngIf="tieneRespuesta(enc, 'RATING')">
+            <div class="respuesta-label">
+              <span class="material-symbols-outlined">star</span>
+              <span>Calificación general</span>
+            </div>
+            <div class="respuesta-valor">
+              <div class="stars-display">
+                <span class="star-filled" *ngFor="let star of getEstrellas(getRespuesta(enc, 'RATING'))">&#9733;</span>
+                <span class="star-empty" *ngFor="let star of getEstrellas(5 - getRespuesta(enc, 'RATING'))">&#9734;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RATING_TRATO (estrellas) -->
+          <div class="respuesta-item" *ngIf="tieneRespuesta(enc, 'RATING_TRATO')">
+            <div class="respuesta-label">
+              <span class="material-symbols-outlined">healing</span>
+              <span>¿Cómo calificaría la atención médica recibida?</span>
+            </div>
+            <div class="respuesta-valor">
+              <div class="stars-display">
+                <span class="star-filled" *ngFor="let star of getEstrellas(getRespuesta(enc, 'RATING_TRATO'))">&#9733;</span>
+                <span class="star-empty" *ngFor="let star of getEstrellas(5 - getRespuesta(enc, 'RATING_TRATO'))">&#9734;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RATING_ESPERA (estrellas) -->
+          <div class="respuesta-item" *ngIf="tieneRespuesta(enc, 'RATING_ESPERA')">
+            <div class="respuesta-label">
+              <span class="material-symbols-outlined">schedule</span>
+              <span>¿El tiempo de espera fue razonable?</span>
+            </div>
+            <div class="respuesta-valor">
+              <div class="stars-display">
+                <span class="star-filled" *ngFor="let star of getEstrellas(getRespuesta(enc, 'RATING_ESPERA'))">&#9733;</span>
+                <span class="star-empty" *ngFor="let star of getEstrellas(5 - getRespuesta(enc, 'RATING_ESPERA'))">&#9734;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comentario -->
+          <div class="respuesta-comentario" *ngIf="enc.comentario">
+            <div class="comentario-header">
+              <span class="material-symbols-outlined">chat</span>
+              <span>Comentario</span>
+            </div>
+            <p class="comentario-texto">{{ enc.comentario }}</p>
+          </div>
+
+          <div class="sin-comentario" *ngIf="!enc.comentario">
+            <span class="material-symbols-outlined">comments_disabled</span>
+            <span>Sin comentarios adicionales</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+  
   <div class="modal-footer">
-    <button class="btn btn-secondary" (click)="close()">Cerrar</button>
+    <div class="footer-info" *ngIf="encuestas && encuestas.length > 0">
+      <span class="material-symbols-outlined">info</span>
+      <span>{{ encuestas.length }} encuesta{{ encuestas.length !== 1 ? 's' : '' }} encontrada{{ encuestas.length !== 1 ? 's' : '' }}</span>
+    </div>
+    <button class="btn btn-secondary" (click)="close()">
+      <span class="material-symbols-outlined">close</span>
+      <span>Cerrar</span>
+    </button>
   </div>
 </div>

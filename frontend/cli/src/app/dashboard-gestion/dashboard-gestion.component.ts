@@ -28,6 +28,9 @@ export class DashboardGestionComponent implements OnInit {
   turnosLabels: string[] = [];
   turnosData: number[] = [];
 
+  // Filtros actuales del dashboard
+  private filtrosActuales: any = {};
+
   constructor(
     private dashboardService: DashboardService,
     private centroAtencionService: CentroAtencionService,
@@ -59,6 +62,9 @@ export class DashboardGestionComponent implements OnInit {
   }
 
   onAplicarFiltros(filters: any) {
+    // Guardar filtros actuales para reutilizar en otros lugares
+    this.filtrosActuales = filters;
+    
     this.cargarMetricas(filters);
     this.cargarOcupacion(filters);
     this.cargarCalidad(filters);
@@ -82,12 +88,18 @@ export class DashboardGestionComponent implements OnInit {
   }
 
   abrirComentarios() {
-    const filtros = { fechaDesde: undefined, fechaHasta: undefined };
-    this.dashboardService.getComentarios(filtros).subscribe({
+    // Usar los filtros actuales del dashboard, incluyendo el centroId
+    this.dashboardService.getEncuestasDetalladas(this.filtrosActuales).subscribe({
       next: (res) => {
-        const comentarios = res.data || [];
-        this.modalService.open(ComentariosModalComponent, { size: 'lg' }).componentInstance.comentarios = comentarios;
-      }, error: () => { console.error('Error cargando comentarios'); }
+        const encuestas = res.data || [];
+        const modalRef = this.modalService.open(ComentariosModalComponent, { size: 'lg' });
+        modalRef.componentInstance.encuestas = encuestas;
+        modalRef.componentInstance.title = 'Encuestas de Pacientes';
+      }, 
+      error: () => { 
+        console.error('Error cargando encuestas'); 
+        this.modalService.alert('Error', 'No se pudieron cargar las encuestas. Por favor intente nuevamente.');
+      }
     });
   }
 
@@ -179,9 +191,8 @@ export class DashboardGestionComponent implements OnInit {
    * Toma los valores actuales del dashboard
    */
   private construirFiltroExportacion(): any {
-    return {
-      // Los filtros se enviarán tal como estén en el estado actual del dashboard
-      // Si no hay filtros específicos, el backend retornará todos los datos
+    // Retornar los filtros actuales aplicados en el dashboard
+    return this.filtrosActuales || {
       fechaDesde: null,
       fechaHasta: null,
       centroId: null
