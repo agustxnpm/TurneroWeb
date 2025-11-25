@@ -426,13 +426,18 @@ public class TurnoService {
         // Enviar notificación por email si el paciente tiene email verificado
         enviarNotificacionCancelacionEmail(savedTurno, cancelacionData, validacionContacto, performedBy);
 
+        // Buscar pacientes en lista de espera que coincidan con el turno cancelado
+        boolean buscarPacienteParaReasignar = listaEsperaService.buscarPacienteParaReasignar(savedTurno);
+        System.out.println("Estado buscarPacienteParaReasignar: " + buscarPacienteParaReasignar);
+
         // Cancelar invitaciones a encuesta pendientes para este turno
         try {
             encuestaInvitacionService.cancelarInvitacionesPorTurno(savedTurno.getId());
             System.out.println("✅ DEBUG TurnoService.cancelarTurno: Invitaciones a encuesta canceladas para turno ID: "
                     + savedTurno.getId());
         } catch (Exception e) {
-            System.err.println("❌ ERROR TurnoService.cancelarTurno: Falló cancelación de invitaciones a encuesta: " + e.getMessage());
+            System.err.println("❌ ERROR TurnoService.cancelarTurno: Falló cancelación de invitaciones a encuesta: "
+                    + e.getMessage());
             // No re-lanzar para no romper la cancelación
         }
 
@@ -1662,7 +1667,8 @@ public class TurnoService {
             System.out.println("✅ DEBUG TurnoService.completarTurno: Invitación a encuesta programada para turno ID: "
                     + savedTurno.getId());
         } catch (Exception e) {
-            System.err.println("❌ ERROR TurnoService.completarTurno: Falló programación de invitación a encuesta: " + e.getMessage());
+            System.err.println("❌ ERROR TurnoService.completarTurno: Falló programación de invitación a encuesta: "
+                    + e.getMessage());
             // No re-lanzar para no romper el completado
         }
 
