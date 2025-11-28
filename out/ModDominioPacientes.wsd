@@ -1,0 +1,87 @@
+@startuml ModDominioPacientes
+!theme plain
+hide empty methods
+
+title Modelo de Dominio - Gestión de Pacientes
+
+package "Identidad Base" {
+    abstract class Persona {
+        - nombre: String
+        - apellido: String
+        - dni: String
+        - email: String
+        - telefono: String
+        - direccion: String
+        - fechaNacimiento: LocalDate
+    }
+
+    class User <<Security>> {
+        - id: Integer
+        - username: String
+        - password: String (Hash)
+        - emailVerified: Boolean
+        - role: RoleEnum
+    }
+}
+
+package "Dominio Clínico (Paciente)" {
+    class Paciente extends Persona {
+        - id: Integer
+        - nroAfiliado: String
+        - fechaAlta: LocalDate
+        - observaciones: String
+    }
+
+    class ObraSocial {
+        - id: Integer
+        - nombre: String
+        - codigo: String
+        - activa: Boolean
+    }
+}
+
+package "Preferencias y Comunicación" {
+    class PreferenciaHoraria {
+        - id: Integer
+        - diaSemana: DiaSemana
+        - rangoHorario: Rango (Mañana/Tarde)
+    }
+
+    class Notificacion {
+        - id: Integer
+        - titulo: String
+        - mensaje: String
+        - leida: Boolean
+        - tipo: TipoNotificacion
+        - fecha: LocalDateTime
+    }
+}
+
+' Relaciones Principales
+Paciente -up-> "0..1" User : vinculado a (cuenta digital)
+Paciente -right-> "0..1" ObraSocial : cobertura
+Paciente *-- "0..*" PreferenciaHoraria : define
+Paciente *-- "0..*" Notificacion : recibe
+
+' Relaciones Transversales (Contexto)
+class Turno <<Referencia>>
+class ListaEspera <<Referencia>>
+
+Paciente "1" <-- "*" Turno : solicita
+Paciente "1" <-- "*" ListaEspera : en cola
+
+note right of Paciente
+    **Regla de Negocio:**
+    El Paciente es la entidad central para la
+    facturación y la historia clínica.
+    Puede existir sin un Usuario asociado
+    (gestión por ventanilla).
+end note
+
+note bottom of PreferenciaHoraria
+    Utilizado por el algoritmo de
+    Lista de Espera para ofrecer
+    turnos relevantes.
+end note
+
+@enduml

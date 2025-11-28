@@ -1,0 +1,101 @@
+@startuml ModDominioProfesionales
+!theme plain
+hide empty methods
+
+title Modelo de Dominio - Profesionales y Disponibilidad
+
+package "Identidad Profesional" {
+    class Medico extends Persona {
+        - id: Integer
+        - matricula: String
+        __
+        + especialidades: Set<Especialidad>
+    }
+
+    class StaffMedico {
+        - id: Integer
+        - porcentaje: Double
+        note: Representa el "Contrato" o vínculo\ndel médico con un centro específico\npara una especialidad concreta.
+    }
+}
+
+package "Gestión de Tiempo (Agenda)" {
+    class DisponibilidadMedico {
+        - id: Integer
+        __
+        Define los bloques horarios base
+    }
+
+    class DiaHorario <<Value Object>> {
+        - dia: String (LUNES, MARTES...)
+        - horaInicio: LocalTime
+        - horaFin: LocalTime
+    }
+
+    class EsquemaTurno {
+        - id: Integer
+        - intervalo: int (minutos)
+        __
+        Reglas para la generación
+        automática de slots
+    }
+
+    class ConfiguracionExcepcional {
+        - id: Integer
+        - fecha: LocalDate
+        - tipo: TipoExcepcion
+        - activo: boolean
+        __
+        Overrides (Sobrescritura)
+        de la disponibilidad normal
+    }
+
+    enum TipoExcepcion {
+        FERIADO
+        MANTENIMIENTO
+        ATENCION_ESPECIAL
+    }
+}
+
+package "Infraestructura (Referencias)" {
+    class CentroAtencion {
+        - nombre: String
+    }
+    class Especialidad {
+        - nombre: String
+    }
+    class Consultorio {
+        - numero: Integer
+    }
+}
+
+' Relaciones de Staff Medico
+Medico "1" -down-> "0..*" StaffMedico : tiene contratos
+StaffMedico -right-> "1" CentroAtencion : trabaja en
+StaffMedico -right-> "1" Especialidad : ejerce como
+StaffMedico -down-> "0..1" Consultorio : consultorio preferido/default
+
+' Relaciones de Disponibilidad
+StaffMedico "1" *-- "0..*" DisponibilidadMedico : configura
+DisponibilidadMedico "1" *-- "1..*" DiaHorario : contiene
+DisponibilidadMedico -right-> "0..1" Especialidad : (Opcional)
+
+' Relaciones de Esquema
+EsquemaTurno -up-> "1" DisponibilidadMedico : se basa en
+EsquemaTurno --> "1" StaffMedico
+EsquemaTurno --> "1" Consultorio : asignado a
+
+' Relaciones de Excepciones
+ConfiguracionExcepcional -up-> TipoExcepcion
+ConfiguracionExcepcional .down.> CentroAtencion : afecta a (Feriado local)
+ConfiguracionExcepcional .down.> EsquemaTurno : afecta a (Licencia médico)
+ConfiguracionExcepcional .down.> Consultorio : afecta a (Mantenimiento)
+
+note right of ConfiguracionExcepcional
+    **Regla de Negocio:**
+    Si existe una Configuración Excepcional
+    activa para una fecha, esta tiene prioridad
+    sobre la DisponibilidadMedico estándar.
+end note
+
+@enduml
