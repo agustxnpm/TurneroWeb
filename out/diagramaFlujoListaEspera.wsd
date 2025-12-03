@@ -81,7 +81,7 @@ group Algoritmo de Reasignación Automática
             
             LE_Service -> Notif: crearNotificacionNuevoTurno(paciente)
             activate Notif
-            Notif --> User: Email/App: "¡Se liberó un turno para vos!"
+            Notif --> User: App: "¡Se liberó un turno para vos!"
             deactivate Notif
             
             LE_Service --> T_Service: true (Reasignado)
