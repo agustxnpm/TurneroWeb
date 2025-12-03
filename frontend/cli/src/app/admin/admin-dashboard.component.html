@@ -1,4 +1,4 @@
-<div class="dashboard-wrapper">  
+<div class="dashboard-wrapper">
   <!-- Header del Dashboard -->
   <div class="dashboard-header card" *ngIf="isAuthenticated()">
     <div class="header-content">
@@ -33,7 +33,7 @@
       Acciones Rápidas
     </h2>
     <p class="section-description">Accede rápidamente a las funciones principales</p>
-    
+
     <div class="actions-grid">
       <div class="card action-card" role="button" aria-label="Dashboard de Auditoría" (click)="goToAudit()">
         <span class="material-symbols-outlined card-icon">assignment</span>
@@ -132,13 +132,15 @@
 
     <div class="calidad-grid">
       <div class="card kpi-card">
-        <h3>CSAT / Satisfacción</h3>
-        <p class="kpi-value">{{ calidad?.satisfaccionPromedio ? (calidad.satisfaccionPromedio | number:'1.1-2') : 'N/A' }}</p>
+        <h3>Satisfacción</h3>
+        <p class="kpi-value">{{ calidad?.satisfaccionPromedio ? (calidad.satisfaccionPromedio | number:'1.1-2') : 'N/A'
+          }}</p>
       </div>
 
       <div class="card kpi-card">
-        <h3>Tiempo asignación (min)</h3>
-        <p class="kpi-value">{{ calidad?.tiempoPromedioSolicitudAsignacionMinutos ? (calidad.tiempoPromedioSolicitudAsignacionMinutos | number:'1.0-0') : 'N/A' }}</p>
+        <h3>Días hasta el Turno</h3>
+        <p class="kpi-value">{{ calidad?.tiempoPromedioSolicitudAsignacionMinutos ?
+          (calidad.tiempoPromedioSolicitudAsignacionMinutos | number:'1.0-0') : 'N/A' }}</p>
       </div>
 
       <div class="card kpi-card clickable" role="button" (click)="openComentariosModal()">
