@@ -159,14 +159,17 @@ public class DashboardService {
 
             long minutosOcupados = 0;
             for (Turno t : turnosC) {
-                if (t.getHoraInicio() != null && t.getHoraFin() != null) {
+                if (t.getEstado() != EstadoTurno.CANCELADO && t.getHoraInicio() != null && t.getHoraFin() != null) {
                     minutosOcupados += ChronoUnit.MINUTES.between(t.getHoraInicio(), t.getHoraFin());
                 }
             }
 
             long minutosDisponibles = calcularMinutosDisponiblesConsultorio(c, desde, hasta);
 
-            double porcentaje = minutosDisponibles > 0 ? ((double) minutosOcupados / minutosDisponibles) * 100.0 : 0.0;
+            double porcentaje = 0.0;
+            if (minutosDisponibles > 0) {
+                porcentaje = ((double) minutosOcupados / minutosDisponibles) * 100.0;
+            }
             if (porcentaje < 0)
                 porcentaje = 0.0;
             if (porcentaje > 100.0)
@@ -228,10 +231,18 @@ public class DashboardService {
                     long mins = ChronoUnit.MINUTES.between(h.getHoraApertura(), h.getHoraCierre());
                     total += mins;
                 } else {
-                    total += fallbackMinutes;
+                    // Configurado pero horas inválidas -> 0
+                    total += 0;
                 }
             } else {
-                total += fallbackMinutes;
+                // --- CORRECCIÓN AQUÍ ---
+                // Si no hay horario configurado, solo aplicamos fallback de lunes a viernes.
+                // Evitamos sumar 8 horas los domingos, lo que diluye la métrica.
+                if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY) {
+                    total += fallbackMinutes;
+                } else {
+                    total += 0; // Fines de semana cerrados por defecto
+                }
             }
             d = d.plusDays(1);
         }
