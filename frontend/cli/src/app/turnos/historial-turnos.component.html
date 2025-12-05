@@ -114,24 +114,23 @@
                                         <div class="observaciones-text">{{ turno.observaciones }}</div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="turno-footer">
-                                    <!-- Asistencia Badge -->
+                                    <!-- Asistencia Badge - Mostrar si estado es COMPLETO o AUSENTE, y asistio no es null -->
                                     <span class="asistencia-badge" [ngClass]="{
-                                        'asistio': turno.asistio !== false,
-                                        'no-asistio': turno.asistio === false
-                                    }">
+                                            'asistio': turno.asistio === true,
+                                            'no-asistio': turno.asistio === false
+                                        }"
+                                        *ngIf="(turno.estado === 'COMPLETO' || turno.estado === 'AUSENTE') && turno.asistio !== null && turno.asistio !== undefined">
                                         <span class="material-symbols-outlined">
-                                            {{ turno.asistio === false ? 'cancel' : 'check_circle' }}
+                                            {{ turno.asistio === true ? 'check_circle' : 'cancel' }}
                                         </span>
-                                        {{ turno.asistio === false ? 'No asistió' : 'Asistió' }}
+                                        {{ turno.asistio === true ? 'Asistió' : 'No asistió' }}
                                     </span>
-                                    
+
                                     <!-- Botón Ver Detalle -->
-                                    <button 
-                                        class="btn btn-link btn-sm" 
-                                        (click)="abrirDetalle(turno); $event.stopPropagation()" 
-                                        type="button"
+                                    <button class="btn btn-link btn-sm"
+                                        (click)="abrirDetalle(turno); $event.stopPropagation()" type="button"
                                         aria-label="Ver detalle del turno">
                                         <span class="material-symbols-outlined me-xs">visibility</span>
                                         Ver Detalle
@@ -143,28 +142,21 @@
 
                     <!-- Paginación -->
                     <div class="paginacion-controles mt-lg" *ngIf="!isLoading && totalPages > 1">
-                        <button class="btn btn-secondary btn-paginacion" 
-                                [disabled]="currentPage === 0"
-                                (click)="cambiarPagina(currentPage - 1)"
-                                type="button">
+                        <button class="btn btn-secondary btn-paginacion" [disabled]="currentPage === 0"
+                            (click)="cambiarPagina(currentPage - 1)" type="button">
                             <span class="material-symbols-outlined">chevron_left</span>
                             Anterior
                         </button>
 
                         <div class="numeros-pagina">
-                            <button *ngFor="let num of getPaginasArray()" 
-                                    class="btn btn-numero-pagina"
-                                    [class.active]="currentPage === num" 
-                                    (click)="cambiarPagina(num)"
-                                    type="button">
+                            <button *ngFor="let num of getPaginasArray()" class="btn btn-numero-pagina"
+                                [class.active]="currentPage === num" (click)="cambiarPagina(num)" type="button">
                                 {{ num + 1 }}
                             </button>
                         </div>
 
-                        <button class="btn btn-secondary btn-paginacion" 
-                                [disabled]="currentPage === totalPages - 1"
-                                (click)="cambiarPagina(currentPage + 1)"
-                                type="button">
+                        <button class="btn btn-secondary btn-paginacion" [disabled]="currentPage === totalPages - 1"
+                            (click)="cambiarPagina(currentPage + 1)" type="button">
                             Siguiente
                             <span class="material-symbols-outlined">chevron_right</span>
                         </button>

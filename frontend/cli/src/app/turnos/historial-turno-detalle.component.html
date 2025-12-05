@@ -8,7 +8,7 @@
       <span class="material-symbols-outlined">close</span>
     </button>
   </div>
-  
+
   <div class="modal-body" *ngIf="turno">
     <!-- Estado y Fecha -->
     <div class="estado-fecha-section">
@@ -72,13 +72,15 @@
       </div>
     </div>
 
-    <!-- Estado de Asistencia -->
-    <div class="asistencia-section">
-      <span class="asistencia-badge" [ngClass]="{'asistio': turno.asistio, 'no-asistio': !turno.asistio}">
+    <!-- Estado de Asistencia - Mostrar si estado es COMPLETO o AUSENTE, y asistio no es null -->
+    <div class="asistencia-section"
+      *ngIf="(turno.estado === 'COMPLETO' || turno.estado === 'AUSENTE') && turno.asistio !== null && turno.asistio !== undefined">
+      <span class="asistencia-badge"
+        [ngClass]="{'asistio': turno.asistio === true, 'no-asistio': turno.asistio === false}">
         <span class="material-symbols-outlined">
-          {{ turno.asistio ? 'check_circle' : 'cancel' }}
+          {{ turno.asistio === true ? 'check_circle' : 'cancel' }}
         </span>
-        {{ turno.asistio ? 'Asistió al turno' : 'No asistió al turno' }}
+        {{ turno.asistio === true ? 'Asistió al turno' : 'No asistió al turno' }}
       </span>
     </div>
   </div>
