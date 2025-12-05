@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { TurnoService } from '../turnos/turno.service';
 import { DisponibilidadMedicoService } from '../disponibilidadMedicos/disponibilidadMedico.service';
 import { MedicoService } from './medico.service';
@@ -10,6 +11,8 @@ import { DisponibilidadMedico } from '../disponibilidadMedicos/disponibilidadMed
 import { Medico } from './medico';
 import { AuthService } from '../inicio-sesion/auth.service';
 import { StaffMedicoService } from '../staffMedicos/staffMedico.service';
+import { AusenciaModalComponent } from '../modal/ausencia-modal.component';
+import { ModalService } from '../modal/modal.service';
 
 interface DashboardStats {
   turnosHoy: number;
@@ -54,7 +57,9 @@ export class MedicoDashboardComponent implements OnInit {
     private disponibilidadService: DisponibilidadMedicoService,
     private medicoService: MedicoService,
     private authService: AuthService,
-    private staffMedicoService: StaffMedicoService
+    private staffMedicoService: StaffMedicoService,
+    private modalService: NgbModal,
+    private notificationService: ModalService
   ) {
     this.initializeParticles();
   }
@@ -810,8 +815,8 @@ Posible problema de configuración. Verifique:
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const fechaActual = new Date(hoy);
-/*     dosdiasAdelante.setDate(dosdiasAdelante.getDate() + 1); // +1 día = mañana
- */
+    /*     dosdiasAdelante.setDate(dosdiasAdelante.getDate() + 1); // +1 día = mañana
+     */
     const fechaTurno = new Date(turno.fecha);
     const esPasadoOHoy = fechaTurno <= fechaActual;
     // Estados válidos para marcar asistencia
@@ -1024,16 +1029,23 @@ Posible problema de configuración. Verifique:
     return `${day}/${month}/${year}`;
   }
 
-  /** Muestra un mensaje de éxito temporal */
+  /** Muestra un mensaje de éxito usando el modal del sistema */
   private mostrarMensajeExito(mensaje: string) {
     console.log('📢 Mensaje de éxito:', mensaje);
-    alert(mensaje);
-    // TODO: Implementar notificación toast más elegante
+    this.notificationService.alert('✅ Éxito', mensaje);
   }
   /** 
- * Toggle entre Asistió / No asistió
- */
-  toggleAsistencia(turno: any) {
+   * Toggle entre Asistió / No asistió
+   * Si intenta marcar como NO ASISTIÓ, muestra un modal de advertencia
+   */
+  toggleAsistencia(turno: any, event?: any) {
+    // Prevenir el cambio inmediato del checkbox
+    if (event) {
+      event.preventDefault();
+      // Resetear el checkbox a su estado anterior
+      event.target.checked = turno.asistio !== false;
+    }
+
     if (!turno.id) {
       console.error('❌ No se puede cambiar asistencia: ID de turno inválido');
       return;
@@ -1049,15 +1061,60 @@ Posible problema de configuración. Verifique:
     const nuevoEstado = turno.asistio === false ? true : false;
 
     const nombrePaciente = `${turno.nombrePaciente} ${turno.apellidoPaciente}`;
-    const mensaje = nuevoEstado
-      ? `¿Confirmar que ${nombrePaciente} SÍ ASISTIÓ?`
-      : `¿Confirmar que ${nombrePaciente} NO ASISTIÓ?`;
 
-    if (!confirm(mensaje)) {
-      return;
+    // Si intenta marcar como AUSENTE (false), mostrar modal de advertencia
+    if (nuevoEstado === false) {
+      this.mostrarModalAusencia(turno, nombrePaciente);
+    } else {
+      // Si marca como PRESENTE (true), usar confirmación simple
+      const confirmacion = confirm(`¿Confirmar que ${nombrePaciente} SÍ ASISTIÓ?`);
+      if (confirmacion) {
+        this.registrarAsistencia(turno, true, nombrePaciente);
+      }
     }
+  }
 
-    console.log('🔄 Toggle asistencia:', { turnoId: turno.id, nuevoEstado });
+  /**
+   * Muestra el modal de advertencia para marcar como AUSENTE
+   */
+  private mostrarModalAusencia(turno: any, nombrePaciente: string) {
+    const modalRef = this.modalService.open(AusenciaModalComponent, {
+      centered: true,
+      backdrop: 'static',
+      keyboard: false,
+      size: 'lg',
+      windowClass: 'ausencia-modal-window ausencia-warning-modal',
+      scrollable: true,
+      animation: true
+    });
+
+    // Pasar datos al modal
+    modalRef.componentInstance.nombrePaciente = nombrePaciente;
+    modalRef.componentInstance.fecha = this.formatearFechaLegible(turno.fecha);
+    modalRef.componentInstance.horaInicio = turno.horaInicio;
+    modalRef.componentInstance.horaFin = turno.horaFin;
+
+    // Esperar respuesta del modal
+    modalRef.result.then(
+      (resultado) => {
+        // Si confirma (resultado === true)
+        if (resultado === true) {
+          console.log('✅ Usuario confirmó la ausencia');
+          this.registrarAsistencia(turno, false, nombrePaciente);
+        }
+      },
+      (razon) => {
+        // Si cancela (dismiss)
+        console.log('❌ Usuario canceló la operación');
+      }
+    );
+  }
+
+  /**
+   * Registra la asistencia del turno
+   */
+  private registrarAsistencia(turno: any, nuevoEstado: boolean, nombrePaciente: string) {
+    console.log('🔄 Registrando asistencia:', { turnoId: turno.id, nuevoEstado });
     turno._cargando = true;
 
     this.turnoService.registrarAsistencia(turno.id, nuevoEstado).subscribe({
