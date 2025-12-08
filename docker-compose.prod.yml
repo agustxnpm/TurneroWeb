@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # 1. Base de Datos
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: turnerodb
+      POSTGRES_USER: ${DB_USERNAME}     # Variables que definiremos en el servidor
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Persistencia de datos
+
+  # 2. Backend (Java)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile  # Usamos el que ya tenías, funciona bien
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # Conectamos con el servicio 'db' definido arriba
+      DB_URL: jdbc:postgresql://db:5432/turnerodb 
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # Configuración JWT y Mail
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      APP_URL: http://168.197.48.210
+    depends_on:
+      - db
+
+  # 3. Frontend (Angular + Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod # El archivo nuevo que creamos
+    restart: always
+    ports:
+      - "80:80" # El puerto web estándar
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
