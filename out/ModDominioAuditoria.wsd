@@ -1,0 +1,67 @@
+@startuml ModDominioAuditoria
+!theme plain
+hide empty methods
+
+title Modelo de Dominio - Auditoría y Trazabilidad
+
+package "Registro de Eventos (Core)" {
+    class AuditLog {
+        - id: Long
+        - timestamp: LocalDateTime
+        - entityId: Long
+        - entityType: EntityType
+        - action: String
+        - performedBy: String
+        - ipAddress: String
+        - userAgent: String
+        - durationMs: Long
+        __ Contexto de Negocio __
+        - turnoId: Integer
+        - estadoAnterior: String
+        - estadoNuevo: String
+        - reason: String
+        __ Datos Serializados (Snapshots) __
+        - oldValues: Map<String, Object> (JSON)
+        - newValues: Map<String, Object> (JSON)
+    }
+
+    enum EntityType {
+        TURNO
+        PACIENTE
+        MEDICO
+        AGENDA
+        LOGIN
+        CONFIGURACION
+    }
+}
+
+package "Contexto de Ejecución" {
+    class AuditContext <<ThreadLocal>> {
+        - currentUser: String
+        - currentIp: String
+    }
+    
+    class AuditInterceptor <<Aspect>> {
+        note: Intercepta las transacciones\ny captura los metadatos.
+    }
+}
+
+' Relaciones
+AuditLog -right-> EntityType : clasificado como
+AuditInterceptor ..> AuditContext : lee
+AuditInterceptor ..> AuditLog : crea/persiste
+
+note right of AuditLog
+    **Inmutabilidad:**
+    Un registro de auditoría nunca se 
+    modifica ni se elimina (Append-Only).
+    Es la "fuente de la verdad" histórica.
+end note
+
+note bottom of AuditLog
+    **oldValues / newValues:**
+    Permiten ver el "Delta" del cambio.
+    Ej: { "hora": "10:00" } -> { "hora": "11:00" }
+end note
+
+@enduml

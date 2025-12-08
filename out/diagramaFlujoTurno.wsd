@@ -1,0 +1,87 @@
+@startuml diagramaFlujoTurno
+!theme plain
+autonumber
+
+actor "Paciente / Operador" as User
+participant "Frontend (Angular)" as FE
+box "Backend Core (Spring Boot)" #f9f9f9
+    participant "TurnoPresenter" as Controller
+    participant "TurnoService" as Service
+    participant "ConsultorioDistribucion\nService" as Allocator
+    participant "Disponibilidad\nMedicoService" as AvailService
+    participant "EmailService" as Email
+end box
+participant "TurnoRepository" as Repo
+database "PostgreSQL" as DB
+
+== 1. Selección y Solicitud ==
+
+User -> FE: Selecciona Especialidad, Médico y Horario
+FE -> FE: Valida datos del formulario
+User -> FE: Clic en "Confirmar Turno"
+activate FE
+
+FE -> Controller: POST /api/turnos\nBody: {medicoId, pacienteId, fecha, hora...}
+activate Controller
+
+== 2. Validación de Negocio ==
+
+Controller -> Service: crearTurno(TurnoDTO)
+activate Service
+
+Service -> AvailService: validarDisponibilidad(medico, fecha, hora)
+activate AvailService
+AvailService -> DB: Verifica cruce de horarios
+DB --> AvailService: OK (Disponible)
+deactivate AvailService
+
+Service -> Service: Validar que el Paciente\nno tenga otro turno a esa hora
+
+== 3. Asignación Inteligente de Consultorio ==
+
+note right of Service
+  El sistema busca automáticamente un consultorio libre
+  en el Centro de Atención correspondiente.
+end note
+
+Service -> Allocator: asignarConsultorio(fecha, hora, centroId)
+activate Allocator
+Allocator -> DB: Buscar consultorios ocupados
+Allocator -> Allocator: Algoritmo de distribución\n(Round Robin / Carga)
+Allocator --> Service: Retorna Consultorio Asignado
+deactivate Allocator
+
+== 4. Persistencia y Auditoría ==
+
+Service -> Service: Set Estado = "CONFIRMADO"
+Service -> Repo: save(turno)
+activate Repo
+Repo -> DB: INSERT INTO turnos ...
+DB --> Repo: ID Generado
+deactivate Repo
+
+note right of Service
+  La auditoría se dispara automáticamente
+  vía AuditInterceptor / EntityListeners
+  al guardar la entidad.
+end note
+
+== 5. Notificación y Respuesta ==
+
+par Proceso Asíncrono
+    Service -> Email: enviarConfirmacion(turno)
+    activate Email
+    Email -> User: Envía correo con detalles
+    deactivate Email
+end
+
+Service --> Controller: Retorna TurnoDTO (con Consultorio asignado)
+deactivate Service
+
+Controller --> FE: HTTP 201 Created
+deactivate Controller
+
+FE --> User: Muestra mensaje de éxito\ny redirige a "Mis Turnos"
+deactivate FE
+
+@enduml

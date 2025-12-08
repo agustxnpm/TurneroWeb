@@ -1,0 +1,103 @@
+@startuml diagramaFlujoListaEspera
+!theme plain
+autonumber
+
+actor "Paciente / Admin" as User
+participant "Frontend" as FE
+box "Backend Logic" #f9f9f9
+    participant "ListaEspera\nPresenter" as LE_Ctrl
+    participant "ListaEspera\nService" as LE_Service
+    participant "Turno\nPresenter" as T_Ctrl
+    participant "Turno\nService" as T_Service
+    participant "Notificacion\nService" as Notif
+    participant "AuditLog\nService" as Audit
+end box
+database "PostgreSQL" as DB
+
+== Escenario A: Alta en Lista de Espera ==
+
+User -> FE: Solicita ingresar a Lista de Espera\n(Especialidad, Médico Pref., Fechas)
+FE -> LE_Ctrl: POST /lista-espera
+activate LE_Ctrl
+
+LE_Ctrl -> LE_Service: save(ListaEsperaDTO)
+activate LE_Service
+
+LE_Service -> DB: Buscar solicitudes pendientes del paciente
+
+alt Ya tiene solicitud para esa Especialidad
+    LE_Service -> LE_Service: validarSolicitud()
+    note right: Detecta duplicado
+    LE_Service --> LE_Ctrl: Lanza RuntimeException:\n"El paciente ya tiene una solicitud pendiente..."
+    
+    LE_Ctrl --> FE: HTTP 400 Bad Request\n{message: "El paciente ya tiene una solicitud..."}
+    FE -> User: Muestra Error: "Ya estás anotado en esta lista"
+else Solicitud Válida (Nueva)
+    LE_Service -> DB: INSERT INTO lista_espera\n(estado='PENDIENTE', urgencia=...)
+    DB --> LE_Service: ID Generado
+    
+    LE_Service --> LE_Ctrl: DTO (Creado)
+    LE_Ctrl --> FE: 200 OK
+    FE -> User: Muestra Éxito: "Agregado a lista de espera"
+end
+deactivate LE_Service
+deactivate LE_Ctrl
+
+== Escenario B: Reasignación Automática (Motor del Sistema) ==
+
+note over User, DB: Este flujo inicia cuando ALGUIEN cancela un turno confirmado
+
+User -> FE: Cancela Turno existente
+FE -> T_Ctrl: POST /turnos/{id}/cancelar
+activate T_Ctrl
+
+T_Ctrl -> T_Service: cancelarTurno(id)
+activate T_Service
+
+T_Service -> DB: UPDATE turnos SET estado='CANCELADO'
+T_Service -> Audit: Registrar Cancelación
+
+group Algoritmo de Reasignación Automática
+    T_Service -> LE_Service: buscarPacienteParaReasignar(turnoCancelado)
+    activate LE_Service
+    
+    LE_Service -> DB: findAll() WHERE estado='PENDIENTE'\nAND especialidad = turno.especialidad
+    
+    LE_Service -> LE_Service: Filtrar y Ordenar Candidatos
+    note right of LE_Service
+      Prioridad:
+      1. Urgencia Médica (URGENTE > ALTA)
+      2. Fecha Solicitud (Antigüedad)
+    end note
+    
+    loop Para cada Candidato (Ordenado)
+        LE_Service -> LE_Service: intentarReasignarTurno(candidato, turno)
+        
+        alt Candidato Válido Encontrado
+            LE_Service -> DB: INSERT INTO turnos (Nuevo Turno)
+            LE_Service -> DB: UPDATE lista_espera SET estado='CUBIERTA'
+            
+            LE_Service -> Audit: logGenericAction("TURNO_REASIGNADO")
+            
+            LE_Service -> Notif: crearNotificacionNuevoTurno(paciente)
+            activate Notif
+            Notif --> User: App: "¡Se liberó un turno para vos!"
+            deactivate Notif
+            
+            LE_Service --> T_Service: true (Reasignado)
+            
+            break "Loop finaliza al cubrir el hueco"
+        end
+    end
+    
+    LE_Service --> T_Service: resultado (boolean)
+    deactivate LE_Service
+end
+
+T_Service --> T_Ctrl: TurnoCanceladoDTO
+deactivate T_Service
+
+T_Ctrl --> FE: 200 OK (Turno Cancelado)
+deactivate T_Ctrl
+
+@enduml

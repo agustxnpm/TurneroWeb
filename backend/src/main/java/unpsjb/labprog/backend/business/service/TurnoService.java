@@ -48,7 +48,6 @@ import unpsjb.labprog.backend.model.User;
 import unpsjb.labprog.backend.business.repository.OperadorRepository;
 import unpsjb.labprog.backend.business.repository.UserRepository;
 
-
 @Service
 public class TurnoService {
 
@@ -60,6 +59,9 @@ public class TurnoService {
 
     @Autowired
     private StaffMedicoRepository staffMedicoRepository;
+
+    @Autowired
+    private ListaEsperaService listaEsperaService;
 
     @Autowired
     private ConsultorioRepository consultorioRepository;
@@ -90,7 +92,6 @@ public class TurnoService {
 
     @Autowired
     private EncuestaInvitacionService encuestaInvitacionService;
-
 
     // === VALIDACIONES DE TRANSICIÓN DE ESTADO ===
 
@@ -426,13 +427,18 @@ public class TurnoService {
         // Enviar notificación por email si el paciente tiene email verificado
         enviarNotificacionCancelacionEmail(savedTurno, cancelacionData, validacionContacto, performedBy);
 
+        // Buscar pacientes en lista de espera que coincidan con el turno cancelado
+        boolean buscarPacienteParaReasignar = listaEsperaService.buscarPacienteParaReasignar(savedTurno);
+        System.out.println("Estado buscarPacienteParaReasignar: " + buscarPacienteParaReasignar);
+
         // Cancelar invitaciones a encuesta pendientes para este turno
         try {
             encuestaInvitacionService.cancelarInvitacionesPorTurno(savedTurno.getId());
             System.out.println("✅ DEBUG TurnoService.cancelarTurno: Invitaciones a encuesta canceladas para turno ID: "
                     + savedTurno.getId());
         } catch (Exception e) {
-            System.err.println("❌ ERROR TurnoService.cancelarTurno: Falló cancelación de invitaciones a encuesta: " + e.getMessage());
+            System.err.println("❌ ERROR TurnoService.cancelarTurno: Falló cancelación de invitaciones a encuesta: "
+                    + e.getMessage());
             // No re-lanzar para no romper la cancelación
         }
 
@@ -1141,29 +1147,28 @@ public class TurnoService {
 
         // Verificar si alguno de los esquemas tiene horario para este día
         boolean medicoAtiendeEsteDia = esquemas.stream()
-            .anyMatch(esquema -> esquema.getHorarios().stream()
-                .anyMatch(horario -> horario.getDia().equalsIgnoreCase(diaSemana)));
+                .anyMatch(esquema -> esquema.getHorarios().stream()
+                        .anyMatch(horario -> horario.getDia().equalsIgnoreCase(diaSemana)));
 
         if (!medicoAtiendeEsteDia) {
             throw new IllegalArgumentException(
-                String.format("El médico %s %s no atiende los días %s",
-                    turno.getStaffMedico().getMedico().getNombre(),
-                    turno.getStaffMedico().getMedico().getApellido(),
-                    diaSemana.toLowerCase()));
+                    String.format("El médico %s %s no atiende los días %s",
+                            turno.getStaffMedico().getMedico().getNombre(),
+                            turno.getStaffMedico().getMedico().getApellido(),
+                            diaSemana.toLowerCase()));
         }
     }
 
     private void validarSolapamiento(Turno turno) {
         // Buscar turnos existentes del mismo médico en la misma fecha
         List<Turno> turnosExistentes = repository.findByFechaAndStaffMedico_Id(
-            turno.getFecha(),
-            turno.getStaffMedico().getId()
-        );
+                turno.getFecha(),
+                turno.getStaffMedico().getId());
 
         // Filtrar turnos que no estén cancelados
         turnosExistentes = turnosExistentes.stream()
-            .filter(t -> t.getEstado() != EstadoTurno.CANCELADO)
-            .collect(Collectors.toList());
+                .filter(t -> t.getEstado() != EstadoTurno.CANCELADO)
+                .collect(Collectors.toList());
 
         // Verificar si hay solapamiento de horarios
         for (Turno turnoExistente : turnosExistentes) {
@@ -1175,17 +1180,17 @@ public class TurnoService {
             // Verificar solapamiento: dos intervalos se solapan si el inicio de uno
             // está antes del fin del otro Y el fin de uno está después del inicio del otro
             boolean haySolapamiento = turno.getHoraInicio().isBefore(turnoExistente.getHoraFin()) &&
-                                    turno.getHoraFin().isAfter(turnoExistente.getHoraInicio());
+                    turno.getHoraFin().isAfter(turnoExistente.getHoraInicio());
 
             if (haySolapamiento) {
                 throw new IllegalArgumentException(
-                    String.format("Ya existe un turno programado para el médico %s %s en el horario %s - %s del día %s",
-                        turno.getStaffMedico().getMedico().getNombre(),
-                        turno.getStaffMedico().getMedico().getApellido(),
-                        turnoExistente.getHoraInicio().toString(),
-                        turnoExistente.getHoraFin().toString(),
-                        turno.getFecha().toString())
-                );
+                        String.format(
+                                "Ya existe un turno programado para el médico %s %s en el horario %s - %s del día %s",
+                                turno.getStaffMedico().getMedico().getNombre(),
+                                turno.getStaffMedico().getMedico().getApellido(),
+                                turnoExistente.getHoraInicio().toString(),
+                                turnoExistente.getHoraFin().toString(),
+                                turno.getFecha().toString()));
             }
         }
     }
@@ -1195,18 +1200,24 @@ public class TurnoService {
      */
     private String convertirDiaSemanaASpanol(String diaIngles) {
         switch (diaIngles.toUpperCase()) {
-            case "MONDAY": return "LUNES";
-            case "TUESDAY": return "MARTES";
-            case "WEDNESDAY": return "MIÉRCOLES";
-            case "THURSDAY": return "JUEVES";
-            case "FRIDAY": return "VIERNES";
-            case "SATURDAY": return "SÁBADO";
-            case "SUNDAY": return "DOMINGO";
-            default: return diaIngles; // Retornar el original si no se reconoce
+            case "MONDAY":
+                return "LUNES";
+            case "TUESDAY":
+                return "MARTES";
+            case "WEDNESDAY":
+                return "MIÉRCOLES";
+            case "THURSDAY":
+                return "JUEVES";
+            case "FRIDAY":
+                return "VIERNES";
+            case "SATURDAY":
+                return "SÁBADO";
+            case "SUNDAY":
+                return "DOMINGO";
+            default:
+                return diaIngles; // Retornar el original si no se reconoce
         }
     }
-
-
 
     // === MÉTODOS DE AUDITORÍA ===
 
@@ -1662,7 +1673,8 @@ public class TurnoService {
             System.out.println("✅ DEBUG TurnoService.completarTurno: Invitación a encuesta programada para turno ID: "
                     + savedTurno.getId());
         } catch (Exception e) {
-            System.err.println("❌ ERROR TurnoService.completarTurno: Falló programación de invitación a encuesta: " + e.getMessage());
+            System.err.println("❌ ERROR TurnoService.completarTurno: Falló programación de invitación a encuesta: "
+                    + e.getMessage());
             // No re-lanzar para no romper el completado
         }
 

@@ -1,0 +1,65 @@
+@startuml ModDominioCAPS
+!theme plain
+hide empty methods
+
+title Modelo de Dominio - Infraestructura de Salud (CAPS)
+
+package "Infraestructura Física" {
+    class CentroAtencion {
+        - id: Integer
+        - nombre: String
+        - direccion: String
+        - localidad: String
+        - telefono: String
+        - coordenadas: Point
+        - activo: Boolean
+    }
+
+    class Consultorio {
+        - id: Integer
+        - numero: Integer
+        - nombre: String
+        - equipamiento: String
+        - activo: Boolean
+    }
+    
+    note left of Consultorio
+        Representa el espacio físico (Sala 1, Box 4).
+        Se asigna dinámicamente a los turnos.
+    end note
+}
+
+package "Catálogo Médico" {
+    class Especialidad {
+        - id: Integer
+        - nombre: String
+        - descripcion: String
+        - codigo: String
+        - activa: Boolean
+    }
+}
+
+package "Recursos Humanos (Vinculación)" {
+    class StaffMedico {
+        - id: Integer
+        note: El staff valida que un médico pueda\natender una especialidad en este centro.
+    }
+}
+
+' Relaciones de Composición (Fuerte)
+CentroAtencion "1" *-- "1..*" Consultorio : contiene >
+
+' Relaciones de Asociación
+CentroAtencion "1" o-- "*" Especialidad : ofrece >
+StaffMedico -up-> "1" CentroAtencion : asignado a
+StaffMedico -up-> "1" Especialidad : habilitado para
+
+note right of CentroAtencion
+    **Regla de Negocio:**
+    Un Centro de Atención define el contexto
+    físico donde ocurren los turnos.
+    La disponibilidad horaria depende del
+    StaffMedico, no del Centro en sí.
+end note
+
+@enduml

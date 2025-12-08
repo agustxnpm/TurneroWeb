@@ -69,9 +69,10 @@
             [value]="calidad.satisfaccionPromedio ? (calidad.satisfaccionPromedio | number:'1.1-2') : '-'"
             icon="mood"></app-kpi-card>
 
-          <app-kpi-card title="Tiempo promedio asignación (min)"
+          <app-kpi-card title="Días hasta el Turno (días)"
             [value]="calidad.tiempoPromedioSolicitudAsignacionMinutos ? (calidad.tiempoPromedioSolicitudAsignacionMinutos | number:'1.0-0') : '-'"
-            icon="schedule"></app-kpi-card>
+            icon="event_upcoming"
+            tooltip="Días promedio de antelación con la que se reservan los turnos"></app-kpi-card>
 
           <app-kpi-card title="Quejas" [value]="calidad.conteoQuejas !== undefined ? calidad.conteoQuejas : '-'"
             icon="report_problem"></app-kpi-card>
@@ -95,8 +96,10 @@
           <div *ngIf="predictivas && predictivas.length; else sinPredictivas">
             <div class="predictiva-item" *ngFor="let p of predictivas">
               <div class="predictiva-titulo">{{ p.especialidad || '-' }}</div>
-              <div class="predictiva-detalle">Pendientes: {{ p.pendientes ?? 0 }} &nbsp; • &nbsp; Urgentes: {{ p.urgentes ?? 0 }}</div>
-              <div class="predictiva-valor">Días promedio espera: {{ p.avgDiasEspera != null ? (p.avgDiasEspera | number:'1.0-0') : '-' }}</div>
+              <div class="predictiva-detalle">Pendientes: {{ p.pendientes ?? 0 }} &nbsp; • &nbsp; Urgentes: {{
+                p.urgentes ?? 0 }}</div>
+              <div class="predictiva-valor">Días promedio espera: {{ p.avgDiasEspera != null ? (p.avgDiasEspera |
+                number:'1.0-0') : '-' }}</div>
             </div>
           </div>
           <ng-template #sinPredictivas>

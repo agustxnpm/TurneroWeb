@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import unpsjb.labprog.backend.business.repository.ConsultorioRepository;
 import unpsjb.labprog.backend.business.repository.TurnoRepository;
@@ -33,6 +34,7 @@ import unpsjb.labprog.backend.model.TipoPregunta;
 import unpsjb.labprog.backend.model.EncuestaRespuesta;
 
 @Service
+@Transactional(readOnly = true)
 public class DashboardService {
 
     @Autowired
@@ -50,6 +52,10 @@ public class DashboardService {
     @Autowired
     private ListaEsperaRepository listaEsperaRepository;
 
+    // Fechas por defecto para evitar errores JDBC con nulls
+    private static final LocalDateTime FECHA_INICIO_DEFAULT = LocalDateTime.of(1970, 1, 1, 0, 0);
+    private static final LocalDateTime FECHA_FIN_DEFAULT = LocalDateTime.of(2100, 12, 31, 23, 59);
+
     /**
      * Calcula métricas básicas (conteos y tasas) aplicando filtros de fechas y
      * entidades
@@ -60,7 +66,6 @@ public class DashboardService {
         LocalDate desde = filtros != null ? filtros.getFechaDesde() : null;
         LocalDate hasta = filtros != null ? filtros.getFechaHasta() : null;
 
-        // Construir specification usando TurnoRepository.buildSpecification
         var spec = TurnoRepository.buildSpecification(
                 null,
                 null,
@@ -92,18 +97,14 @@ public class DashboardService {
         dto.setTotalTurnos(total);
         dto.setTurnosPorEstado(porEstado);
 
-        // Tasas defensivas
         dto.setTasaAsistencia(percentSafe(completos, completos + ausentes));
         dto.setPorcentajeAusentismo(percentSafe(ausentes, completos + ausentes));
         dto.setPorcentajeCancelaciones(percentSafe(cancelados, total));
         dto.setConfirmadosVsProgramados(percentSafe(confirmados, confirmados + programados));
 
-        // Turnos sin consultorio en el rango
         int sinConsultorio = (int) turnos.stream().filter(t -> t.getConsultorio() == null).count();
         dto.setTurnosSinConsultorio(sinConsultorio);
 
-        // Eficiencia de asignación: % de turnos futuros en rango que ya tienen
-        // consultorio
         LocalDate hoy = LocalDate.now();
         List<Turno> futuros = turnos.stream().filter(t -> t.getFecha() != null && !t.getFecha().isBefore(hoy))
                 .collect(Collectors.toList());
@@ -123,7 +124,6 @@ public class DashboardService {
         LocalDate desde = filtros != null ? filtros.getFechaDesde() : null;
         LocalDate hasta = filtros != null ? filtros.getFechaHasta() : null;
 
-        // Si no vienen fechas, usar último mes como default
         if (desde == null && hasta == null) {
             hasta = LocalDate.now();
             desde = hasta.minusDays(30);
@@ -145,7 +145,6 @@ public class DashboardService {
         Map<Integer, Double> ocupacionMap = new HashMap<>();
         List<OcupacionConsultorioDTO> ocupacionDetallada = new ArrayList<>();
 
-        // Obtener todos los turnos en el rango para eficiencia
         var spec = TurnoRepository.buildSpecification(
                 null, null, null, null,
                 filtros != null ? filtros.getCentroId() : null,
@@ -155,20 +154,22 @@ public class DashboardService {
         List<Turno> turnos = turnoRepository.findAll(spec);
 
         for (Consultorio c : consultorios) {
-            // Turnos del consultorio
             List<Turno> turnosC = turnos.stream().filter(t -> t.getConsultorio() != null &&
                     t.getConsultorio().getId().equals(c.getId())).collect(Collectors.toList());
 
             long minutosOcupados = 0;
             for (Turno t : turnosC) {
-                if (t.getHoraInicio() != null && t.getHoraFin() != null) {
+                if (t.getEstado() != EstadoTurno.CANCELADO && t.getHoraInicio() != null && t.getHoraFin() != null) {
                     minutosOcupados += ChronoUnit.MINUTES.between(t.getHoraInicio(), t.getHoraFin());
                 }
             }
 
             long minutosDisponibles = calcularMinutosDisponiblesConsultorio(c, desde, hasta);
 
-            double porcentaje = minutosDisponibles > 0 ? ((double) minutosOcupados / minutosDisponibles) * 100.0 : 0.0;
+            double porcentaje = 0.0;
+            if (minutosDisponibles > 0) {
+                porcentaje = ((double) minutosOcupados / minutosDisponibles) * 100.0;
+            }
             if (porcentaje < 0)
                 porcentaje = 0.0;
             if (porcentaje > 100.0)
@@ -176,7 +177,6 @@ public class DashboardService {
 
             ocupacionMap.put(c.getId(), porcentaje);
 
-            // Crear DTO detallado
             OcupacionConsultorioDTO ocupacionDTO = new OcupacionConsultorioDTO();
             ocupacionDTO.setConsultorioId(c.getId());
             ocupacionDTO.setConsultorioNombre(c.getNombre());
@@ -192,7 +192,6 @@ public class DashboardService {
         dto.setOcupacionPorConsultorio(ocupacionMap);
         dto.setOcupacionDetallada(ocupacionDetallada);
 
-        // Eficiencia de asignación: % de turnos futuros sin consultorio asignado
         LocalDate hoy = LocalDate.now();
         long futurosTotal = turnos.stream().filter(t -> t.getFecha() != null && !t.getFecha().isBefore(hoy)).count();
         long futurosAsignados = turnos.stream()
@@ -208,12 +207,6 @@ public class DashboardService {
         return ((double) numerator / (double) denominator) * 100.0;
     }
 
-    /**
-     * Calcula minutos disponibles en el consultorio entre dos fechas usando sus
-     * horarios semanales.
-     * Si no hay horarios configurados, asume 8 horas (480 minutos) por día como
-     * fallback.
-     */
     private long calcularMinutosDisponiblesConsultorio(Consultorio consultorio, LocalDate desde, LocalDate hasta) {
         if (consultorio == null || desde == null || hasta == null)
             return 0;
@@ -223,10 +216,8 @@ public class DashboardService {
         LocalDate d = desde;
         while (!d.isAfter(hasta)) {
             DayOfWeek dow = d.getDayOfWeek();
-            String diaName = dow.name(); // LUNES..DOMINGO in English uppercase, model stores Spanish but horarios may
-                                         // use uppercase names
+            String diaName = dow.name();
 
-            // Buscar horario que coincida (se usa contains por seguridad)
             var horarioOpt = consultorio.getHorariosSemanales().stream()
                     .filter(h -> h.getActivo() != null && h.getActivo())
                     .filter(h -> h.getDiaSemana() != null
@@ -240,49 +231,50 @@ public class DashboardService {
                     long mins = ChronoUnit.MINUTES.between(h.getHoraApertura(), h.getHoraCierre());
                     total += mins;
                 } else {
-                    total += fallbackMinutes;
+                    // Configurado pero horas inválidas -> 0
+                    total += 0;
                 }
             } else {
-                total += fallbackMinutes;
+                // --- CORRECCIÓN AQUÍ ---
+                // Si no hay horario configurado, solo aplicamos fallback de lunes a viernes.
+                // Evitamos sumar 8 horas los domingos, lo que diluye la métrica.
+                if (dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY) {
+                    total += fallbackMinutes;
+                } else {
+                    total += 0; // Fines de semana cerrados por defecto
+                }
             }
-
             d = d.plusDays(1);
         }
-
         return total;
     }
 
     /**
-     * Calcula métricas de calidad usando encuestas y auditoría
+     * Calcula métricas de calidad usando encuestas y auditoría.
+     * Usa lógica "Safe-Dates" para evitar errores JDBC con nulls.
      */
     public MetricasDashboardDTO getMetricasCalidad(FiltrosDashboardDTO filtros) {
         MetricasDashboardDTO dto = new MetricasDashboardDTO();
 
-        LocalDateTime desde = null;
-        LocalDateTime hasta = null;
-        if (filtros != null) {
-            if (filtros.getFechaDesde() != null) {
-                desde = filtros.getFechaDesde().atStartOfDay();
-            }
-            if (filtros.getFechaHasta() != null) {
-                hasta = filtros.getFechaHasta().atTime(23, 59, 59);
-            }
-        }
+        // 1. Preparar filtros con valores por defecto (Evita nulls en queries)
+        LocalDateTime desde = (filtros != null && filtros.getFechaDesde() != null)
+                ? filtros.getFechaDesde().atStartOfDay()
+                : FECHA_INICIO_DEFAULT;
 
-        // Obtener logs de auditoría de turnos
-        List<AuditLog> logs;
-        if (desde == null && hasta == null) {
-            logs = auditLogRepository.findByEntityTypeOrderByPerformedAtDesc("TURNO");
-        } else {
-            logs = auditLogRepository.findByEntityTypeAndPerformedAtBetweenOrderByPerformedAtDesc("TURNO", desde,
-                    hasta);
-        }
+        LocalDateTime hasta = (filtros != null && filtros.getFechaHasta() != null)
+                ? filtros.getFechaHasta().atTime(23, 59, 59)
+                : FECHA_FIN_DEFAULT;
 
-        // Agrupar por turno (entityId)
+        Integer centroId = (filtros != null) ? filtros.getCentroId() : null;
+
+        // 2. Métricas de Auditoría: TIEMPOS DE GESTIÓN
+        List<AuditLog> logs = auditLogRepository.findByEntityTypeAndPerformedAtBetweenOrderByPerformedAtDesc(
+                "TURNO", desde, hasta);
+
         var byTurno = logs.stream().filter(l -> l.getEntityId() != null).collect(
                 Collectors.groupingBy(l -> l.getEntityId(), Collectors.toList()));
 
-        List<Long> asignacionDurations = new ArrayList<>();
+        List<Long> anticipacionDias = new ArrayList<>();
         List<Long> reagendamientoDurations = new ArrayList<>();
 
         for (var entry : byTurno.entrySet()) {
@@ -290,25 +282,28 @@ public class DashboardService {
                     .sorted(Comparator.comparing(AuditLog::getPerformedAt))
                     .collect(Collectors.toList());
 
-            // Buscar CREATE y ASSIGN
-            LocalDateTime createTime = null;
-            LocalDateTime assignTime = null;
-            for (var a : lista) {
-                if (AuditLog.Actions.CREATE.equals(a.getAction())) {
-                    if (createTime == null)
-                        createTime = a.getPerformedAt();
+            // --- CÁLCULO DE ANTICIPACIÓN (Tiempo de espera desde la reserva) ---
+            // Buscamos el log de creación para saber CUÁNDO se pidió el turno
+            AuditLog logCreacion = lista.stream()
+                    .filter(l -> AuditLog.Actions.CREATE.equals(l.getAction()))
+                    .findFirst()
+                    .orElse(null);
+
+            // Si tenemos el log y podemos acceder al turno asociado, comparamos fechas
+            if (logCreacion != null && logCreacion.getTurno() != null) {
+                LocalDate fechaAlta = logCreacion.getPerformedAt().toLocalDate();
+                LocalDate fechaTurno = logCreacion.getTurno().getFecha();
+
+                if (fechaTurno != null) {
+                    long dias = ChronoUnit.DAYS.between(fechaAlta, fechaTurno);
+                    // Solo consideramos valores positivos (por si hay errores de datos históricos)
+                    if (dias >= 0) {
+                        anticipacionDias.add(dias);
+                    }
                 }
-                if (AuditLog.Actions.ASSIGN.equals(a.getAction())) {
-                    if (assignTime == null)
-                        assignTime = a.getPerformedAt();
-                }
-            }
-            if (createTime != null && assignTime != null && !assignTime.isBefore(createTime)) {
-                long mins = Duration.between(createTime, assignTime).toMinutes();
-                asignacionDurations.add(mins);
             }
 
-            // Reagendamientos
+            // --- CÁLCULO DE REAGENDAMIENTO (Agilidad operativa) ---
             for (int i = 0; i < lista.size(); i++) {
                 var a = lista.get(i);
                 if (AuditLog.Actions.RESCHEDULE.equals(a.getAction())) {
@@ -321,94 +316,48 @@ public class DashboardService {
             }
         }
 
-        double avgAsignacion = 0.0;
-        if (!asignacionDurations.isEmpty()) {
-            avgAsignacion = asignacionDurations.stream().mapToLong(Long::longValue).average().orElse(0.0);
-        }
+        // Promedios
+        double avgAnticipacion = anticipacionDias.stream().mapToLong(Long::longValue).average().orElse(0.0);
+        double avgReagenda = reagendamientoDurations.stream().mapToLong(Long::longValue).average().orElse(0.0);
 
-        double avgReagenda = 0.0;
-        if (!reagendamientoDurations.isEmpty()) {
-            avgReagenda = reagendamientoDurations.stream().mapToLong(Long::longValue).average().orElse(0.0);
-        }
-
-        dto.setTiempoPromedioSolicitudAsignacionMinutos(avgAsignacion);
+        // Usamos el campo existente para devolver el nuevo valor (Anticipación en Días)
+        // NOTA: El nombre del campo en el DTO es
+        // 'TiempoPromedioSolicitudAsignacionMinutos'
+        // pero ahora contiene 'Días Promedio de Anticipación'.
+        dto.setTiempoPromedioSolicitudAsignacionMinutos(avgAnticipacion);
         dto.setTiempoPromedioReagendamientoMinutos(avgReagenda);
 
-        // ----- Satisfacción y quejas usando encuestas -----
-        System.out.println("📊 Calculando métricas de encuestas...");
-        System.out.println("   Rango de fechas: " + desde + " - " + hasta);
+        // 3. Métricas de Encuestas (Satisfacción y Quejas)
+        System.out.println("📊 Calculando métricas de encuestas (Safe Mode)...");
+        System.out.println("   Rango efectivo: " + desde + " - " + hasta);
 
         try {
-            // Tipos de preguntas numéricas para satisfacción
+            // Definimos qué preguntas nos importan para satisfacción y quejas
             List<TipoPregunta> tiposNumericos = Arrays.asList(
-                    TipoPregunta.CSAT,
-                    TipoPregunta.NPS,
-                    TipoPregunta.RATING_TRATO,
-                    TipoPregunta.RATING_ESPERA);
+                    TipoPregunta.CSAT, TipoPregunta.NPS,
+                    TipoPregunta.RATING_TRATO, TipoPregunta.RATING_ESPERA);
 
-            System.out.println("   Tipos a consultar: " + tiposNumericos);
-
-            // ===== CALCULAR SATISFACCIÓN PROMEDIO =====
-            Double avgSatisf = null;
-            if (desde != null && hasta != null) {
-                // Ambas fechas presentes
-                avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoInAndFechasBetween(
-                        tiposNumericos, desde, hasta);
-            } else if (desde != null) {
-                // Solo fecha desde
-                avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoInAndFechaDesde(
-                        tiposNumericos, desde);
-            } else if (hasta != null) {
-                // Solo fecha hasta
-                avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoInAndFechaHasta(
-                        tiposNumericos, hasta);
-            } else {
-                // Sin filtros de fecha
-                avgSatisf = encuestaRespuestaRepository.averageValorNumericoByTipoIn(tiposNumericos);
-            }
-
-            System.out.println("   ✅ Satisfacción promedio: " + avgSatisf);
+            // A) Satisfacción Promedio
+            Double avgSatisf = encuestaRespuestaRepository.calcularPromedio(centroId, tiposNumericos, desde, hasta);
             dto.setSatisfaccionPromedio(avgSatisf != null ? avgSatisf : 0.0);
+            System.out.println("   ✅ Satisfacción promedio: " + avgSatisf);
 
-            // ===== CONTAR COMENTARIOS DE TEXTO LIBRE =====
-            Long countTexto = null;
-            if (desde != null && hasta != null) {
-                countTexto = encuestaRespuestaRepository.countTextoLibreByFechasBetween(desde, hasta);
-            } else if (desde != null) {
-                countTexto = encuestaRespuestaRepository.countTextoLibreByFechaDesde(desde);
-            } else if (hasta != null) {
-                countTexto = encuestaRespuestaRepository.countTextoLibreByFechaHasta(hasta);
-            } else {
-                countTexto = encuestaRespuestaRepository.countTextoLibre();
-            }
+            // B) Conteo Comentarios Texto
+            Long countTexto = encuestaRespuestaRepository.contarComentarios(centroId, desde, hasta);
             System.out.println("   ✅ Comentarios de texto: " + countTexto);
 
-            // ===== CONTAR PUNTUACIONES BAJAS (QUEJAS) =====
-            Long countLow = null;
-            if (desde != null && hasta != null) {
-                countLow = encuestaRespuestaRepository.countLowScoreByTiposAndFechasBetween(
-                        Arrays.asList(TipoPregunta.CSAT), 2, desde, hasta);
-            } else if (desde != null) {
-                countLow = encuestaRespuestaRepository.countLowScoreByTiposAndFechaDesde(
-                        Arrays.asList(TipoPregunta.CSAT), 2, desde);
-            } else if (hasta != null) {
-                countLow = encuestaRespuestaRepository.countLowScoreByTiposAndFechaHasta(
-                        Arrays.asList(TipoPregunta.CSAT), 2, hasta);
-            } else {
-                countLow = encuestaRespuestaRepository.countLowScoreByTipos(
-                        Arrays.asList(TipoPregunta.CSAT), 2);
-            }
+            // C) Conteo Puntuaciones Bajas (Quejas)
+            // MEJORA: Usamos todos los tipos numéricos para capturar quejas de trato o
+            // espera
+            Long countLow = encuestaRespuestaRepository.contarAlertas(centroId, tiposNumericos, 2, desde, hasta);
             System.out.println("   ✅ Puntuaciones bajas (<=2): " + countLow);
 
             long totalQuejas = (countTexto != null ? countTexto : 0L) + (countLow != null ? countLow : 0L);
             dto.setConteoQuejas(totalQuejas);
 
-            System.out.println("   ✅ Total quejas detectadas: " + totalQuejas);
-
         } catch (Exception ex) {
             System.err.println("❌ Error al calcular métricas de encuestas: " + ex.getMessage());
             ex.printStackTrace();
-
             dto.setSatisfaccionPromedio(0.0);
             dto.setConteoQuejas(0L);
         }
@@ -417,8 +366,7 @@ public class DashboardService {
     }
 
     /**
-     * Métricas predictivas: demanda insatisfecha por especialidad usando
-     * ListaEspera
+     * Métricas predictivas: demanda insatisfecha por especialidad
      */
     public List<Map<String, Object>> getMetricasPredictivas(FiltrosDashboardDTO filtros) {
         var stats = listaEsperaRepository.getEstadisticasPorEspecialidad();
@@ -435,52 +383,44 @@ public class DashboardService {
     }
 
     /**
-     * Devuelve comentarios de encuestas (texto libre)
+     * Devuelve comentarios de encuestas.
+     * Usa lógica Safe-Dates para reutilizar el método Between sin
+     * errores.
      */
     public List<String> getComentarios(FiltrosDashboardDTO filtros) {
-        LocalDateTime desde = null;
-        LocalDateTime hasta = null;
-        if (filtros != null) {
-            if (filtros.getFechaDesde() != null)
-                desde = filtros.getFechaDesde().atStartOfDay();
-            if (filtros.getFechaHasta() != null)
-                hasta = filtros.getFechaHasta().atTime(23, 59, 59);
-        }
+        LocalDateTime desde = (filtros != null && filtros.getFechaDesde() != null)
+                ? filtros.getFechaDesde().atStartOfDay()
+                : FECHA_INICIO_DEFAULT;
 
-        // Seleccionar query según filtros
-        if (desde != null && hasta != null) {
-            return encuestaRespuestaRepository.findComentariosByFechasBetween(desde, hasta);
-        } else if (desde != null) {
-            return encuestaRespuestaRepository.findComentariosByFechaDesde(desde);
-        } else if (hasta != null) {
-            return encuestaRespuestaRepository.findComentariosByFechaHasta(hasta);
-        } else {
-            return encuestaRespuestaRepository.findComentarios();
-        }
+        LocalDateTime hasta = (filtros != null && filtros.getFechaHasta() != null)
+                ? filtros.getFechaHasta().atTime(23, 59, 59)
+                : FECHA_FIN_DEFAULT;
+
+        // Al usar fechas default (1970-2100), esta llamada funciona como "Traer Todo"
+        // o "Filtrar por Rango" según corresponda, sin necesidad de ifs.
+        // Asume que en el repo existe findComentariosByFechasBetween(desde, hasta).
+        return encuestaRespuestaRepository.findComentariosByFechasBetween(desde, hasta);
     }
 
     /**
-     * Obtener encuestas completas con toda la información (respuestas, turno, médico, centro)
-     * Filtrado por centro de atención y rango de fechas
+     * Obtener encuestas detalladas.
+     * Usa llamada única simplificada.
      */
     public List<EncuestaDetalleDTO> getEncuestasDetalladas(FiltrosDashboardDTO filtros) {
-        LocalDateTime desde = null;
-        LocalDateTime hasta = null;
-        Integer centroId = null;
+        LocalDateTime desde = (filtros != null && filtros.getFechaDesde() != null)
+                ? filtros.getFechaDesde().atStartOfDay()
+                : FECHA_INICIO_DEFAULT;
 
-        if (filtros != null) {
-            if (filtros.getFechaDesde() != null)
-                desde = filtros.getFechaDesde().atStartOfDay();
-            if (filtros.getFechaHasta() != null)
-                hasta = filtros.getFechaHasta().atTime(23, 59, 59);
-            centroId = filtros.getCentroId();
-        }
+        LocalDateTime hasta = (filtros != null && filtros.getFechaHasta() != null)
+                ? filtros.getFechaHasta().atTime(23, 59, 59)
+                : FECHA_FIN_DEFAULT;
 
-        // Obtener IDs de turnos con encuestas respondidas
+        Integer centroId = (filtros != null) ? filtros.getCentroId() : null;
+
+        // Llamada unificada al repositorio
         List<Integer> turnosConEncuesta = encuestaRespuestaRepository.findTurnosConEncuestas(
                 centroId, desde, hasta);
 
-        // Construir DTOs con información completa
         List<EncuestaDetalleDTO> resultados = new ArrayList<>();
 
         for (Integer turnoId : turnosConEncuesta) {
@@ -489,39 +429,31 @@ public class DashboardService {
             if (respuestas.isEmpty())
                 continue;
 
-            // Tomar la primera respuesta para obtener datos del turno
             EncuestaRespuesta primeraRespuesta = respuestas.get(0);
             Turno turno = primeraRespuesta.getTurno();
 
             EncuestaDetalleDTO dto = new EncuestaDetalleDTO();
-
-            // Información del turno
             dto.setTurnoId(turno.getId());
             dto.setFechaTurno(turno.getFecha());
 
-            // Información del paciente
             dto.setPacienteId(turno.getPaciente().getId());
             dto.setPacienteNombre(turno.getPaciente().getApellido() + " " + turno.getPaciente().getNombre());
 
-            // Información del médico y centro (usar campos de auditoría del turno)
             dto.setMedicoId(turno.getMedico().getId());
             dto.setMedicoNombre(turno.getMedico().getApellido() + " " + turno.getMedico().getNombre());
             dto.setCentroAtencionId(turno.getCentroAtencion().getId());
             dto.setCentroAtencionNombre(turno.getCentroAtencion().getNombre());
 
-            // Especialidad (del campo de auditoría)
             if (turno.getEspecialidad() != null) {
                 dto.setEspecialidadNombre(turno.getEspecialidad().getNombre());
             }
 
-            // Fecha de respuesta (tomar la más reciente)
             LocalDateTime fechaRespuesta = respuestas.stream()
                     .map(EncuestaRespuesta::getFechaCreacion)
                     .max(LocalDateTime::compareTo)
                     .orElse(null);
             dto.setFechaRespuesta(fechaRespuesta);
 
-            // Procesar respuestas y agrupar por tipo de pregunta
             Map<String, Object> respuestasMap = new HashMap<>();
             String comentario = null;
 

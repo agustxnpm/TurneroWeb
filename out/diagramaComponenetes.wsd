@@ -1,0 +1,265 @@
+@startuml TurneroWeb_Architecture
+!define DIRECTION top to bottom
+skinparam linetype ortho
+
+title TurneroWeb - Diagrama de Componentes
+
+package "Frontend - Angular 19" {
+  component [App Routing] as AppRouting
+  component [Auth Guard] as AuthGuard
+  component [Interceptors] as Interceptors
+  
+  package "Modules by Entity" {
+    component [Turnos Module] as TurnosModule
+    component [Medicos Module] as MedicosModule
+    component [Centros Atencion Module] as CentrosModule
+    component [Pacientes Module] as PacientesModule
+    component [Especialidades Module] as EspecialidadesModule
+    component [Staff Medicos Module] as StaffModule
+    component [Esquema Turno Module] as EsquemaModule
+    component [Admin Module] as AdminModule
+  }
+  
+  package "Services Layer" {
+    component [Auth Service] as FrontAuthService
+    component [Turno Service] as FrontTurnoService
+    component [Medico Service] as FrontMedicoService
+    component [Centro Service] as FrontCentroService
+    component [Paciente Service] as FrontPacienteService
+    component [Especialidad Service] as FrontEspecialidadService
+    component [Staff Service] as FrontStaffService
+    component [Esquema Service] as FrontEsquemaService
+    component [Audit Service] as FrontAuditService
+    component [Notification Service] as FrontNotificationService
+  }
+  
+  component [HTTP Client] as HttpClient
+  component [Proxy Config] as ProxyConf
+}
+
+package "Backend - Spring Boot 3.0.2" {
+  package "Presenter Layer" {
+    component [Turno Presenter] as TurnoPresenter
+    component [Medico Presenter] as MedicoPresenter
+    component [Centro Atencion Presenter] as CentroPresenter
+    component [Paciente Presenter] as PacientePresenter
+    component [Especialidad Presenter] as EspecialidadPresenter
+    component [Staff Medico Presenter] as StaffPresenter
+    component [Esquema Turno Presenter] as EsquemaPresenter
+    component [Auth Presenter] as AuthPresenter
+    component [Admin Presenter] as AdminPresenter
+  }
+  
+  package "Business Service Layer" {
+    component [Turno Service] as BackTurnoService
+    component [Medico Service] as BackMedicoService
+    component [Centro Service] as BackCentroService
+    component [Paciente Service] as BackPacienteService
+    component [Especialidad Service] as BackEspecialidadService
+    component [Staff Service] as BackStaffService
+    component [Esquema Service] as BackEsquemaService
+    component [Auth Service] as BackAuthService
+    component [Audit Service] as BackAuditService
+    component [Disponibilidad Service] as DisponibilidadService
+  }
+  
+  package "Repository Layer" {
+    component [Turno Repository] as TurnoRepo
+    component [Medico Repository] as MedicoRepo
+    component [Centro Repository] as CentroRepo
+    component [Paciente Repository] as PacienteRepo
+    component [Especialidad Repository] as EspecialidadRepo
+    component [Staff Repository] as StaffRepo
+    component [Esquema Repository] as EsquemaRepo
+    component [User Repository] as UserRepo
+    component [Audit Log Repository] as AuditRepo
+    component [Disponibilidad Repository] as DisponibilidadRepo
+  }
+  
+  package "Entity Model" {
+    component [Turno Entity] as TurnoEntity
+    component [Medico Entity] as MedicoEntity
+    component [Centro Atencion Entity] as CentroEntity
+    component [Paciente Entity] as PacienteEntity
+    component [Especialidad Entity] as EspecialidadEntity
+    component [Staff Medico Entity] as StaffEntity
+    component [Esquema Turno Entity] as EsquemaEntity
+    component [User Entity] as UserEntity
+    component [Audit Log Entity] as AuditEntity
+    component [Disponibilidad Entity] as DisponibilidadEntity
+  }
+  
+  package "DTOs Layer" {
+    component [Turno DTO] as TurnoDTO
+    component [Medico DTO] as MedicoDTO
+    component [Centro DTO] as CentroDTO
+    component [Paciente DTO] as PacienteDTO
+    component [Especialidad DTO] as EspecialidadDTO
+    component [Staff DTO] as StaffDTO
+    component [Esquema DTO] as EsquemaDTO
+    component [User DTO] as UserDTO
+    component [Audit DTO] as AuditDTO
+  }
+  
+  package "Config & Security" {
+    component [JWT Token Provider] as JwtProvider
+    component [Security Config] as SecurityConfig
+    component [Jwt Auth Filter] as JwtFilter
+    component [Audit Context] as AuditContext
+    component [Audit Interceptor] as AuditInterceptor
+    component [Jackson Config] as JacksonConfig
+    component [Response Class] as ResponseClass
+  }
+}
+
+package "Database - PostgreSQL" {
+  database "TurneroWeb DB" as PostgresDB
+}
+
+package "Messaging & Notifications" {
+  component [Email Service] as EmailService
+  component [SMS Service] as SmsService
+}
+
+package "Docker Compose" {
+  component [Frontend Container] as FrontendContainer
+  component [Backend Container] as BackendContainer
+  component [DB Container] as DBContainer
+}
+
+package "Testing - BDD" {
+  component [Feature Files] as FeatureFiles
+  component [Step Definitions] as StepDefs
+  component [Cucumber Hooks] as CucumberHooks
+}
+
+' Frontend internal connections
+AppRouting --> AuthGuard
+AuthGuard --> FrontAuthService
+FrontAuthService --> HttpClient
+HttpClient --> ProxyConf
+
+TurnosModule --> FrontTurnoService
+MedicosModule --> FrontMedicoService
+CentrosModule --> FrontCentroService
+PacientesModule --> FrontPacienteService
+EspecialidadesModule --> FrontEspecialidadService
+StaffModule --> FrontStaffService
+EsquemaModule --> FrontEsquemaService
+AdminModule --> FrontAuthService
+
+FrontTurnoService --> HttpClient
+FrontMedicoService --> HttpClient
+FrontCentroService --> HttpClient
+FrontPacienteService --> HttpClient
+FrontEspecialidadService --> HttpClient
+FrontStaffService --> HttpClient
+FrontEsquemaService --> HttpClient
+FrontAuditService --> HttpClient
+FrontNotificationService --> HttpClient
+
+' Frontend to Backend via HTTP
+HttpClient -.-> TurnoPresenter
+HttpClient -.-> MedicoPresenter
+HttpClient -.-> CentroPresenter
+HttpClient -.-> PacientePresenter
+HttpClient -.-> EspecialidadPresenter
+HttpClient -.-> StaffPresenter
+HttpClient -.-> EsquemaPresenter
+HttpClient -.-> AuthPresenter
+HttpClient -.-> AdminPresenter
+
+' Presenter to Service
+TurnoPresenter --> BackTurnoService
+MedicoPresenter --> BackMedicoService
+CentroPresenter --> BackCentroService
+PacientePresenter --> BackPacienteService
+EspecialidadPresenter --> BackEspecialidadService
+StaffPresenter --> BackStaffService
+EsquemaPresenter --> BackEsquemaService
+AuthPresenter --> BackAuthService
+AdminPresenter --> BackPacienteService
+
+' Security
+AuthPresenter --> JwtProvider
+AuthPresenter --> SecurityConfig
+JwtFilter --> JwtProvider
+AuditInterceptor --> AuditContext
+
+' Service to Repository
+BackTurnoService --> TurnoRepo
+BackMedicoService --> MedicoRepo
+BackCentroService --> CentroRepo
+BackPacienteService --> PacienteRepo
+BackEspecialidadService --> EspecialidadRepo
+BackStaffService --> StaffRepo
+BackEsquemaService --> EsquemaRepo
+BackAuthService --> UserRepo
+BackAuditService --> AuditRepo
+DisponibilidadService --> DisponibilidadRepo
+
+' Service to DTO
+BackTurnoService --> TurnoDTO
+BackMedicoService --> MedicoDTO
+BackCentroService --> CentroDTO
+BackPacienteService --> PacienteDTO
+BackEspecialidadService --> EspecialidadDTO
+BackStaffService --> StaffDTO
+BackEsquemaService --> EsquemaDTO
+BackAuditService --> AuditDTO
+
+' Repository to Entity
+TurnoRepo --> TurnoEntity
+MedicoRepo --> MedicoEntity
+CentroRepo --> CentroEntity
+PacienteRepo --> PacienteEntity
+EspecialidadRepo --> EspecialidadEntity
+StaffRepo --> StaffEntity
+EsquemaRepo --> EsquemaEntity
+UserRepo --> UserEntity
+AuditRepo --> AuditEntity
+DisponibilidadRepo --> DisponibilidadEntity
+
+' Entity to Database
+TurnoEntity --> PostgresDB
+MedicoEntity --> PostgresDB
+CentroEntity --> PostgresDB
+PacienteEntity --> PostgresDB
+EspecialidadEntity --> PostgresDB
+StaffEntity --> PostgresDB
+EsquemaEntity --> PostgresDB
+UserEntity --> PostgresDB
+AuditEntity --> PostgresDB
+DisponibilidadEntity --> PostgresDB
+
+' Response standardization
+BackTurnoService --> ResponseClass
+BackMedicoService --> ResponseClass
+BackCentroService --> ResponseClass
+BackPacienteService --> ResponseClass
+BackEspecialidadService --> ResponseClass
+BackStaffService --> ResponseClass
+BackEsquemaService --> ResponseClass
+BackAuthService --> ResponseClass
+BackAuditService --> ResponseClass
+
+' Notifications
+BackTurnoService --> EmailService
+BackTurnoService --> SmsService
+BackPacienteService --> EmailService
+
+' Docker containers
+FrontendContainer ..> FrontAuthService
+BackendContainer ..> BackTurnoService
+DBContainer ..> PostgresDB
+
+' Testing connections
+FeatureFiles --> StepDefs
+StepDefs --> CucumberHooks
+CucumberHooks -.-> BackendContainer
+
+' Jackson Config
+JacksonConfig -.-> BackTurnoService
+JacksonConfig -.-> BackMedicoService
+
+@enduml

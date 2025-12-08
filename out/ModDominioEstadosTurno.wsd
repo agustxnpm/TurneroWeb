@@ -1,0 +1,67 @@
+@startuml ModDominioEstadosTurno
+!theme plain
+hide empty description
+
+title Modelo de Dominio - Ciclo de Vida del Turno
+
+state PROGRAMADO
+note right of PROGRAMADO
+    **Estado Inicial.**
+    El turno se reserva pero el paciente
+    aún no ha confirmado su asistencia.
+end note
+
+state CONFIRMADO
+note right of CONFIRMADO
+    El paciente ratificó su asistencia.
+    (Dentro de la ventana de días configurada)
+end note
+
+state REAGENDADO
+note bottom of REAGENDADO
+    Cambio de fecha/hora.
+    Requiere nueva confirmación.
+end note
+
+state COMPLETO #ccffcc
+note bottom of COMPLETO
+    **Estado Final (Éxito)**
+    Atención realizada y registrada.
+    Dispara encuesta de satisfacción.
+end note
+
+state CANCELADO #ffcccc
+note bottom of CANCELADO
+    **Estado Final (Fallo)**
+    Libera el slot horario.
+    Dispara búsqueda en Lista de Espera.
+end note
+
+state AUSENTE #ffcc99
+note bottom of AUSENTE
+    **Estado Final (Fallo)**
+    Paciente no se presentó.
+    Se registra para estadísticas.
+end note
+
+' --- Transiciones ---
+
+[*] --> PROGRAMADO : Alta de Turno
+
+PROGRAMADO --> CONFIRMADO : Confirmar Asistencia\n(Paciente/Admin)
+PROGRAMADO --> CANCELADO : Cancelar\n(Con Motivo)
+PROGRAMADO --> REAGENDADO : Solicitar Cambio\n(Fecha/Hora)
+
+CONFIRMADO --> COMPLETO : Registrar Atención\n(Médico)
+CONFIRMADO --> CANCELADO : Cancelar\n(Urgencia/Imprevisto)
+CONFIRMADO --> REAGENDADO : Reprogramar
+CONFIRMADO --> AUSENTE : Marcar Inasistencia\n(Fin del día)
+
+REAGENDADO --> CONFIRMADO : Confirmar Nuevo Horario
+REAGENDADO --> CANCELADO : Cancelar Cambio
+
+' Transiciones automáticas o por sistema
+PROGRAMADO --> CANCELADO : Timeout\n(Sin confirmar X días antes)
+PROGRAMADO --> AUSENTE : No Show\n(Si no se confirmó ni canceló)
+
+@enduml

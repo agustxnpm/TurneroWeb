@@ -1,0 +1,106 @@
+@startuml MoDominioTurnos
+!theme plain
+hide empty methods
+
+title Modelo de Dominio - Módulo de Turnos
+
+package "Core Turnos" {
+
+    class Turno {
+        - id: Integer
+        - fecha: LocalDate
+        - horaInicio: LocalTime
+        - horaFin: LocalTime
+        - observaciones: String
+        - asistio: Boolean
+        - fechaRegistroAsistencia: LocalDateTime
+        __ Relaciones Activas __
+        + paciente: Paciente
+        + staffMedico: StaffMedico
+        + consultorio: Consultorio
+        __ Datos Históricos (Snapshots) __
+        + medico: Medico
+        + especialidad: Especialidad
+        + centroAtencion: CentroAtencion
+    }
+
+    enum EstadoTurno {
+        PROGRAMADO
+        CONFIRMADO
+        CANCELADO
+        REAGENDADO
+        COMPLETO
+        AUSENTE
+    }
+
+    note right of EstadoTurno
+        Reglas de Negocio:
+        - PROGRAMADO: Estado inicial por defecto
+        - CONFIRMADO: Por el paciente o admin
+        - COMPLETO: Atención finalizada
+        - AUSENTE: Paciente no se presentó
+    end note
+}
+
+package "Contexto Externo (Referencias)" {
+    class Paciente {
+        - id: Integer
+        - nombre: String
+        - apellido: String
+        - dni: String
+        - email: String
+    }
+
+    class StaffMedico {
+        - id: Integer
+        - legajo: String
+    }
+
+    class Consultorio {
+        - id: Integer
+        - nombre: String
+        - numero: Integer
+    }
+    
+    class CentroAtencion {
+        - id: Integer
+        - nombre: String
+    }
+    
+    class Medico {
+        - id: Integer
+        - matricula: String
+    }
+    
+    class Especialidad {
+        - id: Integer
+        - nombre: String
+    }
+}
+
+' Relaciones Principales
+Turno "1" -up-> "1" EstadoTurno : tiene estado
+Turno "1" --> "1" Paciente : solicitado por
+Turno "1" --> "1" StaffMedico : asignado a
+Turno "1" --> "1" Consultorio : lugar físico
+
+' Relaciones de Integridad Histórica (Snapshots)
+Turno ..> Medico : snapshot histórico
+Turno ..> Especialidad : snapshot histórico
+Turno ..> CentroAtencion : snapshot histórico
+
+' Relaciones de las entidades externas (Contexto)
+StaffMedico --> Medico
+StaffMedico --> Especialidad
+StaffMedico --> CentroAtencion
+Consultorio --> CentroAtencion
+
+note left of Turno
+    **Invariante de Solapamiento:**
+    No pueden existir dos turnos activos
+    (estado != CANCELADO) para el mismo
+    StaffMedico en el mismo rango de
+    Fecha + HoraInicio/Fin.
+end note
+
+@enduml

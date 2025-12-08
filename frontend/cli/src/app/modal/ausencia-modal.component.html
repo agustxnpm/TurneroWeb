@@ -1,0 +1,91 @@
+<div class="ausencia-modal">
+    <!-- Header con icono de advertencia -->
+    <div class="modal-header warning-header">
+        <div class="warning-icon-container">
+            <span class="material-symbols-outlined warning-icon">warning</span>
+        </div>
+        <h2 class="modal-title">
+            Advertencia: Marcar como No Asistió
+        </h2>
+        <button type="button" class="btn-close" (click)="cancelar()" aria-label="Cerrar">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+
+    <!-- Body con información y advertencia -->
+    <div class="modal-body">
+        <!-- Información del turno -->
+        <div class="turno-info-section">
+            <h3 class="section-title">Información del Turno</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Paciente:</span>
+                    <span class="info-value">{{ nombrePaciente }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Fecha:</span>
+                    <span class="info-value">{{ fecha }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Horario:</span>
+                    <span class="info-value">{{ horaInicio }} - {{ horaFin }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advertencia principal -->
+        <div class="warning-section">
+            <div class="warning-box">
+                <span class="material-symbols-outlined warning-icon-large">error</span>
+                <div class="warning-content">
+                    <h4 class="warning-title">
+                        ⚠️ ¡IMPORTANTE! Acción Irreversible
+                    </h4>
+                    <p class="warning-text">
+                        Una vez que marque a <strong>{{ nombrePaciente }}</strong> como <strong>"NO ASISTIÓ"</strong>,
+                        esta decisión <strong>NO PODRÁ SER REVERTIDA</strong>.
+                    </p>
+                    <ul class="warning-list">
+                        <li>
+                            <span class="material-symbols-outlined">check_circle</span>
+                            El registro quedará guardado permanentemente en el sistema
+                        </li>
+                        <li>
+                            <span class="material-symbols-outlined">check_circle</span>
+                            No podrá cambiar esta información posteriormente
+                        </li>
+                        <li>
+                            <span class="material-symbols-outlined">check_circle</span>
+                            Afectará los reportes y estadísticas de asistencia
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmación explícita -->
+        <div class="confirmation-section">
+            <p class="confirmation-text">
+                Por favor, verifique que esta acción es correcta antes de proceder.
+            </p>
+            <div class="checkbox-container">
+                <input type="checkbox" id="confirmar-checkbox" class="confirmation-checkbox">
+                <label for="confirmar-checkbox" class="confirmation-label">
+                    Confirmo que <strong>{{ nombrePaciente }}</strong> NO ASISTIÓ al turno
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer con botones -->
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-cancel" (click)="cancelar()">
+            <span class="material-symbols-outlined">close</span>
+            Cancelar
+        </button>
+        <button type="button" class="btn btn-danger btn-confirm" (click)="confirmarAusencia()" id="confirmar-button">
+            <span class="material-symbols-outlined">check_circle</span>
+            Confirmar Ausencia
+        </button>
+    </div>
+</div>

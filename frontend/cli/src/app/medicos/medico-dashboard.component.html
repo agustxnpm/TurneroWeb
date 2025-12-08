@@ -236,7 +236,7 @@
               <input 
                 type="checkbox" 
                 [checked]="esPresente(turno)" 
-                (change)="toggleAsistencia(turno)"
+                (change)="toggleAsistencia(turno, $event)"
                 [disabled]="turno._cargando">
               <span class="slider round"></span>
             </label>

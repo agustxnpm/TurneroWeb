@@ -1,0 +1,93 @@
+@startuml diagramaFlujoEmailConf
+!theme plain
+autonumber
+
+actor "Paciente" as User
+participant "Cliente de Correo\n(Gmail/Outlook)" as Email
+participant "Frontend\n(DeepLinkBridge)" as FE
+box "Backend (Spring Boot)" #f9f9f9
+    participant "DeepLink\nPresenter" as DL_Ctrl
+    participant "DeepLink\nService" as DL_Service
+    participant "Turno\nService" as T_Service
+    participant "AuditLog\nService" as Audit
+end box
+database "PostgreSQL" as DB
+
+== 1. Acceso desde el Correo ==
+
+note right of User
+  El correo contiene un enlace único tipo:
+  /deep-link?token=abc-123-xyz&action=CONFIRMAR_TURNO
+end note
+
+User -> Email: Abre correo de "Recordatorio de Turno"
+User -> Email: Clic en botón "Confirmar Asistencia"
+activate Email
+Email -> FE: Redirige al navegador\n(DeepLinkBridgeComponent)
+deactivate Email
+activate FE
+
+== 2. Validación del Token Seguro ==
+
+FE -> FE: Extrae 'token' de la URL
+FE -> DL_Ctrl: POST /api/deep-link/validate\n{ token: "abc-123..." }
+activate DL_Ctrl
+
+DL_Ctrl -> DL_Service: validateToken(token)
+activate DL_Service
+
+DL_Service -> DB: SELECT * FROM deep_link_token WHERE token = ?
+activate DB
+DB --> DL_Service: Retorna Token Entity
+deactivate DB
+
+DL_Service -> DL_Service: Verificar Expiración y Estado
+note right of DL_Service
+  El token debe ser válido, no expirado
+  y no haber sido usado previamente.
+end note
+
+DL_Service --> DL_Ctrl: TokenVálido (payload: turnoId, action)
+deactivate DL_Service
+
+== 3. Ejecución de la Confirmación ==
+
+alt Acción == CONFIRMAR_TURNO
+    DL_Ctrl -> T_Service: confirmarTurno(turnoId, "PACIENTE_VIA_EMAIL")
+    activate T_Service
+    
+    T_Service -> DB: SELECT * FROM turnos WHERE id = turnoId
+    
+    group Validación de Ventana de Tiempo (Regla de Negocio)
+        T_Service -> T_Service: validarVentanaConfirmacion()
+        note right of T_Service
+          Verifica configuración:
+          - No confirmar con demasiada antelación (diasMax)
+          - No confirmar muy sobre la hora (diasMin)
+          - Validar hora de corte (horaCorte)
+        end note
+        
+        alt Fuera de Ventana (Muy temprano o muy tarde)
+            T_Service --> DL_Ctrl: Error: "No es posible confirmar en este momento"
+            DL_Ctrl --> FE: Error 400 (Mensaje Explicativo)
+            FE -> User: Muestra "El periodo de confirmación ha expirado o aun no inicia"
+        else En Ventana Correcta
+            T_Service -> T_Service: setEstado(CONFIRMADO)
+            T_Service -> DB: UPDATE turnos SET estado='CONFIRMADO'
+            T_Service -> Audit: logTurnoConfirmed("PACIENTE_VIA_EMAIL")
+            
+            T_Service --> DL_Ctrl: TurnoDTO (Confirmado)
+            
+            DL_Service -> DB: Invalida el Token usado (delete o set used=true)
+            
+            DL_Ctrl --> FE: HTTP 200 OK
+            FE -> User: Muestra "¡Gracias! Tu turno está confirmado"
+        end
+    end
+    deactivate T_Service
+end
+
+deactivate DL_Ctrl
+deactivate FE
+
+@enduml

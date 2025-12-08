@@ -1,0 +1,87 @@
+@startuml OAuth2_JWT_Login_Flow
+!theme plain
+autonumber
+
+actor "Usuario" as User
+participant "Frontend (Angular)" as FE
+participant "Google Identity\nPlatform" as Google
+box "Backend (Spring Boot)" #f9f9f9
+    participant "AuthController" as Ctrl
+    participant "GoogleAuthService" as GService
+    participant "UserService" as UService
+    participant "JwtTokenProvider" as JwtProv
+end box
+database "PostgreSQL" as DB
+
+== 1. Autenticación con Google (Lado Cliente) ==
+
+User -> FE: Clic en botón "Ingresar con Google"
+activate FE
+FE -> Google: Solicita inicio de sesión
+activate Google
+Google --> User: Muestra ventana de consentimiento
+User -> Google: Acepta permisos
+Google --> FE: Retorna **Google ID Token** (JWT firmado por Google)
+deactivate Google
+
+== 2. Intercambio de Token (Token Swap) ==
+
+FE -> Ctrl: POST /api/auth/google\nBody: { token: "google_id_token" }
+activate Ctrl
+
+Ctrl -> GService: loginWithGoogle(token)
+activate GService
+
+note right of GService
+  Usa la librería Google API Client
+  para verificar la firma criptográfica
+  y la expiración del token.
+end note
+
+GService -> Google: (Librería Interna) Verifica validez del ID Token
+activate Google
+Google --> GService: Token Válido + Datos de Usuario (Email, Nombre, Foto)
+deactivate Google
+
+== 3. Lógica de Negocio y Persistencia ==
+
+GService -> UService: Buscar usuario por Email
+activate UService
+UService -> DB: SELECT * FROM users WHERE email = ?
+activate DB
+DB --> UService: Retorna Usuario (o null)
+deactivate DB
+
+alt Usuario No Existe (Registro Automático)
+    UService -> UService: Crear nueva entidad User
+    UService -> DB: INSERT INTO users ...
+    DB --> UService: Confirmación
+end
+
+UService --> GService: Retorna Entidad User
+deactivate UService
+
+== 4. Generación de Token Interno ==
+
+GService -> JwtProv: generateToken(User authentication)
+activate JwtProv
+note right of JwtProv
+  Crea un JWT del sistema TurneroWeb.
+  Incluye Roles (Admin, Medico, Paciente)
+  Firmado con la clave secreta de la app.
+end note
+JwtProv --> GService: Retorna **App JWT** (String)
+deactivate JwtProv
+
+GService --> Ctrl: Retorna LoginResponse (JWT + UserDTO)
+deactivate GService
+
+Ctrl --> FE: HTTP 200 OK\nJSON: { token: "eyJhbG...", type: "Bearer", ... }
+deactivate Ctrl
+
+== 5. Sesión Establecida ==
+
+FE -> FE: Guarda JWT en LocalStorage
+FE -> User: Redirige al Dashboard (según rol)
+
+@enduml

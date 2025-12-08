@@ -226,15 +226,145 @@ public interface EncuestaRespuestaRepository extends JpaRepository<EncuestaRespu
 			"ORDER BY er.fechaCreacion DESC")
 	List<String> findComentariosByFechaHasta(@Param("hasta") LocalDateTime hasta);
 
-	// ========== QUERIES PARA ENCUESTAS DETALLADAS (con filtros de centro) ==========
+	/**
+	 * 
+	 * Obtener turnos con encuestas - TODOS LOS FILTROS
+	 * 
+	 */
+
+	@Query("SELECT DISTINCT er.turno.id FROM EncuestaRespuesta er " +
+			"WHERE er.turno.centroAtencion.id = :centroId " +
+			"AND er.fechaCreacion >= :desde " +
+			"AND er.fechaCreacion <= :hasta " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<Integer> findTurnosConEncuestasByCentroAndFechas(
+			@Param("centroId") Integer centroId,
+			@Param("desde") LocalDateTime desde,
+			@Param("hasta") LocalDateTime hasta);
 
 	/**
-	 * Obtener todas las respuestas agrupadas por turno, con filtros opcionales de fecha y centro de atención
+	 * 
+	 * Obtener turnos con encuestas - SIN FILTROS
+	 * 
 	 */
+	@Query("SELECT DISTINCT er.turno.id FROM EncuestaRespuesta er " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<Integer> findTurnosConEncuestas();
+
+	/**
+	 * 
+	 * Obtener turnos con encuestas - SOLO CENTRO
+	 * 
+	 */
+	@Query("SELECT DISTINCT er.turno.id FROM EncuestaRespuesta er " +
+			"WHERE er.turno.centroAtencion.id = :centroId " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<Integer> findTurnosConEncuestasByCentro(@Param("centroId") Integer centroId);
+
+	/**
+	 * 
+	 * Obtener turnos con encuestas - SOLO FECHAS
+	 * 
+	 */
+
+	@Query("SELECT DISTINCT er.turno.id FROM EncuestaRespuesta er " +
+			"WHERE er.fechaCreacion >= :desde " +
+			"AND er.fechaCreacion <= :hasta " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<Integer> findTurnosConEncuestasByFechas(
+			@Param("desde") LocalDateTime desde,
+			@Param("hasta") LocalDateTime hasta);
+
+	/**
+	 * 
+	 * Obtener turnos con encuestas - CENTRO Y DESDE
+	 * 
+	 */
+	@Query("SELECT DISTINCT er.turno.id FROM EncuestaRespuesta er " +
+			"WHERE er.turno.centroAtencion.id = :centroId " +
+			"AND er.fechaCreacion >= :desde " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<Integer> findTurnosConEncuestasByCentroAndDesde(
+			@Param("centroId") Integer centroId,
+			@Param("desde") LocalDateTime desde);
+
+	/**
+	 * 
+	 * Obtener turnos con encuestas - CENTRO Y HASTA
+	 * 
+	 */
+	@Query("SELECT DISTINCT er.turno.id FROM EncuestaRespuesta er " +
+			"WHERE er.turno.centroAtencion.id = :centroId " +
+			"AND er.fechaCreacion <= :hasta " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<Integer> findTurnosConEncuestasByCentroAndHasta(
+			@Param("centroId") Integer centroId,
+			@Param("hasta") LocalDateTime hasta);
+
+	/**
+	 * 
+	 * Obtener turnos con encuestas - SOLO DESDE
+	 * 
+	 */
+	@Query("SELECT DISTINCT er.turno.id FROM EncuestaRespuesta er " +
+			"WHERE er.fechaCreacion >= :desde " +
+			"ORDER BY er.fechaCreacion DESC")
+	List<Integer> findTurnosConEncuestasByDesde(@Param("desde") LocalDateTime desde);
+	// ==========================================
+	// MÉTRICAS CONSOLIDADAS (Centro Opcional + Rango Obligatorio)
+	// ==========================================
+
+	/**
+	 * Calcula promedio.
+	 * Truco: Si centroId es NULL, la parte (:centroId IS NULL) se hace verdadera y
+	 * trae todo.
+	 */
+	@Query("SELECT AVG(CAST(er.valorNumerico AS double)) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo IN :tipos " +
+			"AND er.valorNumerico IS NOT NULL " +
+			"AND (:centroId IS NULL OR er.turno.centroAtencion.id = :centroId) " +
+			"AND er.fechaCreacion BETWEEN :desde AND :hasta")
+	Double calcularPromedio(
+			@Param("centroId") Integer centroId,
+			@Param("tipos") List<TipoPregunta> tipos,
+			@Param("desde") LocalDateTime desde,
+			@Param("hasta") LocalDateTime hasta);
+
+	/**
+	 * Cuenta comentarios de texto.
+	 */
+	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo = unpsjb.labprog.backend.model.TipoPregunta.TEXTO_LIBRE " +
+			"AND er.valorTexto IS NOT NULL AND TRIM(er.valorTexto) <> '' " +
+			"AND (:centroId IS NULL OR er.turno.centroAtencion.id = :centroId) " +
+			"AND er.fechaCreacion BETWEEN :desde AND :hasta")
+	Long contarComentarios(
+			@Param("centroId") Integer centroId,
+			@Param("desde") LocalDateTime desde,
+			@Param("hasta") LocalDateTime hasta);
+
+	/**
+	 * Cuenta alertas (puntuaciones bajas).
+	 */
+	@Query("SELECT COUNT(er) FROM EncuestaRespuesta er " +
+			"JOIN er.pregunta p " +
+			"WHERE p.tipo IN :tipos " +
+			"AND er.valorNumerico <= :threshold " +
+			"AND (:centroId IS NULL OR er.turno.centroAtencion.id = :centroId) " +
+			"AND er.fechaCreacion BETWEEN :desde AND :hasta")
+	Long contarAlertas(
+			@Param("centroId") Integer centroId,
+			@Param("tipos") List<TipoPregunta> tipos,
+			@Param("threshold") Integer threshold,
+			@Param("desde") LocalDateTime desde,
+			@Param("hasta") LocalDateTime hasta);
+
+	// MANTENER: Método para el listado detallado (el que ya arreglaste)
 	@Query("SELECT er.turno.id FROM EncuestaRespuesta er " +
 			"WHERE (:centroId IS NULL OR er.turno.centroAtencion.id = :centroId) " +
-			"AND er.fechaCreacion >= COALESCE(:desde, er.fechaCreacion) " +
-			"AND er.fechaCreacion <= COALESCE(:hasta, er.fechaCreacion) " +
+			"AND er.fechaCreacion BETWEEN :desde AND :hasta " +
 			"GROUP BY er.turno.id " +
 			"ORDER BY MAX(er.fechaCreacion) DESC")
 	List<Integer> findTurnosConEncuestas(
@@ -242,9 +372,7 @@ public interface EncuestaRespuestaRepository extends JpaRepository<EncuestaRespu
 			@Param("desde") LocalDateTime desde,
 			@Param("hasta") LocalDateTime hasta);
 
-	/**
-	 * Obtener todas las respuestas de un turno específico
-	 */
+	// MANTENER: Para detalles del turno
 	@Query("SELECT er FROM EncuestaRespuesta er " +
 			"JOIN FETCH er.pregunta " +
 			"JOIN FETCH er.turno t " +
