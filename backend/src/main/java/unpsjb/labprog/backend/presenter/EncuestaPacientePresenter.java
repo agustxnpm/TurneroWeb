@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import unpsjb.labprog.backend.Response;
 import unpsjb.labprog.backend.business.repository.TurnoRepository;
 import unpsjb.labprog.backend.business.service.EncuestaService;
-import unpsjb.labprog.backend.config.AuditContext;
 import unpsjb.labprog.backend.dto.EncuestaRespuestaInputDTO;
 import unpsjb.labprog.backend.dto.EncuestaPlantillaDTO;
 import unpsjb.labprog.backend.dto.PreguntaDTO;
@@ -36,23 +35,14 @@ public class EncuestaPacientePresenter {
 
     /**
      * Obtener la plantilla de encuesta correspondiente a un turno.
-     * Solo el paciente propietario del turno puede consultarla.
+     * Pacientes solo pueden ver sus propios turnos, pero ADMIN/OPERADOR tienen acceso completo.
      */
     @GetMapping("/turno/{idTurno}")
-    @PreAuthorize("hasRole('PACIENTE')")
+    @PreAuthorize("hasRole('PACIENTE')") // Gracias a herencia, ADMIN y OPERADOR también pasan
     public ResponseEntity<Object> getEncuestaForTurno(@PathVariable Integer idTurno) {
         Optional<Turno> turnoOpt = turnoRepository.findById(idTurno);
         if (turnoOpt.isEmpty()) {
             return Response.notFound("Turno no encontrado");
-        }
-
-        Turno turno = turnoOpt.get();
-        String currentUser = AuditContext.getCurrentUser();
-
-        // Validar que el usuario autenticado coincida con el email del paciente
-        if (turno.getPaciente() == null || turno.getPaciente().getEmail() == null ||
-                !turno.getPaciente().getEmail().equalsIgnoreCase(currentUser)) {
-            return Response.error(null, "No autorizado para ver la encuesta de este turno");
         }
 
         Optional<EncuestaPlantilla> plantillaOpt = encuestaService.getPlantillaForTurno(idTurno);
@@ -67,25 +57,15 @@ public class EncuestaPacientePresenter {
     }
 
     /**
-     * Indica si hay una encuesta pendiente para este turno (plantilla asignada y
-     * sin
-     * respuestas)
+     * Indica si hay una encuesta pendiente para este turno (plantilla asignada y sin respuestas).
+     * Gracias a herencia de roles, ADMIN y OPERADOR también tienen acceso.
      */
     @GetMapping("/turno/{idTurno}/pendiente")
-    @PreAuthorize("hasRole('PACIENTE')")
+    @PreAuthorize("hasRole('PACIENTE')") // Gracias a herencia, ADMIN y OPERADOR también pasan
     public ResponseEntity<Object> isEncuestaPendiente(@PathVariable Integer idTurno) {
         Optional<Turno> turnoOpt = turnoRepository.findById(idTurno);
         if (turnoOpt.isEmpty()) {
             return Response.notFound("Turno no encontrado");
-        }
-
-        Turno turno = turnoOpt.get();
-        String currentUser = AuditContext.getCurrentUser();
-
-        // Validar que el usuario autenticado coincida con el email del paciente
-        if (turno.getPaciente() == null || turno.getPaciente().getEmail() == null ||
-                !turno.getPaciente().getEmail().equalsIgnoreCase(currentUser)) {
-            return Response.error(null, "No autorizado para ver la encuesta de este turno");
         }
 
         boolean pendiente = encuestaService.isEncuestaPendiente(idTurno);
@@ -117,22 +97,16 @@ public class EncuestaPacientePresenter {
     }
 
     /**
-     * Guardar respuestas de encuesta enviadas por el paciente.
+     * Guardar respuestas de encuesta.
+     * Gracias a herencia de roles, ADMIN y OPERADOR también tienen acceso.
      */
     @PostMapping("/responder")
-    @PreAuthorize("hasRole('PACIENTE')")
+    @PreAuthorize("hasRole('PACIENTE')") // Gracias a herencia, ADMIN y OPERADOR también pasan
     public ResponseEntity<Object> responderEncuesta(@RequestBody EncuestaRespuestaInputDTO dto) {
-        // Validar turno y propietario
+        // Validar turno
         Optional<Turno> turnoOpt = turnoRepository.findById(dto.getTurnoId());
         if (turnoOpt.isEmpty()) {
             return Response.notFound("Turno no encontrado");
-        }
-
-        Turno turno = turnoOpt.get();
-        String currentUser = AuditContext.getCurrentUser();
-        if (turno.getPaciente() == null || turno.getPaciente().getEmail() == null ||
-                !turno.getPaciente().getEmail().equalsIgnoreCase(currentUser)) {
-            return Response.error(null, "No autorizado para responder la encuesta de este turno");
         }
 
         int saved = encuestaService.guardarRespuestas(dto);

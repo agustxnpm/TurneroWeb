@@ -1,5 +1,6 @@
 package unpsjb.labprog.backend.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -186,7 +187,22 @@ public class User extends Persona implements UserDetails {
     
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.getName() : "USER")));
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        
+        if (role != null) {
+            // Agregar el rol principal
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
+            
+            // Agregar todos los roles heredados (implementa jerarquía de roles)
+            for (Role inheritedRole : role.getAllInheritedRoles()) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + inheritedRole.getName()));
+            }
+        } else {
+            // Fallback si no tiene rol asignado
+            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        }
+        
+        return authorities;
     }
     
     @Override
