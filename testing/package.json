@@ -13,5 +13,9 @@
     "@cucumber/cucumber": "^11.2.0",
     "json-diff": "^1.0.3",
     "sync-request": "^6.1.0"
+  },
+  "dependencies": {
+    "pg": "^8.16.3",
+    "selenium-webdriver": "^4.39.0"
   }
 }
