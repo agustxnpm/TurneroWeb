@@ -20,6 +20,7 @@ import unpsjb.labprog.backend.business.repository.ConsultorioRepository;
 import unpsjb.labprog.backend.dto.ConsultorioDTO;
 import unpsjb.labprog.backend.model.CentroAtencion;
 import unpsjb.labprog.backend.model.Consultorio;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class ConsultorioService {
@@ -33,15 +34,58 @@ public class ConsultorioService {
     @Autowired
     private AuditLogService auditLogService;
 
+    /**
+     * Obtiene todos los consultorios con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los consultorios globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo consultorios de su centro
+     * - PACIENTE: Ve todos los consultorios (acceso global)
+     */
     public List<ConsultorioDTO> findAll() {
-        return repository.findAll().stream()
-                .map(this::toDTO)
-                .toList();
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por consultorios del centro
+            return repository.findByCentroAtencionId(centroId).stream()
+                    .map(this::toDTO)
+                    .toList();
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll().stream()
+                    .map(this::toDTO)
+                    .toList();
+        }
     }
 
+    /**
+     * Obtiene página de consultorios con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los consultorios globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo consultorios de su centro
+     * - PACIENTE: Ve todos los consultorios (acceso global)
+     */
     public Page<ConsultorioDTO> findByPage(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size))
-                .map(this::toDTO);
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        PageRequest pageRequest = PageRequest.of(page, size);
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por consultorios del centro
+            // Nota: ConsultorioRepository no tiene método Page con centroId, usar findAll filtrado
+            List<Consultorio> consultorios = repository.findByCentroAtencionId(centroId);
+            // Convertir a Page manualmente
+            int start = (int) pageRequest.getOffset();
+            int end = Math.min((start + pageRequest.getPageSize()), consultorios.size());
+            return new org.springframework.data.domain.PageImpl<>(
+                consultorios.subList(start, end).stream()
+                    .map(this::toDTO)
+                    .toList(),
+                pageRequest,
+                consultorios.size()
+            );
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll(pageRequest)
+                    .map(this::toDTO);
+        }
     }
 
     public Optional<ConsultorioDTO> findById(Integer id) {

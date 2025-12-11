@@ -18,12 +18,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import unpsjb.labprog.backend.business.repository.EspecialidadRepository;
 import unpsjb.labprog.backend.business.repository.MedicoRepository;
+import unpsjb.labprog.backend.business.repository.StaffMedicoRepository;
+import unpsjb.labprog.backend.business.repository.CentroAtencionRepository;
 import unpsjb.labprog.backend.dto.EspecialidadDTO;
 import unpsjb.labprog.backend.dto.MedicoDTO;
 import unpsjb.labprog.backend.model.Especialidad;
 import unpsjb.labprog.backend.model.Medico;
+import unpsjb.labprog.backend.model.StaffMedico;
+import unpsjb.labprog.backend.model.CentroAtencion;
 import unpsjb.labprog.backend.model.User;
 import unpsjb.labprog.backend.model.AuditLog;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class MedicoService {
@@ -35,6 +40,12 @@ public class MedicoService {
 
     @Autowired
     private EspecialidadRepository especialidadRepo;
+
+    @Autowired
+    private StaffMedicoRepository staffMedicoRepository;
+    
+    @Autowired
+    private CentroAtencionRepository centroAtencionRepository;
 
      @Autowired
     private RegistrationService registrationService;
@@ -48,9 +59,65 @@ public class MedicoService {
     @Autowired
     private UserService userService;
 
+    /**
+     * Obtiene todos los médicos con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los médicos globalmente
+     * - ADMINISTRADOR/OPERADOR: Solo médicos que trabajan en su centro (via StaffMedico)
+     * - PACIENTE: Ve todos los médicos (acceso global)
+     */
     public List<MedicoDTO> findAll() {
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por médicos del centro
+            return repository.findByCentroAtencionId(centroId).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    /**
+     * Obtiene información básica de TODOS los médicos del sistema (sin filtrado por centro).
+     * Retorna solo datos no sensibles: id, nombre, apellido, matricula, especialidades.
+     * Útil para selectores al crear StaffMedico, permitiendo ver médicos disponibles
+     * sin exponer información de contacto.
+     * 
+     * TODO: Implementar flujo de aprobación bidireccional donde el médico
+     * debe aceptar la solicitud del centro antes de ser asociado.
+     * 
+     * @return Lista de mapas con información básica de todos los médicos
+     */
+    public List<java.util.Map<String, Object>> findAllMedicosBasicInfo() {
         return repository.findAll().stream()
-                .map(this::toDTO)
+                .map(medico -> {
+                    java.util.Map<String, Object> info = new java.util.HashMap<>();
+                    info.put("id", medico.getId());
+                    info.put("nombre", medico.getNombre());
+                    info.put("apellido", medico.getApellido());
+                    info.put("matricula", medico.getMatricula());
+                    
+                    // Incluir especialidades
+                    if (medico.getEspecialidades() != null && !medico.getEspecialidades().isEmpty()) {
+                        List<java.util.Map<String, Object>> especialidades = medico.getEspecialidades().stream()
+                                .map(esp -> {
+                                    java.util.Map<String, Object> espInfo = new java.util.HashMap<>();
+                                    espInfo.put("id", esp.getId());
+                                    espInfo.put("nombre", esp.getNombre());
+                                    return espInfo;
+                                })
+                                .collect(Collectors.toList());
+                        info.put("especialidades", especialidades);
+                    } else {
+                        info.put("especialidades", List.of());
+                    }
+                    
+                    return info;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -64,6 +131,140 @@ public class MedicoService {
     
     public Optional<MedicoDTO> findByEmail(String email) {
         return repository.findByEmail(email).map(this::toDTO);
+    }
+    
+    /**
+     * Crea un nuevo médico o reutiliza uno existente (por DNI) y lo vincula al centro del administrador.
+     * Solo para uso de ADMINISTRADOR (crea médicos en su propio centro).
+     * 
+     * Lógica:
+     * 1. Valida por DNI si el médico ya existe globalmente
+     * 2. Si existe: Reutiliza el registro (no crea cuenta de usuario duplicada)
+     * 3. Si NO existe: Crea médico + cuenta User
+     * 4. Vincula mediante StaffMedico al centro del administrador
+     * 
+     * @param dto Datos del médico (debe incluir especialidadId)
+     * @param performedByEmail Email del ADMINISTRADOR que realiza la acción
+     * @return MedicoDTO del médico creado/vinculado
+     * @throws IllegalArgumentException si hay errores de validación
+     */
+    @Transactional
+    public MedicoDTO createMedico(MedicoDTO dto, String performedByEmail) {
+        // Validar que venga especialidad
+        final Integer especialidadId;
+        if (dto.getEspecialidadIds() != null && !dto.getEspecialidadIds().isEmpty()) {
+            especialidadId = dto.getEspecialidadIds().iterator().next();
+        } else if (dto.getEspecialidades() != null && !dto.getEspecialidades().isEmpty()) {
+            especialidadId = dto.getEspecialidades().iterator().next().getId();
+        } else {
+            throw new IllegalArgumentException("Debe proporcionar al menos una especialidad válida");
+        }
+        
+        // Obtener el centro del administrador que está creando el médico
+        User performingAdmin = userService.findByEmail(performedByEmail)
+            .orElseThrow(() -> new IllegalArgumentException("Administrador no encontrado: " + performedByEmail));
+        
+        if (performingAdmin.getCentroAtencion() == null) {
+            throw new IllegalArgumentException("El administrador no tiene un centro asignado");
+        }
+        
+        Integer centroId = performingAdmin.getCentroAtencion().getId();
+        
+        // Buscar especialidad
+        Especialidad especialidad = especialidadRepo.findById(especialidadId)
+            .orElseThrow(() -> new IllegalArgumentException("Especialidad no encontrada con ID: " + especialidadId));
+        
+        // Validar DNI
+        if (dto.getDni() == null || dto.getDni().isBlank()) {
+            throw new IllegalArgumentException("El DNI es obligatorio");
+        }
+        if (!dto.getDni().matches("\\d+")) {
+            throw new IllegalArgumentException("DNI incorrecto, debe contener sólo números");
+        }
+        
+        Long dniLong = Long.parseLong(dto.getDni());
+        
+        // PASO 1: Validar por DNI si el médico ya existe globalmente
+        Optional<Medico> existingMedico = repository.findByDni(dniLong);
+        
+        Medico medico;
+        boolean medicoCreado = false;
+        
+        if (existingMedico.isPresent()) {
+            // REUTILIZAR médico existente
+            medico = existingMedico.get();
+            logger.info("Médico con DNI {} ya existe. Reutilizando registro.", dniLong);
+            
+            // Verificar que no esté ya vinculado a este centro
+            if (staffMedicoRepository.existsByMedicoIdAndCentroId(medico.getId(), centroId)) {
+                throw new IllegalArgumentException("Este médico ya está asignado a su centro");
+            }
+        } else {
+            // CREAR nuevo médico
+            // Validar matrícula y email únicos
+            if (repository.existsByMatricula(dto.getMatricula())) {
+                throw new IllegalArgumentException("La matrícula ya existe en el sistema");
+            }
+            if (repository.existsByEmail(dto.getEmail())) {
+                throw new IllegalArgumentException("Ya existe un médico con el email: " + dto.getEmail());
+            }
+            
+            medico = toEntity(dto);
+            medico.setDni(dniLong);
+            validarMedico(medico);
+            
+            // Guardar médico
+            medico = repository.save(medico);
+            medicoCreado = true;
+            
+            // Crear cuenta User para que pueda acceder al sistema
+            String temporaryPassword = java.util.UUID.randomUUID().toString().substring(0, 12);
+            registrationService.registrarMedicoWithAudit(
+                dto.getEmail(),
+                temporaryPassword,
+                dniLong,
+                dto.getNombre(),
+                dto.getApellido(),
+                dto.getTelefono(),
+                performedByEmail
+            );
+            
+            // Enviar email con credenciales
+            User medicoUser = userService.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new IllegalStateException("Error al crear usuario para médico"));
+            emailService.sendMedicoWelcomeEmail(medicoUser, temporaryPassword);
+            
+            logger.info("Médico con DNI {} creado exitosamente.", dniLong);
+        }
+        
+        // PASO 2: SIEMPRE crear StaffMedico vinculando al centro
+        CentroAtencion centro = centroAtencionRepository.findById(centroId)
+            .orElseThrow(() -> new IllegalStateException("Centro no encontrado"));
+        
+        StaffMedico staff = new StaffMedico();
+        staff.setMedico(medico);
+        staff.setCentroAtencion(centro);
+        staff.setEspecialidad(especialidad);
+        staffMedicoRepository.save(staff);
+        
+        // Auditar la vinculación
+        String accion = medicoCreado ? "Médico creado y vinculado" : "Médico existente vinculado";
+        auditLogService.logGenericAction(
+            AuditLog.EntityTypes.STAFF_MEDICO,
+            staff.getId().longValue(),
+            AuditLog.Actions.CREATE,
+            performedByEmail,
+            null,
+            String.format("%s - %s (%s)", medico.getNombre(), medico.getApellido(), especialidad.getNombre()),
+            null,
+            null,
+            accion + " al centro " + centro.getNombre()
+        );
+        
+        logger.info("StaffMedico creado: Médico {} vinculado al centro {} con especialidad {}",
+            medico.getId(), centroId, especialidadId);
+        
+        return toDTO(medico);
     }
 
    
@@ -260,9 +461,26 @@ public class MedicoService {
         }
     }
 
+    /**
+     * Obtiene página de médicos con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los médicos globalmente
+     * - ADMINISTRADOR/OPERADOR: Solo médicos que trabajan en su centro (via StaffMedico)
+     * - PACIENTE: Ve todos los médicos (acceso global)
+     */
     public Page<MedicoDTO> findByPage(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size))
-                .map(this::toDTO);
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        Pageable pageable = PageRequest.of(page, size);
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por médicos del centro
+            return repository.findByCentroAtencionId(centroId, pageable)
+                    .map(this::toDTO);
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll(pageable)
+                    .map(this::toDTO);
+        }
     }
 
     /**

@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { DataPackage } from '../data.package';
-import { Medico } from './medico';
+import { Medico, MedicoBasicInfo } from './medico';
 import { ResultsPage } from '../results-page';
 
 @Injectable({
@@ -17,7 +17,17 @@ export class MedicoService {
 
   constructor(private http: HttpClient) {}
 
-  /** Obtiene todos los médicos */
+  /** 
+   * Obtiene todos los médicos según el tipo de usuario:
+   * - SUPERADMIN: Todos los médicos globalmente
+   * - ADMIN/OPERADOR: Solo médicos de su centro (via StaffMedico)
+   * - PACIENTE: Todos los médicos (acceso global para búsqueda)
+   * 
+   * NOTA: Para ver información básica de TODOS los médicos (para selector),
+   * el ADMIN debe usar un endpoint específico de "médicos disponibles".
+   * TODO: Implementar endpoint /medicos/disponibles que retorne lista básica
+   * (nombre, apellido, matricula) de todos los médicos del sistema.
+   */
   getAll(): Observable<DataPackage<Medico[]>> {
     return this.http.get<DataPackage<Medico[]>>(this.url);
   }
@@ -49,7 +59,17 @@ export class MedicoService {
     return this.http.post<DataPackage<Medico>>(this.url, medico);
   }
 
-  /** Crea un nuevo médico por administrador */
+  /** 
+   * Crea un nuevo médico por administrador
+   * IMPORTANTE: Los médicos son entidades GLOBALES. Al crear un médico:
+   * 1. Se registra globalmente en la tabla 'medico'
+   * 2. Luego debe asociarse al centro via StaffMedico
+   * 
+   * TODO: Implementar flujo de aprobación bidireccional
+   * - El ADMIN envía solicitud al médico
+   * - El médico debe aceptar ser asociado al centro
+   * Por ahora, la asociación es directa sin aprobación.
+   */
   createByAdmin(medico: Medico): Observable<DataPackage<Medico>> {
     return this.http.post<DataPackage<Medico>>(
       `${this.url}/create-by-admin`,
@@ -90,6 +110,29 @@ export class MedicoService {
     return this.http.get<DataPackage<Medico>>(`${this.url}/email/${encodeURIComponent(email)}`);
   }
 
+  /**
+   * Obtiene información básica de TODOS los médicos disponibles en el sistema.
+   * Retorna solo datos no sensibles (id, nombre, apellido, matricula, especialidades).
+   * Útil para selectores al crear StaffMedico.
+   * 
+   * NOTA: Este endpoint NO filtra por centro - retorna todos los médicos globalmente.
+   * 
+   * TODO: Implementar flujo de aprobación bidireccional donde el médico
+   * debe aceptar la solicitud del centro antes de ser asociado.
+   * 
+   * @example
+   * // En un componente para crear StaffMedico:
+   * this.medicoService.getMedicosDisponibles().subscribe({
+   *   next: (response) => {
+   *     this.medicosDisponibles = response.data;
+   *     // Mostrar en un <select> o dropdown
+   *   }
+   * });
+   */
+  getMedicosDisponibles(): Observable<DataPackage<MedicoBasicInfo[]>> {
+    return this.http.get<DataPackage<MedicoBasicInfo[]>>(`${this.url}/disponibles`);
+  }
+
   /** Paginación */
   byPage(page: number, size: number): Observable<DataPackage> {
     return this.http.get<DataPackage>(`${this.url}/page?page=${page - 1}&size=${size}`);
@@ -97,6 +140,11 @@ export class MedicoService {
 
   /**
    * Búsqueda paginada avanzada con filtros y ordenamiento
+   * El backend filtra automáticamente según el tipo de usuario:
+   * - SUPERADMIN: Todos los médicos
+   * - ADMIN/OPERADOR: Solo médicos de su centro (via StaffMedico)
+   * - PACIENTE: Todos los médicos (para búsqueda de turnos)
+   * 
    * @param page Número de página (0-based)
    * @param size Tamaño de página
    * @param nombre Filtro por nombre (opcional)

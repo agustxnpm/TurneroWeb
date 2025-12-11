@@ -52,6 +52,21 @@ export class AuditDashboardComponent implements OnInit {
     'CENTRO_ATENCION', 'ESPECIALIDAD', 'MEDICO'
   ];
 
+  /**
+   * TODO: Implementar filtrado multi-tenant para auditoría
+   * 
+   * ESTADO ACTUAL:
+   * - Backend NO filtra auditoría por centro automáticamente
+   * - AuditLog no tiene relación directa con CentroAtencion
+   * - Los logs se filtran indirectamente a través de las entidades auditadas
+   * 
+   * SOLUCIÓN RECOMENDADA:
+   * 1. Backend: Agregar campo centroAtencionId a AuditLog
+   * 2. Backend: Implementar filtrado en AuditLogService usando TenantContext
+   * 3. Frontend (SUPERADMIN): Agregar selector de centro para ver auditoría específica
+   * 
+   * POR AHORA: SUPERADMIN y ADMIN ven toda la auditoría (sin filtrar)
+   */
   constructor(
     private turnoService: TurnoService,
     private router: Router,

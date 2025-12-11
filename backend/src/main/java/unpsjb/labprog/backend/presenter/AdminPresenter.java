@@ -2,6 +2,7 @@ package unpsjb.labprog.backend.presenter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +40,11 @@ public class AdminPresenter {
     }
 
     /**
-     * Crea un nuevo administrador
+     * Crea un nuevo administrador con centro asignado.
+     * Solo accesible para SUPERADMIN.
      */
     @PostMapping
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Object> create(@RequestBody RegisterRequest dto) {
         try {
             String performedBy = AuditContext.getCurrentUser();
@@ -111,6 +114,28 @@ public class AdminPresenter {
             return Response.error(null, "Error al verificar email: " + e.getMessage());
         }
     }
+    
+    /**
+     * Crea un nuevo operador asignado al centro del administrador que lo crea.
+     * Solo accesible para ADMINISTRADOR.
+     */
+    @PostMapping("/operadores")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    public ResponseEntity<Object> createOperador(@RequestBody RegisterRequest dto) {
+        try {
+            String performedBy = AuditContext.getCurrentUser();
+            if (performedBy == null || performedBy.trim().isEmpty()) {
+                return Response.error(null, "No se pudo determinar el usuario que realiza la acción");
+            }
+
+            RegisterSuccessResponse newOperador = userService.createOperador(dto, performedBy);
+            return Response.ok(newOperador, "Operador creado exitosamente. Se ha enviado un email con las credenciales.");
+        } catch (IllegalArgumentException e) {
+            return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al crear operador: " + e.getMessage());
+        }
+    }
 
     /**
      * Endpoint temporal para probar el envío de invitaciones a encuestas
@@ -125,5 +150,5 @@ public class AdminPresenter {
         } catch (Exception e) {
             return Response.error(null, "Error al procesar invitaciones: " + e.getMessage());
         }
-    }
+}
 }

@@ -18,6 +18,7 @@ import unpsjb.labprog.backend.business.repository.EspecialidadRepository;
 import unpsjb.labprog.backend.dto.DisponibilidadMedicoDTO;
 import unpsjb.labprog.backend.model.DisponibilidadMedico;
 import unpsjb.labprog.backend.model.Especialidad;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class DisponibilidadMedicoService {
@@ -34,19 +35,61 @@ public class DisponibilidadMedicoService {
     @Autowired
     private unpsjb.labprog.backend.business.repository.EsquemaTurnoRepository esquemaTurnoRepository;
 
+    /**
+     * Obtiene todas las disponibilidades con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todas las disponibilidades globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo disponibilidades de su centro (via StaffMedico)
+     * - PACIENTE: Ve todas las disponibilidades (acceso global)
+     */
     public List<DisponibilidadMedicoDTO> findAll() {
-        return repository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por disponibilidades del centro (via StaffMedico)
+            return repository.findByStaffMedico_CentroAtencionId(centroId).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
     }
 
     public Optional<DisponibilidadMedicoDTO> findById(Integer id) {
         return repository.findById(id).map(this::toDTO);
     }
 
+    /**
+     * Obtiene página de disponibilidades con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todas las disponibilidades globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo disponibilidades de su centro (via StaffMedico)
+     * - PACIENTE: Ve todas las disponibilidades (acceso global)
+     */
     public Page<DisponibilidadMedicoDTO> findByPage(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size))
-                .map(this::toDTO);
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        PageRequest pageRequest = PageRequest.of(page, size);
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por disponibilidades del centro
+            List<DisponibilidadMedico> dispList = repository.findByStaffMedico_CentroAtencionId(centroId);
+            // Convertir a Page manualmente
+            int start = (int) pageRequest.getOffset();
+            int end = Math.min((start + pageRequest.getPageSize()), dispList.size());
+            return new org.springframework.data.domain.PageImpl<>(
+                dispList.subList(start, end).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList()),
+                pageRequest,
+                dispList.size()
+            );
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll(pageRequest)
+                    .map(this::toDTO);
+        }
     }
 
     public Page<DisponibilidadMedicoDTO> findByPage(int page, int size, String staffMedico, String especialidad, String dia, String sortBy, String sortDir) {

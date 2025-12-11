@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import unpsjb.labprog.backend.business.repository.CentroAtencionRepository;
+import unpsjb.labprog.backend.config.TenantContext;
 import unpsjb.labprog.backend.dto.CentroAtencionDTO;
 import unpsjb.labprog.backend.model.CentroAtencion;
 import unpsjb.labprog.backend.model.AuditLog;
@@ -26,10 +27,27 @@ public class CentroAtencionService {
         this.auditLogService = auditLogService;
     }
 
+    /**
+     * Obtiene todos los centros de atención con filtrado multi-tenant:
+     * - SUPERADMIN: Ve todos los centros (acceso global)
+     * - ADMIN/OPERADOR/MEDICO: Solo su propio centro de atención
+     * - PACIENTE: Ve todos los centros (acceso global para agendar)
+     */
     public List<CentroAtencionDTO> findAll() {
-        return repository.findAll().stream()
-                .map(this::toDTO)
-                .toList();
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - solo ve su centro
+            return repository.findById(centroId)
+                    .map(this::toDTO)
+                    .map(List::of)
+                    .orElse(List.of());
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll().stream()
+                    .map(this::toDTO)
+                    .toList();
+        }
     }
 
     public Optional<CentroAtencionDTO> findById(Integer id) {
@@ -40,15 +58,62 @@ public class CentroAtencionService {
         return repository.findById(id).orElse(null);
     }
 
+    /**
+     * Obtiene página de centros de atención con filtrado multi-tenant:
+     * - SUPERADMIN: Ve todos los centros (acceso global)
+     * - ADMIN/OPERADOR/MEDICO: Solo su propio centro de atención
+     * - PACIENTE: Ve todos los centros (acceso global para agendar)
+     */
     public Page<CentroAtencionDTO> findByPage(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size))
-                .map(this::toDTO);
+        Integer centroId = TenantContext.getFilteredCentroId();
+        PageRequest pageRequest = PageRequest.of(page, size);
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - solo ve su centro
+            Optional<CentroAtencion> centro = repository.findById(centroId);
+            if (centro.isPresent()) {
+                List<CentroAtencionDTO> centros = List.of(toDTO(centro.get()));
+                return new org.springframework.data.domain.PageImpl<>(
+                    centros,
+                    pageRequest,
+                    centros.size()
+                );
+            } else {
+                return Page.empty(pageRequest);
+            }
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll(pageRequest)
+                    .map(this::toDTO);
+        }
     }
 
+    /**
+     * Búsqueda de centros con filtrado multi-tenant:
+     * - SUPERADMIN: Busca en todos los centros
+     * - ADMIN/OPERADOR/MEDICO: Solo busca en su centro (si coincide)
+     * - PACIENTE: Busca en todos los centros
+     */
     public List<CentroAtencionDTO> search(String term) {
-        return repository.search("%" + term.toUpperCase() + "%").stream()
-                .map(this::toDTO)
-                .toList();
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar solo su centro
+            return repository.findById(centroId)
+                    .filter(centro -> 
+                        centro.getNombre().toUpperCase().contains(term.toUpperCase()) ||
+                        centro.getDireccion().toUpperCase().contains(term.toUpperCase()) ||
+                        centro.getLocalidad().toUpperCase().contains(term.toUpperCase())
+                    )
+                    .map(this::toDTO)
+                    .map(List::of)
+                    .orElse(List.of());
+        } else {
+            // SUPERADMIN o PACIENTE - búsqueda global
+            return repository.search("%" + term.toUpperCase() + "%").stream()
+                    .map(this::toDTO)
+                    .toList();
+        }
     }
 
     @Transactional

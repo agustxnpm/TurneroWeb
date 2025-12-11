@@ -123,6 +123,9 @@ public class AuthController {
                 );
             }
 
+            // MULTI-TENENCIA: Extraer centroAtencionId del usuario
+            Integer centroAtencionId = user.getCentroAtencion() != null ? user.getCentroAtencion().getId() : null;
+
             // Crear response
             LoginResponse loginResponse = new LoginResponse(
                 accessToken, 
@@ -130,7 +133,8 @@ public class AuthController {
                 user.getEmail(), 
                 user.getNombre() + " " + user.getApellido(),
                 user.getRole() != null ? user.getRole().getName() : "USER",
-                allRoles
+                allRoles,
+                centroAtencionId
             );
 
             return Response.response(HttpStatus.OK, "Login exitoso", loginResponse);
@@ -164,10 +168,25 @@ public class AuthController {
             // Generar nuevo access token
             String newAccessToken = jwtTokenProvider.generateAccessToken(userDetails);
 
+            // MULTI-TENENCIA: Extraer centroAtencionId del usuario
+            User user = (User) userDetails;
+            Integer centroAtencionId = user.getCentroAtencion() != null ? user.getCentroAtencion().getId() : null;
+
+            // Obtener lista completa de roles
+            java.util.List<String> allRoles = new java.util.ArrayList<>();
+            if (user.getRole() != null) {
+                allRoles.add(user.getRole().getName());
+                user.getRole().getAllInheritedRoles().forEach(inheritedRole -> 
+                    allRoles.add(inheritedRole.getName())
+                );
+            }
+
             return Response.response(HttpStatus.OK, "Token renovado exitosamente", 
                 new LoginResponse(newAccessToken, refreshToken, email, 
-                    ((User) userDetails).getNombre() + " " + ((User) userDetails).getApellido(),
-                    ((User) userDetails).getRole() != null ? ((User) userDetails).getRole().getName() : "USER"));
+                    user.getNombre() + " " + user.getApellido(),
+                    user.getRole() != null ? user.getRole().getName() : "USER",
+                    allRoles,
+                    centroAtencionId));
 
         } catch (Exception e) {
             return Response.response(HttpStatus.UNAUTHORIZED, "Error al renovar token: " + e.getMessage(), null);
@@ -788,6 +807,9 @@ public class AuthController {
                 );
             }
 
+            // MULTI-TENENCIA: Extraer centroAtencionId del usuario
+            Integer centroAtencionId = user.getCentroAtencion() != null ? user.getCentroAtencion().getId() : null;
+
             // Creamos la respuesta que espera el frontend.
             LoginResponse loginResponse = new LoginResponse(
                 accessToken, 
@@ -795,7 +817,8 @@ public class AuthController {
                 user.getEmail(), 
                 user.getNombre() + " " + user.getApellido(),
                 user.getRole() != null ? user.getRole().getName() : "PACIENTE",
-                allRoles
+                allRoles,
+                centroAtencionId
             );
             
             logger.info("Login exitoso con Google para usuario: {}", user.getEmail());

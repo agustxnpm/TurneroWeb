@@ -111,8 +111,13 @@ export class OperadorService {
     return this.http.get<DataPackage<Operador>>(`${this.url}/by-email/${encodeURIComponent(email)}`);
   }
 
-  /** Crea un operador desde el perfil de administrador con auditoría */
+  /** 
+   * Crea un operador desde el perfil de administrador con auditoría
+   * IMPORTANTE: Usa endpoint /admins/operadores para que el backend automáticamente
+   * asocie el operador al centro del ADMIN autenticado (multi-tenancy)
+   */
   createByAdmin(operador: Operador): Observable<DataPackage<Operador>> {
-    return this.http.post<DataPackage<Operador>>(`${this.url}/create-by-admin`, operador);
+    const adminUrl = environment.production ? `${environment.apiUrl}/admins/operadores` : "rest/admins/operadores";
+    return this.http.post<DataPackage<Operador>>(adminUrl, operador);
   }
 }

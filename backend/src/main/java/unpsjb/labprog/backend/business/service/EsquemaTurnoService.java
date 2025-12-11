@@ -22,6 +22,7 @@ import unpsjb.labprog.backend.business.repository.EsquemaTurnoRepository;
 import unpsjb.labprog.backend.dto.EsquemaTurnoDTO;
 import unpsjb.labprog.backend.model.DisponibilidadMedico;
 import unpsjb.labprog.backend.model.EsquemaTurno;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class EsquemaTurnoService {
@@ -41,10 +42,26 @@ public class EsquemaTurnoService {
     @Autowired
     private ConsultorioDistribucionService consultorioDistribucionService;
 
+    /**
+     * Obtiene todos los esquemas de turno con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los esquemas globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo esquemas de su centro
+     * - PACIENTE: Ve todos los esquemas (acceso global)
+     */
     public List<EsquemaTurnoDTO> findAll() {
-        return esquemaTurnoRepository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por esquemas del centro
+            return esquemaTurnoRepository.findByCentroAtencionId(centroId).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return esquemaTurnoRepository.findAll().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
     }
 
     public Optional<EsquemaTurnoDTO> findById(Integer id) {
@@ -92,10 +109,36 @@ public class EsquemaTurnoService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene página de esquemas con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los esquemas globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo esquemas de su centro
+     * - PACIENTE: Ve todos los esquemas (acceso global)
+     */
     public Page<EsquemaTurnoDTO> findByPage(int page, int size) {
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<EsquemaTurno> esquemaPage = esquemaTurnoRepository.findAll(pageRequest);
-        return esquemaPage.map(this::toDTO);
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por esquemas del centro
+            // Nota: EsquemaTurnoRepository tiene findByCentroAtencionId pero retorna List, no Page
+            List<EsquemaTurno> esquemas = esquemaTurnoRepository.findByCentroAtencionId(centroId);
+            // Convertir a Page manualmente
+            int start = (int) pageRequest.getOffset();
+            int end = Math.min((start + pageRequest.getPageSize()), esquemas.size());
+            return new org.springframework.data.domain.PageImpl<>(
+                esquemas.subList(start, end).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList()),
+                pageRequest,
+                esquemas.size()
+            );
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            Page<EsquemaTurno> esquemaPage = esquemaTurnoRepository.findAll(pageRequest);
+            return esquemaPage.map(this::toDTO);
+        }
     }
 
     /**

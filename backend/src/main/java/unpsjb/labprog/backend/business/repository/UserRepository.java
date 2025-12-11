@@ -76,4 +76,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return número de usuarios que cumplen ambas condiciones
      */
     long countByRoleAndEnabled(unpsjb.labprog.backend.model.Role role, boolean enabled);
+
+    /**
+     * Busca usuarios pertenecientes a un centro de atención específico
+     * Usado para filtrado multi-tenant: ADMIN/OPERADOR solo ve usuarios de su centro
+     * @param centroId ID del centro de atención
+     * @return lista de usuarios del centro
+     */
+    java.util.List<User> findByCentroAtencion_Id(Integer centroId);
 }

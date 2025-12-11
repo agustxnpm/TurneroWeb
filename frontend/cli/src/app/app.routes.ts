@@ -48,6 +48,8 @@ import { PatientGuard } from "./guards/patient.guard";
 import { MedicoGuard } from "./guards/medico.guard";
 import { OperadorGuard } from "./guards/operador.guard";
 import { AdminOperadorGuard } from "./guards/admin-operador.guard";
+import { SuperAdminGuard } from "./guards/super-admin.guard";
+import { CentroAtencionAccessGuard } from "./guards/centro-atencion-access.guard";
 
 import { OperadorDashboardComponent } from "./operador/operador-dashboard.component";
 //import { OperadorAgendaComponent } from "./operador/operador-agenda.component";
@@ -301,17 +303,17 @@ export const routes: Routes = [
   {
     path: "centrosAtencion",
     component: CentrosAtencionComponent,
-    canActivate: [AdminOperadorGuard],
+    canActivate: [SuperAdminGuard], // Solo SUPERADMIN ve el listado completo
   },
   {
     path: "centrosAtencion/new",
     component: CentroAtencionDetailRefactoredComponent,
-    canActivate: [AdminOperadorGuard],
+    canActivate: [CentroAtencionAccessGuard], // Solo SUPERADMIN crea centros (validado en guard)
   },
   {
     path: "centrosAtencion/:id",
     component: CentroAtencionDetailRefactoredComponent,
-    canActivate: [AdminOperadorGuard],
+    canActivate: [CentroAtencionAccessGuard], // SUPERADMIN (cualquier centro) o ADMIN (solo su centro)
   },
   {
     path: "consultorios",

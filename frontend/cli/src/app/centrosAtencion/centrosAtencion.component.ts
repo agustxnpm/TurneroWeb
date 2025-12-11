@@ -6,6 +6,7 @@ import { CentroAtencion } from './centroAtencion';
 import { ModalService } from '../modal/modal.service';
 import { ResultsPage } from '../results-page';
 import { PaginationComponent } from '../pagination/pagination.component';
+import { UserContextService } from '../services/user-context.service';
 
 @Component({
   selector: 'app-centros-atencion',
@@ -28,17 +29,45 @@ export class CentrosAtencionComponent {
   currentPage: number = 1;
   modoEdicion: boolean = false;
   selectedId?: number;
+  
+  // Multi-tenant: Control de acceso por rol
+  isSuperAdmin: boolean = false;
 
   constructor(
     private centroAtencionService: CentroAtencionService,
     private modalService: ModalService,
     public router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private userContextService: UserContextService
   ) {
     this.modoEdicion = this.route.snapshot.queryParamMap.get('edit') === 'true';
   }
 
   ngOnInit() {
+    // Verificar rol del usuario para control de acceso multi-tenant
+    this.isSuperAdmin = this.userContextService.isSuperAdmin;
+    
+    // Si es ADMIN (no SUPERADMIN), redirigir a "Mi Centro"
+    if (this.userContextService.isAdmin && !this.isSuperAdmin) {
+      const centroId = this.userContextService.tenantId;
+      if (centroId) {
+        console.log('ADMIN detectado, redirigiendo a su centro:', centroId);
+        this.router.navigate(['/centrosAtencion', centroId]);
+        return;
+      } else {
+        console.error('ADMIN sin centroAtencionId asignado');
+        this.router.navigate(['/']);
+        return;
+      }
+    }
+    
+    // Solo SUPERADMIN puede ver el listado completo
+    if (!this.isSuperAdmin) {
+      console.warn('Acceso denegado: solo SUPERADMIN puede gestionar centros');
+      this.router.navigate(['/']);
+      return;
+    }
+    
     this.getCentrosAtencion();
   }
 

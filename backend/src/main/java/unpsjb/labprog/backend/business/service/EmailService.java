@@ -305,6 +305,81 @@ public class EmailService {
                         """,
                 appName, adminName, temporaryPassword, appUrl);
     }
+    
+    /**
+     * Envía email de bienvenida a médicos con credenciales iniciales
+     * 
+     * @param medicoUser        Usuario médico creado
+     * @param temporaryPassword Contraseña temporal asignada
+     */
+    @Async
+    public CompletableFuture<Void> sendMedicoWelcomeEmail(unpsjb.labprog.backend.model.User medicoUser,
+            String temporaryPassword) {
+        String subject = appName + " - Bienvenido Dr./Dra. " + medicoUser.getApellido();
+        String htmlBody = buildMedicoWelcomeEmailBody(medicoUser.getNombre(), medicoUser.getApellido(), temporaryPassword);
+
+        return sendHtmlEmailAsync(medicoUser.getEmail(), subject, htmlBody);
+    }
+
+    private String buildMedicoWelcomeEmailBody(String nombre, String apellido, String temporaryPassword) {
+        return String.format(
+                """
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <title>Bienvenida Médico</title>
+                        </head>
+                        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                                <h2 style="color: #2c5aa0;">Bienvenido/a a %s - Cuenta Profesional</h2>
+                                <p>Estimado/a Dr./Dra. %s %s,</p>
+                                <p>Su cuenta de médico ha sido creada exitosamente en nuestro sistema de gestión de turnos. A continuación encontrará sus credenciales de acceso:</p>
+
+                                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <p><strong>Usuario:</strong> Su dirección de correo electrónico</p>
+                                    <p><strong>Contraseña temporal:</strong> <code style="background-color: #e9ecef; padding: 2px 6px; border-radius: 3px;">%s</code></p>
+                                </div>
+
+                                <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <p style="margin: 0; color: #0c5460;">
+                                        <strong>ℹ️ Con su cuenta podrá:</strong>
+                                        <ul style="margin-top: 10px;">
+                                            <li>Visualizar sus turnos programados</li>
+                                            <li>Acceder al historial de pacientes</li>
+                                            <li>Gestionar su agenda y disponibilidad</li>
+                                            <li>Actualizar información de consultas</li>
+                                        </ul>
+                                    </p>
+                                </div>
+
+                                <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                                    <p style="margin: 0; color: #856404;">
+                                        <strong>⚠️ IMPORTANTE - Seguridad:</strong>
+                                        <ul style="margin-top: 10px;">
+                                            <li>Por favor cambie esta contraseña en su primer inicio de sesión.</li>
+                                            <li>Esta contraseña temporal expirará en 24 horas.</li>
+                                            <li>Nunca comparta sus credenciales con terceros.</li>
+                                            <li>El sistema cumple con normativas de protección de datos médicos.</li>
+                                        </ul>
+                                    </p>
+                                </div>
+
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="%s" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Acceder al Sistema</a>
+                                </div>
+
+                                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                                <p style="font-size: 12px; color: #666;">
+                                    Este es un correo automático. Por favor no responda a este mensaje.<br>
+                                    Si tiene consultas o no esperaba este correo, contacte al administrador de su centro de atención.
+                                </p>
+                            </div>
+                        </body>
+                        </html>
+                        """,
+                appName, nombre, apellido, temporaryPassword, appUrl);
+    }
 
     // Métodos privados para construir los cuerpos de los correos
 

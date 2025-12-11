@@ -1,5 +1,6 @@
 package unpsjb.labprog.backend.business.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -45,4 +46,33 @@ public interface MedicoRepository extends JpaRepository<Medico, Integer> {
                               @Param("especialidad") String especialidad,
                               @Param("estado") String estado,
                               Pageable pageable);
+    
+    // ===== MÉTODOS MULTI-TENENCIA =====
+    // Nota: Medico es una entidad global, la restricción por centro se hace mediante StaffMedico
+    // Estos métodos buscan médicos que trabajen en un centro específico
+    
+    /**
+     * Encuentra médicos que trabajan en un centro específico (a través de StaffMedico)
+     * @param centroId ID del centro de atención
+     * @return Lista de médicos que atienden en el centro
+     */
+    @Query("""
+        SELECT DISTINCT m FROM Medico m
+        JOIN StaffMedico sm ON sm.medico.id = m.id
+        WHERE sm.centroAtencion.id = :centroId
+        """)
+    List<Medico> findByCentroAtencionId(@Param("centroId") Integer centroId);
+    
+    /**
+     * Encuentra médicos que trabajan en un centro específico con paginación
+     * @param centroId ID del centro de atención
+     * @param pageable Configuración de paginación
+     * @return Página de médicos que atienden en el centro
+     */
+    @Query("""
+        SELECT DISTINCT m FROM Medico m
+        JOIN StaffMedico sm ON sm.medico.id = m.id
+        WHERE sm.centroAtencion.id = :centroId
+        """)
+    Page<Medico> findByCentroAtencionId(@Param("centroId") Integer centroId, Pageable pageable);
 }

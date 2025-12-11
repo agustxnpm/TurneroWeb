@@ -6,6 +6,12 @@ import java.util.Set;
 /**
  * Enum para representar la jerarquía de roles del sistema
  * Cada rol incluye los permisos de los roles que hereda
+ * 
+ * MULTI-TENENCIA:
+ * - SUPERADMIN: Acceso global a todos los centros de atención (centro_atencion_id puede ser NULL)
+ * - ADMINISTRADOR: Acceso limitado a su centro de atención (centro_atencion_id OBLIGATORIO)
+ * - MEDICO/OPERADOR: Acceso limitado a su centro de atención (centro_atencion_id OBLIGATORIO)
+ * - PACIENTE: Lectura cross-tenant permitida (centro_atencion_id puede ser NULL)
  */
 public enum Role {
 
@@ -13,12 +19,14 @@ public enum Role {
     // PACIENTE (base)
     // ├── MEDICO (hereda de PACIENTE)
     // ├── OPERADOR (hereda de PACIENTE)
-    // └── ADMINISTRADOR (hereda de PACIENTE, MEDICO, OPERADOR)
+    // ├── ADMINISTRADOR (hereda de PACIENTE, MEDICO, OPERADOR)
+    // └── SUPERADMIN (hereda de ADMINISTRADOR y todos los demás roles - acceso global)
 
     PACIENTE(Set.of()),
     MEDICO(Set.of(PACIENTE)),
     OPERADOR(Set.of(PACIENTE)),
-    ADMINISTRADOR(Set.of(PACIENTE, MEDICO, OPERADOR));
+    ADMINISTRADOR(Set.of(PACIENTE, MEDICO, OPERADOR)),
+    SUPERADMIN(Set.of(PACIENTE, MEDICO, OPERADOR, ADMINISTRADOR));
 
     private final Set<Role> inheritedRoles;
 

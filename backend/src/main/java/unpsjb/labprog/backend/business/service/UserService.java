@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 
 import unpsjb.labprog.backend.business.repository.UserRepository;
+import unpsjb.labprog.backend.config.TenantContext;
 import unpsjb.labprog.backend.model.User;
 import unpsjb.labprog.backend.model.Role;
 import unpsjb.labprog.backend.dto.PacienteDTO;
@@ -162,12 +163,23 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * Obtiene todos los usuarios
+     * Obtiene todos los usuarios con filtrado multi-tenant:
+     * - SUPERADMIN: Ve todos los usuarios (acceso global)
+     * - ADMIN/OPERADOR: Solo usuarios de su centro de atención
+     * - MEDICO/PACIENTE: Acceso global (sin filtrado)
      * 
-     * @return List<User> lista de todos los usuarios
+     * @return List<User> lista de usuarios según permisos
      */
     public List<User> findAll() {
-        return userRepository.findAll();
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        // SUPERADMIN/PACIENTE/MEDICO: acceso global (sin filtro por centro)
+        if (centroId == null) {
+            return userRepository.findAll();
+        }
+        
+        // ADMIN/OPERADOR: solo usuarios de su centro
+        return userRepository.findByCentroAtencion_Id(centroId);
     }
 
     /**
@@ -386,12 +398,13 @@ public class UserService implements UserDetailsService {
      * @return User usuario existente o recién creado
      */
     /**
-     * Crea un nuevo administrador
+     * Crea un nuevo administrador con centro asignado.
+     * Solo para uso de SUPERADMIN.
      * 
-     * @param dto                  datos del nuevo administrador
-     * @param performingAdminEmail email del administrador que realiza la acción
+     * @param dto                  datos del nuevo administrador (debe incluir centroId)
+     * @param performingAdminEmail email del SUPERADMIN que realiza la acción
      * @return RegisterSuccessResponse con datos del admin creado
-     * @throws IllegalArgumentException si hay errores de validación
+     * @throws IllegalArgumentException si hay errores de validación o falta centroId
      */
     @Transactional
     public RegisterSuccessResponse createAdmin(
@@ -399,6 +412,11 @@ public class UserService implements UserDetailsService {
         // Validar email duplicado
         if (userRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Ya existe un usuario con el email: " + dto.getEmail());
+        }
+        
+        // Validar que venga centroId
+        if (dto.getCentroId() == null) {
+            throw new IllegalArgumentException("El centroId es obligatorio para crear un administrador");
         }
 
         // Generar contraseña temporal
@@ -416,6 +434,10 @@ public class UserService implements UserDetailsService {
         admin.setRole(Role.ADMINISTRADOR);
         admin.setEmailVerified(true); // Auto-verificar email de administradores
         admin.setEmailVerifiedAt(java.time.LocalDateTime.now());
+        
+        // Asignar centro (validación se hace al guardar por JPA)
+        admin.setCentroAtencion(new unpsjb.labprog.backend.model.CentroAtencion());
+        admin.getCentroAtencion().setId(dto.getCentroId());
 
         User savedAdmin = userRepository.save(admin);
 
@@ -437,6 +459,72 @@ public class UserService implements UserDetailsService {
         response.setFullName(savedAdmin.getNombre() + " " + savedAdmin.getApellido());
         response.setMessage("Administrador creado exitosamente");
         response.setRequiresActivation(false); // Los administradores no requieren activación
+
+        return response;
+    }
+    
+    /**
+     * Crea un nuevo operador asignado al centro del administrador.
+     * Solo para uso de ADMINISTRADOR (crea operadores en su propio centro).
+     * 
+     * @param dto                  datos del nuevo operador
+     * @param performingAdminEmail email del ADMINISTRADOR que realiza la acción
+     * @return RegisterSuccessResponse con datos del operador creado
+     * @throws IllegalArgumentException si hay errores de validación
+     */
+    @Transactional
+    public RegisterSuccessResponse createOperador(
+            RegisterRequest dto, String performingAdminEmail) {
+        // Validar email duplicado
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un usuario con el email: " + dto.getEmail());
+        }
+        
+        // Obtener el centro del administrador que está creando el operador
+        User performingAdmin = userRepository.findByEmail(performingAdminEmail)
+            .orElseThrow(() -> new IllegalArgumentException("Administrador no encontrado: " + performingAdminEmail));
+        
+        if (performingAdmin.getCentroAtencion() == null) {
+            throw new IllegalArgumentException("El administrador no tiene un centro asignado");
+        }
+
+        // Generar contraseña temporal
+        String temporaryPassword = UUID.randomUUID().toString().substring(0, 12);
+        String hashedPassword = passwordEncoder.encode(temporaryPassword);
+
+        // Crear usuario con rol OPERADOR asignado al mismo centro del admin
+        User operador = new User();
+        operador.setNombre(dto.getNombre());
+        operador.setApellido(dto.getApellido());
+        operador.setDni(Long.parseLong(dto.getDni()));
+        operador.setEmail(dto.getEmail());
+        operador.setHashedPassword(hashedPassword);
+        operador.setTelefono(dto.getTelefono());
+        operador.setRole(Role.OPERADOR);
+        operador.setEmailVerified(true);
+        operador.setEmailVerifiedAt(java.time.LocalDateTime.now());
+        operador.setCentroAtencion(performingAdmin.getCentroAtencion()); // Mismo centro que el admin
+
+        User savedOperador = userRepository.save(operador);
+
+        // Registrar en auditoría
+        auditLogService.logUserCreated(
+                savedOperador.getId(),
+                savedOperador.getEmail(),
+                "OPERADOR",
+                savedOperador.getNombre(),
+                savedOperador.getApellido(),
+                performingAdminEmail);
+
+        // Enviar email con credenciales
+        emailService.sendAdminWelcomeEmail(savedOperador, temporaryPassword);
+
+        // Retornar respuesta
+        RegisterSuccessResponse response = new RegisterSuccessResponse();
+        response.setEmail(savedOperador.getEmail());
+        response.setFullName(savedOperador.getNombre() + " " + savedOperador.getApellido());
+        response.setMessage("Operador creado exitosamente");
+        response.setRequiresActivation(false);
 
         return response;
     }
@@ -596,4 +684,5 @@ public class UserService implements UserDetailsService {
             return userRepository.save(newUser);
         }
     }
+
 }

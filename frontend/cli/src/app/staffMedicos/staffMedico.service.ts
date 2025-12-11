@@ -17,7 +17,10 @@ export class StaffMedicoService {
 
   constructor(private http: HttpClient) { }
 
-  /** Obtiene todos los staff médicos */
+  /** 
+   * Obtiene todos los staff médicos
+   * NOTA: El backend filtra automáticamente por centro si el usuario es ADMIN/OPERADOR (multi-tenancy)
+   */
   all(): Observable<DataPackage<StaffMedico[]>> {
     return this.http.get<DataPackage<StaffMedico[]>>(this.url);
   }

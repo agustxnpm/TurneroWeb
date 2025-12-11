@@ -303,14 +303,20 @@
         <button type="button" class="btn btn-modern btn-back" (click)="onGoBack()">
           ← Volver
         </button>
-        <button type="button" class="btn btn-modern btn-edit" (click)="onActivarEdicion()">
+        <!-- Solo SUPERADMIN puede editar/eliminar -->
+        <button 
+          type="button" 
+          class="btn btn-modern btn-edit" 
+          (click)="onActivarEdicion()"
+          *ngIf="canEdit"
+        >
           ✏️ Editar
         </button>
         <button 
           type="button" 
           class="btn btn-modern btn-delete ms-auto" 
           (click)="onConfirmDelete(centroAtencion)"
-          *ngIf="centroAtencion.id"
+          *ngIf="centroAtencion.id && canEdit"
         >
           🗑️ Eliminar
         </button>

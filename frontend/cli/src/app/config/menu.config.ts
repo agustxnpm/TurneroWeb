@@ -329,6 +329,60 @@ export const MENU_CONFIG: MenuSection[] = [
   },
 
   // ========================================
+  // SECCIÓN: SUPERADMIN (Gestión Multi-Tenant)
+  // ========================================
+  {
+    id: 'superadmin',
+    label: 'Panel SuperAdmin',
+    icon: 'shield_person',
+    role: Role.SUPERADMIN,
+    order: 5,
+    items: [
+      {
+        label: 'Dashboard Global',
+        route: '/superadmin-dashboard',
+        icon: 'dashboard',
+        description: 'Panel de control global del sistema'
+      },
+      {
+        label: 'Gestión de Centros',
+        route: '/centrosAtencion',
+        icon: 'domain',
+        description: 'ABM de Centros de Atención (multi-tenant)'
+      },
+      {
+        label: 'Gestión de Admins',
+        route: '/admin/users',
+        icon: 'admin_panel_settings',
+        description: 'Crear y asignar administradores a centros'
+      },
+      {
+        label: 'Auditoría Global',
+        route: '/superadmin-auditoria',
+        icon: 'policy',
+        description: 'Ver logs de auditoría de todos los centros'
+      },
+      {
+        label: 'Métricas del Sistema',
+        route: '/superadmin-metricas',
+        icon: 'analytics',
+        description: 'Estadísticas globales de todos los centros'
+      },
+      {
+        divider: true,
+        label: '',
+        icon: ''
+      },
+      {
+        label: 'Acceso Admin',
+        route: '/admin-dashboard',
+        icon: 'visibility',
+        description: 'Ver panel de administrador (soporte)'
+      }
+    ]
+  },
+
+  // ========================================
   // SECCIÓN: GESTIÓN GENERAL (solo para OPERADOR)
   // ========================================
   // Esta sección solo se muestra para usuarios con rol OPERADOR

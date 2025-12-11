@@ -35,6 +35,7 @@ export interface LoginResponse {
   nombre: string;
   role: string;
   roles?: string[]; // Lista completa de roles incluyendo heredados
+  centroAtencionId?: number; // ID del centro de atención (null para SUPERADMIN y PACIENTE)
 }
 
 /**
@@ -103,7 +104,8 @@ export enum Role {
   PACIENTE = 'PACIENTE',
   MEDICO = 'MEDICO',
   OPERADOR = 'OPERADOR',
-  ADMINISTRADOR = 'ADMINISTRADOR'
+  ADMINISTRADOR = 'ADMINISTRADOR',
+  SUPERADMIN = 'SUPERADMIN'
 }
 
 /**
@@ -114,6 +116,7 @@ export const ROLE_HIERARCHY: Record<Role, Role[]> = {
   [Role.MEDICO]: [Role.PACIENTE],
   [Role.OPERADOR]: [Role.PACIENTE],
   [Role.ADMINISTRADOR]: [Role.PACIENTE, Role.MEDICO, Role.OPERADOR],
+  [Role.SUPERADMIN]: [Role.PACIENTE, Role.MEDICO, Role.OPERADOR, Role.ADMINISTRADOR]
 };
 
 /**
@@ -225,7 +228,8 @@ export class AuthService {
               email: response.data.email,
               nombre: response.data.nombre,
               primaryRole: response.data.role,
-              allRoles: response.data.roles // Roles completos desde backend
+              allRoles: response.data.roles, // Roles completos desde backend
+              centroAtencionId: response.data.centroAtencionId // Multi-tenant: ID del centro
             });
             
             // Notificar a otras pestañas sobre el login con un pequeño delay
@@ -281,7 +285,8 @@ export class AuthService {
               nombre: response.data.nombre,
               primaryRole: response.data.role,
               allRoles: response.data.roles,
-              profileCompleted: profileCompleted ?? true
+              profileCompleted: profileCompleted ?? true,
+              centroAtencionId: response.data.centroAtencionId // Multi-tenant: ID del centro
             });
             
             // Notificar a otras pestañas sobre el login
@@ -375,7 +380,8 @@ export class AuthService {
       email: loginResponse.email,
       nombre: loginResponse.nombre,
       primaryRole: loginResponse.role,
-      allRoles: loginResponse.roles
+      allRoles: loginResponse.roles,
+      centroAtencionId: loginResponse.centroAtencionId // Multi-tenant: ID del centro
     });
     
     // Notificar a otras pestañas sobre el login con delay
@@ -1335,7 +1341,8 @@ export class AuthService {
             email: data.data.email,
             nombre: data.data.nombre || '',
             primaryRole: data.data.role,
-            allRoles: data.data.roles || [data.data.role]
+            allRoles: data.data.roles || [data.data.role],
+            centroAtencionId: data.data.centroAtencionId // Multi-tenant: ID del centro
           });
         }
         break;

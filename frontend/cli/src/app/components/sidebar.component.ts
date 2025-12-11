@@ -116,7 +116,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
       'PACIENTE': 'Paciente',
       'MEDICO': 'Médico',
       'OPERADOR': 'Operador',
-      'ADMINISTRADOR': 'Administrador'
+      'ADMINISTRADOR': 'Administrador',
+      'SUPERADMIN': 'Super Administrador'
     };
     return roleMap[role] || role;
   }

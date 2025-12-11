@@ -23,6 +23,7 @@ import { DisponibilidadMedico } from '../disponibilidadMedicos/disponibilidadMed
 import { DisponibilidadMedicoService } from '../disponibilidadMedicos/disponibilidadMedico.service';
 import { DataPackage } from '../data.package';
 import { forkJoin, of } from 'rxjs';
+import { UserContextService } from '../services/user-context.service';
 
 // Importar los tabs separados
 import { CentroAtencionDetalleTabComponent } from './tabs/detalle/centro-atencion-detalle-tab.component';
@@ -57,6 +58,11 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   form: any = { invalid: false, valid: true };
   activeTab: string = 'detalle';
   modoEdicion = false;
+  
+  // Multi-tenant: Control de permisos
+  isSuperAdmin: boolean = false;
+  isAdmin: boolean = false;
+  canEdit: boolean = false; // Determina si el usuario puede editar este centro
 
   // ==================== DATOS DE DOMINIO (SRP) ====================
   consultorios: Consultorio[] = [];
@@ -110,7 +116,8 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
     private esquemaTurnoService: EsquemaTurnoService,
     private disponibilidadMedicoService: DisponibilidadMedicoService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private userContextService: UserContextService
   ) { }
 
   ngAfterViewInit(): void {
@@ -120,6 +127,14 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   }
 
   ngOnInit(): void {
+    // Verificar permisos del usuario (multi-tenant)
+    this.isSuperAdmin = this.userContextService.isSuperAdmin;
+    this.isAdmin = this.userContextService.isAdmin;
+    
+    // SUPERADMIN puede editar cualquier centro
+    // ADMIN solo puede VER (no editar) su centro
+    this.canEdit = this.isSuperAdmin;
+    
     this.get();
     this.cargarEsquemasParaSemana();
     
@@ -180,6 +195,11 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   // ==================== MÉTODOS DE TAB DETALLE ====================
 
   activarEdicion(): void {
+    // Solo SUPERADMIN puede editar centros
+    if (!this.canEdit) {
+      this.showMessage('No tiene permisos para editar este centro', 'warning');
+      return;
+    }
     this.modoEdicion = true;
   }
 

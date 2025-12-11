@@ -35,6 +35,16 @@ public class User extends Persona implements UserDetails {
     @Column(nullable = false)
     private String hashedPassword; // Hash de la contraseña para autenticación
     
+    /**
+     * Centro de atención al que pertenece el usuario (Multi-tenencia).
+     * - SUPERADMIN: NULL (acceso global a todos los centros)
+     * - ADMINISTRADOR/MEDICO/OPERADOR: NOT NULL (acceso limitado a su centro)
+     * - PACIENTE: NULL (puede acceder a turnos de cualquier centro)
+     */
+    @ManyToOne
+    @JoinColumn(name = "centro_atencion_id", nullable = true)
+    private CentroAtencion centroAtencion;
+    
     @Column(nullable = false)
     private Boolean enabled = true;
     
@@ -179,6 +189,50 @@ public class User extends Persona implements UserDetails {
      */
     public boolean isFullyActivated() {
         return isActive() && isEmailVerified();
+    }
+    
+    // ===============================
+    // MÉTODOS DE MULTI-TENENCIA
+    // ===============================
+    
+    /**
+     * Verifica si este usuario tiene acceso global (no limitado a un centro)
+     * @return true si es SUPERADMIN o PACIENTE
+     */
+    public boolean tieneAccesoGlobal() {
+        return role == Role.SUPERADMIN || role == Role.PACIENTE;
+    }
+    
+    /**
+     * Verifica si este usuario está limitado a un centro específico
+     * @return true si es ADMINISTRADOR, MEDICO u OPERADOR
+     */
+    public boolean estáLimitadoACentro() {
+        return role == Role.ADMINISTRADOR || role == Role.MEDICO || role == Role.OPERADOR;
+    }
+    
+    /**
+     * Verifica si el usuario pertenece a un centro específico
+     * @param centroId ID del centro a verificar
+     * @return true si el usuario pertenece al centro o tiene acceso global
+     */
+    public boolean perteneceACentro(Integer centroId) {
+        if (tieneAccesoGlobal()) {
+            return true; // SUPERADMIN y PACIENTE tienen acceso a todos los centros
+        }
+        return centroAtencion != null && centroAtencion.getId().equals(centroId);
+    }
+    
+    /**
+     * Valida que el usuario tenga un centro asignado si su rol lo requiere
+     * @throws IllegalStateException si el usuario requiere un centro pero no lo tiene
+     */
+    public void validarCentroRequerido() {
+        if (estáLimitadoACentro() && centroAtencion == null) {
+            throw new IllegalStateException(
+                String.format("El usuario con rol %s debe tener un centro de atención asignado", role.getName())
+            );
+        }
     }
     
     // ===============================

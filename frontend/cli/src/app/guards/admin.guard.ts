@@ -27,7 +27,8 @@ export class AdminGuard implements CanActivate {
       return false;
     }
 
-    // Verificar si tiene rol de admin usando el UserContextService
-    return this.userContextService.hasRole(Role.ADMINISTRADOR);
+    // Verificar si tiene rol de admin o superadmin
+    // SUPERADMIN hereda permisos de ADMIN (puede dar soporte aunque no opere)
+    return this.userContextService.hasAnyRole([Role.ADMINISTRADOR, Role.SUPERADMIN]);
   }
 }

@@ -82,6 +82,20 @@ public class JwtTokenProvider {
     }
 
     /**
+     * Extrae el centroAtencionId del token (MULTI-TENENCIA)
+     * @param token JWT token
+     * @return Integer centroAtencionId o null si el usuario no está asociado a un centro
+     */
+    public Integer extractCentroAtencionId(String token) {
+        Claims claims = extractAllClaims(token);
+        Object centroIdObj = claims.get("centroAtencionId");
+        if (centroIdObj instanceof Integer) {
+            return (Integer) centroIdObj;
+        }
+        return null;
+    }
+
+    /**
      * Extrae un claim específico del token
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -117,6 +131,12 @@ public class JwtTokenProvider {
             User user = (User) userDetails;
             claims.put("userId", user.getId());
             claims.put("role", user.getRole() != null ? user.getRole().getName() : "USER");
+
+            // MULTI-TENENCIA: Inyectar centroAtencionId en el token JWT
+            // Solo para roles que están limitados a un centro (ADMINISTRADOR, MEDICO, OPERADOR)
+            if (user.getCentroAtencion() != null) {
+                claims.put("centroAtencionId", user.getCentroAtencion().getId());
+            }
 
             // Si el usuario tiene acceso a PACIENTE (cualquier rol en la jerarquía), verificar paciente
             // Usa lógica centralizada de jerarquía de roles: user.getRole().hasAccessTo(Role.PACIENTE)

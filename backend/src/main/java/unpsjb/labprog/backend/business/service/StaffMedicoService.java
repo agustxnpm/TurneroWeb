@@ -30,6 +30,7 @@ import unpsjb.labprog.backend.model.DisponibilidadMedico;
 import unpsjb.labprog.backend.model.Especialidad;
 import unpsjb.labprog.backend.model.Medico;
 import unpsjb.labprog.backend.model.StaffMedico;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class StaffMedicoService {
@@ -52,10 +53,26 @@ public class StaffMedicoService {
     @Autowired
     private unpsjb.labprog.backend.business.repository.TurnoRepository turnoRepository;
 
+    /**
+     * Obtiene todos los staff médicos con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los staff médicos globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo staff de su centro
+     * - PACIENTE: Ve todos los staff médicos (acceso global)
+     */
     public List<StaffMedicoDTO> findAll() {
-        return repository.findAll().stream()
-                .map(this::toDTO)
-                .toList();
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por staff del centro
+            return repository.findByCentroAtencionId(centroId).stream()
+                    .map(this::toDTO)
+                    .toList();
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll().stream()
+                    .map(this::toDTO)
+                    .toList();
+        }
     }
 
     public Optional<StaffMedicoDTO> findById(Integer id) {
@@ -74,9 +91,35 @@ public class StaffMedicoService {
                 .toList();
     }
 
+    /**
+     * Obtiene página de staff médicos con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los staff médicos globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo staff de su centro
+     * - PACIENTE: Ve todos los staff médicos (acceso global)
+     */
     public Page<StaffMedicoDTO> findByPage(int page, int size) {
-        Page<StaffMedico> pageResult = repository.findAll(PageRequest.of(page, size));
-        return pageResult.map(this::toDTO);
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        PageRequest pageRequest = PageRequest.of(page, size);
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por staff del centro
+            List<StaffMedico> staffList = repository.findByCentroAtencionId(centroId);
+            // Convertir a Page manualmente
+            int start = (int) pageRequest.getOffset();
+            int end = Math.min((start + pageRequest.getPageSize()), staffList.size());
+            return new org.springframework.data.domain.PageImpl<>(
+                staffList.subList(start, end).stream()
+                    .map(this::toDTO)
+                    .toList(),
+                pageRequest,
+                staffList.size()
+            );
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            Page<StaffMedico> pageResult = repository.findAll(pageRequest);
+            return pageResult.map(this::toDTO);
+        }
     }
 
     @Transactional

@@ -65,7 +65,16 @@ public class Turno {
     @ManyToOne(optional = false)
     private Especialidad especialidad;
 
+    /**
+     * Centro de atención al que pertenece este turno (Columna Discriminadora Multi-Tenencia).
+     * Este campo es CRÍTICO para la segregación de datos entre clínicas.
+     * - Se asigna automáticamente desde el centro del médico al crear el turno
+     * - NO puede ser nulo (todo turno pertenece a una clínica específica)
+     * - Los ROLE_ADMIN/OPERADOR/MEDICO solo ven turnos de su centro
+     * - Los ROLE_PACIENTE pueden crear turnos en cualquier centro
+     */
     @ManyToOne(optional = false)
+    @JoinColumn(name = "centro_atencion_id", nullable = false)
     private CentroAtencion centroAtencion;
 
     // Nuevo campo para observaciones

@@ -13,6 +13,7 @@ public class RegisterRequest {
     private String telefono;
     private String dni; // Cambiado a String para coincidir con frontend
     private String fechaNacimiento;
+    private Integer centroId; // Para asignar centro al crear operadores/admins
     
     // Getter para DNI como Long para compatibilidad con backend
     public Long getDniAsLong() {

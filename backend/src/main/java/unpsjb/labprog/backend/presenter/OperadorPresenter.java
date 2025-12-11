@@ -44,19 +44,6 @@ public class OperadorPresenter {
                 .orElse(Response.notFound("Operador con id " + id + " no encontrado"));
     }
 
-    @PostMapping
-    public ResponseEntity<Object> create(@RequestBody OperadorDTO operadorDTO) {
-        try {
-            String performedBy = AuditContext.getCurrentUser();
-            OperadorDTO saved = service.saveOrUpdate(operadorDTO, performedBy);
-            return Response.ok(saved, "Operador creado correctamente");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return Response.dbError(e.getMessage());
-        } catch (Exception e) {
-            return Response.error(null, "Error al crear el operador: " + e.getMessage());
-        }
-    }
-
     @PutMapping
     public ResponseEntity<Object> update(@RequestBody OperadorDTO operadorDTO) {
         try {

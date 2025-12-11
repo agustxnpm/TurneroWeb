@@ -13,7 +13,9 @@ import unpsjb.labprog.backend.model.User;
 
 /**
  * Componente que se ejecuta al inicio de la aplicación para crear 
- * el usuario administrador inicial si no existe.
+ * el usuario SUPERADMIN inicial si no existe.
+ * 
+ * SUPERADMIN tiene acceso global sin restricciones de centro.
  */
 @Component
 public class AdminInitializer implements CommandLineRunner {
@@ -55,45 +57,43 @@ public class AdminInitializer implements CommandLineRunner {
         }
         
         try {
-            logger.info("🚀 Verificando administrador inicial...");
+            logger.info("🚀 Verificando SUPERADMIN inicial...");
             
-            // Verificar si ya existe el usuario administrador
+            // Verificar si ya existe el usuario SUPERADMIN
             if (userService.existsByEmail(adminEmail)) {
-                logger.info("✅ El administrador inicial ya existe: {}", adminEmail);
+                logger.info("✅ El SUPERADMIN inicial ya existe: {}", adminEmail);
                 return;
             }
             
-            logger.info("👤 Creando usuario administrador inicial...");
+            logger.info("👤 Creando usuario SUPERADMIN inicial...");
             
-            // Crear el usuario administrador usando UserService
+            // Crear el usuario SUPERADMIN usando UserService
             String hashedPassword = passwordEncoder.encode(adminPassword);
             
-            User adminUser = userService.createUserWithAudit(
-                adminNombre,
-                adminApellido, 
-                adminDni,
-                adminEmail,
-                hashedPassword,
-                adminTelefono,
-                "ADMINISTRADOR",
-                "SYSTEM_INITIAL_SEED"
-            );
+            // Crear User con rol SUPERADMIN (sin centro asignado)
+            User superAdmin = new User();
+            superAdmin.setNombre(adminNombre);
+            superAdmin.setApellido(adminApellido);
+            superAdmin.setDni(adminDni);
+            superAdmin.setEmail(adminEmail);
+            superAdmin.setHashedPassword(hashedPassword);
+            superAdmin.setTelefono(adminTelefono);
+            superAdmin.setRole(unpsjb.labprog.backend.model.Role.SUPERADMIN);
+            superAdmin.setCentroAtencion(null); // SUPERADMIN no tiene centro asignado
+            superAdmin.setEmailVerified(true);
+            superAdmin.setEmailVerifiedAt(java.time.LocalDateTime.now());
             
-            // Activar la cuenta del administrador (emailVerified = true)
-            adminUser.activateAccount();
-            userService.save(adminUser);
+            userService.save(superAdmin);
             
-            logger.info("✅ Cuenta de administrador activada automáticamente (email verificado)");
-            
-            
-            logger.info("✅ Administrador inicial creado exitosamente:");
+            logger.info("✅ SUPERADMIN inicial creado exitosamente:");
             logger.info("   📧 Email: {}", adminEmail);
             logger.info("   🆔 DNI: {}", adminDni);
-            logger.warn("⚠️  IMPORTANTE: El administrador debe cambiar su contraseña en el primer login");
+            logger.info("   🌐 Acceso: GLOBAL (sin restricciones de centro)");
+            logger.warn("⚠️  IMPORTANTE: El SUPERADMIN debe cambiar su contraseña en el primer login");
             logger.info("🔐 Credenciales temporales configuradas desde variables de entorno");
             
         } catch (Exception e) {
-            logger.error("❌ Error al crear el administrador inicial: {}", e.getMessage());
+            logger.error("❌ Error al crear el SUPERADMIN inicial: {}", e.getMessage());
             logger.error("   Verifique las variables de entorno y la configuración de la base de datos");
             // No lanzar excepción para no impedir el startup de la aplicación
         }
