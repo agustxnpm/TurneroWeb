@@ -219,6 +219,18 @@ public class ConsultorioService {
                 .orElseThrow(() -> new IllegalStateException("Centro de Atención no encontrado"));
         consultorio.setCentroAtencion(centro);
 
+        // VALIDACIÓN MULTI-TENANT: Administradores solo pueden crear consultorios en su centro
+        Integer userCentroId = TenantContext.getCurrentCentroId();
+        if (userCentroId != null) {
+            // Usuario con centro asignado (ADMINISTRADOR, OPERADOR, MEDICO)
+            if (!userCentroId.equals(centro.getId())) {
+                throw new IllegalStateException(
+                    "No tiene permisos para crear/modificar consultorios en otro centro de atención"
+                );
+            }
+        }
+        // Si userCentroId == null, es SUPERADMIN o PACIENTE (acceso global permitido)
+
         if (consultorio.getId() == null || consultorio.getId() == 0) { // CREACIÓN
             if (repository.existsByNumeroAndCentroAtencion(consultorio.getNumero(), centro)) {
                 throw new IllegalStateException("El número de consultorio ya está en uso");

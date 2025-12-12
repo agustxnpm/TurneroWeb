@@ -142,7 +142,7 @@
                 >
                   <option [ngValue]="null">Todos los médicos</option>
                   <option *ngFor="let staff of staffMedicos" [ngValue]="staff.id">
-                    {{ staff.medico?.nombre }} {{ staff.medico?.apellido }}
+                    {{ staff.medico?.nombre }} {{ staff.medico?.apellido }} ({{ staff.centro?.nombre || 'Sin centro' }})
                   </option>
                 </select>
               </div>

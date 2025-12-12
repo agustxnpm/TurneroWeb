@@ -444,6 +444,11 @@ public class StaffMedicoService {
 
     /**
      * Búsqueda paginada avanzada con filtros y ordenamiento
+     * Con filtrado automático multi-tenencia:
+     * - SUPERADMIN: Ve todos los staff médicos globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo staff de su centro
+     * - PACIENTE: Ve todos los staff médicos (acceso global)
+     * 
      * @param page Número de página (0-based)
      * @param size Tamaño de página
      * @param medico Filtro por nombre/apellido/dni de médico (opcional)
@@ -463,6 +468,19 @@ public class StaffMedicoService {
             String consultorio,
             String sortBy,
             String sortDir) {
+
+        // MULTI-TENANT: Obtener centro según el contexto del usuario
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - forzar filtro por su centro
+            // Buscar el nombre del centro para pasarlo al query
+            Optional<CentroAtencion> centroOpt = centroRepository.findById(centroId);
+            if (centroOpt.isPresent()) {
+                centro = centroOpt.get().getNombre(); // Sobrescribir el parámetro centro
+            }
+        }
+        // Si centroId == null, es SUPERADMIN o PACIENTE (acceso global, mantener filtro original)
 
         // Configurar ordenamiento
         Sort sort = Sort.unsorted();

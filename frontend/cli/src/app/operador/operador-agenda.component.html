@@ -71,7 +71,7 @@
               <option value="">Todos los médicos</option>
               <option *ngFor="let staff of staffMedicos" [value]="staff.id">
                 {{ staff.medico?.nombre }} {{ staff.medico?.apellido }} -
-                {{ staff.especialidad?.nombre }}
+                {{ staff.especialidad?.nombre }} ({{ staff.centro?.nombre || 'Sin centro' }})
               </option>
             </select>
             <div class="loading-indicator" *ngIf="isLoadingStaffMedicos">

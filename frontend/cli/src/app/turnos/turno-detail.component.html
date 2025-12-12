@@ -245,7 +245,7 @@
                   aria-label="Seleccione el médico que atenderá el turno">
                   <option value="">Seleccione un staff médico...</option>
                   <option *ngFor="let staff of staffMedicos" [value]="staff.id">
-                    {{ staff.medico?.nombre }} {{ staff.medico?.apellido }} - {{ staff.especialidad?.nombre }}
+                    {{ staff.medico?.nombre }} {{ staff.medico?.apellido }} - {{ staff.especialidad?.nombre }} ({{ staff.centro?.nombre || 'Sin centro' }})
                   </option>
                 </select>
                 <small class="form-text">Seleccione el médico que atenderá el turno.</small>
