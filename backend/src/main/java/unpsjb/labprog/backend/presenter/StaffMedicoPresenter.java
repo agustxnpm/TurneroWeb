@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import unpsjb.labprog.backend.Response;
 import unpsjb.labprog.backend.business.service.StaffMedicoService;
+import unpsjb.labprog.backend.config.TenantContext;
 import unpsjb.labprog.backend.dto.StaffMedicoDTO;
 
 @RestController
@@ -42,11 +43,24 @@ public class StaffMedicoPresenter {
         if (!dtoOpt.isPresent()) {
             return Response.notFound("No se encontró el staff médico con id " + id);
         }
+        // Validar acceso
+        Integer currentCentro = TenantContext.getCurrentCentroId();
+        if (currentCentro != null) {
+            Integer staffCentro = dtoOpt.get().getCentroAtencionId();
+            if (staffCentro != null && !staffCentro.equals(currentCentro)) {
+                return Response.forbidden("No tiene permiso para ver este staff médico");
+            }
+        }
         return Response.ok(dtoOpt.get(), "Staff médico recuperado correctamente");
     }
 
     @GetMapping("/centrosAtencion/{centroId}/staffMedico")
     public ResponseEntity<Object> getStaffMedicoByCentro(@PathVariable Integer centroId) {
+        // Validar acceso
+        Integer currentCentro = TenantContext.getCurrentCentroId();
+        if (currentCentro != null && !currentCentro.equals(centroId)) {
+            return Response.forbidden("No tiene permiso para ver staff de otro centro");
+        }
         List<StaffMedicoDTO> staff = service.findByCentroId(centroId);
         return Response.ok(staff, "Staff médico recuperado correctamente");
     }
@@ -104,6 +118,20 @@ public class StaffMedicoPresenter {
     @GetMapping("/centro/{centroId}")
     public ResponseEntity<Object> getByCentro(@PathVariable Integer centroId) {
         try {
+            // Validar acceso multi-tenant
+            Integer currentCentro = TenantContext.getCurrentCentroId();
+            boolean hasGlobalAccess = TenantContext.hasGlobalAccess();
+            
+            // Si el usuario NO tiene acceso global, validar que acceda solo a su centro
+            if (!hasGlobalAccess) {
+                if (currentCentro == null) {
+                    return Response.forbidden("Usuario sin centro asignado no puede acceder a este recurso");
+                }
+                if (!currentCentro.equals(centroId)) {
+                    return Response.forbidden("No tiene permiso para ver staff de otro centro");
+                }
+            }
+            
             List<StaffMedicoDTO> lista = service.findByCentroId(centroId);
             return Response.ok(lista, "Médicos asociados recuperados correctamente");
         } catch (Exception e) {

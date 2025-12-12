@@ -87,13 +87,12 @@ export class AdminDetailComponent {
       email: this.form.value.email,
       dni: this.form.value.dni,
       telefono: this.form.value.telefono
+      // No enviamos password - el backend lo genera automáticamente
     };
     
-    // Si es SUPERADMIN, incluir el centro seleccionado en el payload
+    // Backend espera centroId (número) no centroAtencion (objeto)
     if (this.isSuperAdmin && this.form.value.centroAtencionId) {
-      payload.centroAtencion = {
-        id: this.form.value.centroAtencionId
-      };
+      payload.centroId = this.form.value.centroAtencionId;
     }
     
     console.log('Payload para crear admin:', payload);
@@ -101,12 +100,20 @@ export class AdminDetailComponent {
     this.adminService.createAdmin(payload).subscribe({
       next: (pkg: DataPackage) => {
         this.isSubmitting = false;
-        this.router.navigate(['/admin/users']);
+        
+        // Verificar el status_code dentro del DataPackage, no el HTTP status
+        if (pkg.status_code === 200 || pkg.status_code === 201) {
+          alert('Administrador creado exitosamente. Se ha enviado un email con el link de activación y las instrucciones para configurar la contraseña.');
+          this.router.navigate(['/admin/users']);
+        } else {
+          // Mostrar el mensaje de error del backend
+          alert(`Error: ${pkg.status_text || 'No se pudo crear el administrador'}`);
+        }
       },
       error: (err) => {
-        console.error('Error creando admin', err);
+        console.error('Error de red creando admin', err);
         this.isSubmitting = false;
-        alert('Error al crear el administrador. Por favor, verifique los datos.');
+        alert('Error de conexión. Por favor, intente nuevamente.');
       }
     });
   }

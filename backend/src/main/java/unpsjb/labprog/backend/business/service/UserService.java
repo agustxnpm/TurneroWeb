@@ -24,6 +24,8 @@ import unpsjb.labprog.backend.model.Role;
 import unpsjb.labprog.backend.dto.PacienteDTO;
 import unpsjb.labprog.backend.dto.RegisterSuccessResponse;
 import unpsjb.labprog.backend.dto.RegisterRequest;
+import unpsjb.labprog.backend.business.repository.OperadorRepository;
+import unpsjb.labprog.backend.model.Operador;
 
 /**
  * Servicio para la gestión de usuarios.
@@ -459,6 +461,10 @@ public class UserService implements UserDetailsService {
         response.setFullName(savedAdmin.getNombre() + " " + savedAdmin.getApellido());
         response.setMessage("Administrador creado exitosamente");
         response.setRequiresActivation(false); // Los administradores no requieren activación
+        // Incluir centro asignado
+        if (savedAdmin.getCentroAtencion() != null) {
+            response.setCentroAtencionId(savedAdmin.getCentroAtencion().getId());
+        }
 
         return response;
     }
@@ -507,6 +513,17 @@ public class UserService implements UserDetailsService {
 
         User savedOperador = userRepository.save(operador);
 
+        // También crear entrada en la tabla operador para consistencia
+        Operador operadorEntity = new Operador();
+        operadorEntity.setNombre(dto.getNombre());
+        operadorEntity.setApellido(dto.getApellido());
+        operadorEntity.setDni(Long.parseLong(dto.getDni()));
+        operadorEntity.setEmail(dto.getEmail());
+        operadorEntity.setTelefono(dto.getTelefono());
+        operadorEntity.setActivo(true);
+        operadorEntity.setCentroAtencion(performingAdmin.getCentroAtencion());
+        operadorRepository.save(operadorEntity);
+
         // Registrar en auditoría
         auditLogService.logUserCreated(
                 savedOperador.getId(),
@@ -525,6 +542,10 @@ public class UserService implements UserDetailsService {
         response.setFullName(savedOperador.getNombre() + " " + savedOperador.getApellido());
         response.setMessage("Operador creado exitosamente");
         response.setRequiresActivation(false);
+        // Incluir centro asignado
+        if (savedOperador.getCentroAtencion() != null) {
+            response.setCentroAtencionId(savedOperador.getCentroAtencion().getId());
+        }
 
         return response;
     }
@@ -628,6 +649,9 @@ public class UserService implements UserDetailsService {
     @Autowired
     @Lazy
     private EmailService emailService;
+
+    @Autowired
+    private OperadorRepository operadorRepository;
 
     public User processGoogleUser(GoogleIdToken.Payload payload) {
         String email = payload.getEmail();

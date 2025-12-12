@@ -313,6 +313,10 @@ public class OperadorService {
         dto.setEmail(operador.getEmail());
         dto.setActivo(operador.isActivo());
         dto.setTelefono(operador.getTelefono());
+        if (operador.getCentroAtencion() != null) {
+            dto.setCentroAtencionId(operador.getCentroAtencion().getId());
+            dto.setCentroAtencionNombre(operador.getCentroAtencion().getNombre());
+        }
         return dto;
     }
 

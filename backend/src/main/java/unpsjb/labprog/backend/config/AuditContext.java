@@ -66,8 +66,11 @@ public class AuditContext {
             if (principal instanceof User) {
                 User user = (User) principal;
                 if (user.getCentroAtencion() != null) {
-                    return user.getCentroAtencion().getId();
+                    Integer centroId = user.getCentroAtencion().getId();
+                    return centroId;
+                } else {
                 }
+            } else {
             }
         }
 

@@ -16,6 +16,8 @@ public class OperadorDTO {
     private String password; // Para registro
     private boolean activo; // estado del operador
     private String telefono;
+    private Integer centroAtencionId;
+    private String centroAtencionNombre;
     
     // Campo para auditoría
     private String performedBy; // Usuario que realiza la acción

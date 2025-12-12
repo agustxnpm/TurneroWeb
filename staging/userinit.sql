@@ -64,10 +64,10 @@ DO $$
 BEGIN
     -- Consultorios Clínica Santa María
     INSERT INTO consultorio (numero, nombre, centro_atencion_id) VALUES
-    (1, 'Consultorio 1', 1),
-    (2, 'Consultorio 2', 1),
-    (3, 'Consultorio 3', 1),
-    (4, 'Consultorio 4', 1);
+    (1, 'Consultorio A', 1),
+    (2, 'Consultorio B', 1),
+    (3, 'Consultorio C', 1),
+    (4, 'Consultorio D', 1);
     RAISE NOTICE '✅ Consultorios Clínica Santa María insertados correctamente';
 EXCEPTION
     WHEN OTHERS THEN
@@ -78,10 +78,10 @@ DO $$
 BEGIN
     -- Consultorios Clínica del Sur
     INSERT INTO consultorio (numero, nombre, centro_atencion_id) VALUES
-    (1, 'Consultorio 1', 2),
-    (2, 'Consultorio 2', 2),
-    (3, 'Consultorio 3', 2),
-    (4, 'Consultorio 4', 2);
+    (1, 'Consultorio Sur 1', 2),
+    (2, 'Consultorio Sur 2', 2),
+    (3, 'Consultorio Sur 3', 2),
+    (4, 'Consultorio Sur 4', 2);
     RAISE NOTICE '✅ Consultorios Clínica del Sur insertados correctamente';
 EXCEPTION
     WHEN OTHERS THEN
@@ -92,14 +92,39 @@ DO $$
 BEGIN
     -- Consultorios Consultorios del Sol
     INSERT INTO consultorio (numero, nombre, centro_atencion_id) VALUES
-    (1, 'Consultorio 1', 3),
-    (2, 'Consultorio 2', 3),
-    (3, 'Consultorio 3', 3),
-    (4, 'Consultorio 4', 3);
+    (1, 'Consultorio Sol 1', 3),
+    (2, 'Consultorio Sol 2', 3),
+    (3, 'Consultorio Sol 3', 3),
+    (4, 'Consultorio Sol 4', 3);
     RAISE NOTICE '✅ Consultorios del Sol insertados correctamente';
 EXCEPTION
     WHEN OTHERS THEN
         RAISE WARNING '❌ ERROR al insertar Consultorios del Sol: %', SQLERRM;
+END $$;
+
+-- =====================================
+-- 4.1 INSERTAR HORARIOS DE CONSULTORIOS
+-- =====================================
+-- Todos los consultorios atienden de Lunes a Viernes de 08:00 a 18:00
+
+DO $$
+DECLARE
+    dias TEXT[] := ARRAY['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+    dia TEXT;
+    consultorio_id INT;
+BEGIN
+    -- Para cada consultorio (1-12)
+    FOR consultorio_id IN 1..12 LOOP
+        FOREACH dia IN ARRAY dias LOOP
+            INSERT INTO consultorio_horarios (consultorio_id, dia_semana, hora_apertura, hora_cierre, activo)
+            VALUES (consultorio_id, dia, '08:00:00', '18:00:00', true)
+            ON CONFLICT DO NOTHING;
+        END LOOP;
+    END LOOP;
+    RAISE NOTICE '✅ Horarios de consultorios insertados correctamente';
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE WARNING '❌ ERROR al insertar Horarios de consultorios: %', SQLERRM;
 END $$;
 
 -- =====================================

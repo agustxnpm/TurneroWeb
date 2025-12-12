@@ -15,6 +15,7 @@ import unpsjb.labprog.backend.dto.RegisterSuccessResponse;
 import unpsjb.labprog.backend.model.User;
 import unpsjb.labprog.backend.model.Role;
 import unpsjb.labprog.backend.config.AuditContext;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @RestController
 @RequestMapping("admins")
@@ -30,6 +31,7 @@ public class AdminPresenter {
      * Obtiene la lista de todos los administradores
      */
     @GetMapping
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Object> getAllAdmins() {
         try {
             List<User> admins = userService.findByRole(Role.ADMINISTRADOR);
@@ -123,6 +125,15 @@ public class AdminPresenter {
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Object> createOperador(@RequestBody RegisterRequest dto) {
         try {
+            Integer currentCentro = TenantContext.getCurrentCentroId();
+            if (currentCentro != null) {
+                if (dto.getCentroId() != null && !dto.getCentroId().equals(currentCentro)) {
+                    return Response.forbidden("No puede crear operadores para otro centro");
+                }
+                // Asegurar que se crea en el centro correcto
+                dto.setCentroId(currentCentro);
+            }
+
             String performedBy = AuditContext.getCurrentUser();
             if (performedBy == null || performedBy.trim().isEmpty()) {
                 return Response.error(null, "No se pudo determinar el usuario que realiza la acción");

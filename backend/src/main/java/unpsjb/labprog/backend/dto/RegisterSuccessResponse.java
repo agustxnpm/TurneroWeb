@@ -8,6 +8,7 @@ public class RegisterSuccessResponse {
     private String fullName;
     private String message;
     private boolean requiresActivation = true;
+    private Integer centroAtencionId; // Centro asignado al usuario creado
     
     // Constructores
     public RegisterSuccessResponse() {}
@@ -16,6 +17,13 @@ public class RegisterSuccessResponse {
         this.email = email;
         this.fullName = fullName;
         this.message = message;
+    }
+    
+    public RegisterSuccessResponse(String email, String fullName, String message, Integer centroAtencionId) {
+        this.email = email;
+        this.fullName = fullName;
+        this.message = message;
+        this.centroAtencionId = centroAtencionId;
     }
     
     // Getters y Setters
@@ -49,5 +57,13 @@ public class RegisterSuccessResponse {
     
     public void setRequiresActivation(boolean requiresActivation) {
         this.requiresActivation = requiresActivation;
+    }
+    
+    public Integer getCentroAtencionId() {
+        return centroAtencionId;
+    }
+    
+    public void setCentroAtencionId(Integer centroAtencionId) {
+        this.centroAtencionId = centroAtencionId;
     }
 }

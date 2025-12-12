@@ -6,14 +6,13 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,7 +21,9 @@ import org.springframework.data.domain.Page;
 import unpsjb.labprog.backend.Response;
 import unpsjb.labprog.backend.business.service.OperadorService;
 import unpsjb.labprog.backend.config.AuditContext;
+import unpsjb.labprog.backend.config.TenantContext;
 import unpsjb.labprog.backend.dto.OperadorDTO;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("operadores")
@@ -32,6 +33,7 @@ public class OperadorPresenter {
     private OperadorService service;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Object> findAll() {
         List<OperadorDTO> operadores = service.findAll();
         return Response.ok(operadores, "Operadores recuperados correctamente");
@@ -39,9 +41,24 @@ public class OperadorPresenter {
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> findById(@PathVariable Long id) {
-        return service.findById(id)
-                .map(operador -> Response.ok(operador, "Operador encontrado"))
-                .orElse(Response.notFound("Operador con id " + id + " no encontrado"));
+        Optional<OperadorDTO> opt = service.findById(id);
+        if (opt.isPresent()) {
+            // Validar acceso multi-tenant
+            Integer currentCentro = TenantContext.getCurrentCentroId();
+            boolean hasGlobalAccess = TenantContext.hasGlobalAccess();
+            
+            if (!hasGlobalAccess) {
+                if (currentCentro == null) {
+                    return Response.forbidden("Usuario sin centro asignado no puede realizar esta operación");
+                }
+                Integer opCentro = opt.get().getCentroAtencionId();
+                if (opCentro != null && !opCentro.equals(currentCentro)) {
+                    return Response.forbidden("No tiene permiso para ver operadores de otro centro");
+                }
+            }
+            return Response.ok(opt.get(), "Operador encontrado");
+        }
+        return Response.notFound("Operador con id " + id + " no encontrado");
     }
 
     @PutMapping
@@ -50,6 +67,26 @@ public class OperadorPresenter {
             if (operadorDTO.getId() == null || operadorDTO.getId() <= 0) {
                 return Response.error(null, "Debe proporcionar un ID válido para actualizar");
             }
+            
+            // Validar acceso multi-tenant
+            Integer currentCentro = TenantContext.getCurrentCentroId();
+            boolean hasGlobalAccess = TenantContext.hasGlobalAccess();
+            
+            if (!hasGlobalAccess) {
+                if (currentCentro == null) {
+                    return Response.forbidden("Usuario sin centro asignado no puede realizar esta operación");
+                }
+                Optional<OperadorDTO> existing = service.findById(operadorDTO.getId());
+                if (existing.isPresent()) {
+                    Integer opCentro = existing.get().getCentroAtencionId();
+                    if (opCentro != null && !opCentro.equals(currentCentro)) {
+                        return Response.forbidden("No tiene permiso para modificar operadores de otro centro");
+                    }
+                } else {
+                    return Response.notFound("Operador no encontrado");
+                }
+            }
+
             String performedBy = AuditContext.getCurrentUser();
             OperadorDTO updated = service.saveOrUpdate(operadorDTO, performedBy);
             return Response.ok(updated, "Operador actualizado correctamente");
@@ -63,6 +100,27 @@ public class OperadorPresenter {
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateById(@PathVariable Long id, @RequestBody OperadorDTO operadorDTO) {
         try {
+            // Validar acceso multi-tenant
+            Integer currentCentro = TenantContext.getCurrentCentroId();
+            boolean hasGlobalAccess = TenantContext.hasGlobalAccess();
+            
+            // Si el usuario NO tiene acceso global, DEBE tener un centro asignado
+            if (!hasGlobalAccess) {
+                if (currentCentro == null) {
+                    return Response.forbidden("Usuario sin centro asignado no puede realizar esta operación");
+                }
+                
+                Optional<OperadorDTO> existing = service.findById(id);
+                if (existing.isPresent()) {
+                    Integer opCentro = existing.get().getCentroAtencionId();
+                    if (opCentro != null && !opCentro.equals(currentCentro)) {
+                        return Response.forbidden("No tiene permiso para modificar operadores de otro centro");
+                    }
+                } else {
+                    return Response.notFound("Operador no encontrado");
+                }
+            }
+
             // Asegurar que el ID del path coincida con el del DTO
             operadorDTO.setId(id);
             String performedBy = AuditContext.getCurrentUser();
@@ -78,6 +136,27 @@ public class OperadorPresenter {
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> delete(@PathVariable Long id) {
         try {
+            // Validar acceso multi-tenant
+            Integer currentCentro = TenantContext.getCurrentCentroId();
+            boolean hasGlobalAccess = TenantContext.hasGlobalAccess();
+            
+            // Si el usuario NO tiene acceso global, DEBE tener un centro asignado
+            if (!hasGlobalAccess) {
+                if (currentCentro == null) {
+                    return Response.forbidden("Usuario sin centro asignado no puede realizar esta operación");
+                }
+                
+                Optional<OperadorDTO> existing = service.findById(id);
+                if (existing.isPresent()) {
+                    Integer opCentro = existing.get().getCentroAtencionId();
+                    if (opCentro != null && !opCentro.equals(currentCentro)) {
+                        return Response.forbidden("No tiene permiso para eliminar operadores de otro centro");
+                    }
+                } else {
+                    return Response.notFound("Operador no encontrado");
+                }
+            }
+
             String performedBy = AuditContext.getCurrentUser();
             service.delete(id, performedBy);
             return Response.ok(null, "Operador eliminado correctamente");
@@ -120,33 +199,6 @@ public class OperadorPresenter {
                     return Response.ok(response, "Operador encontrado por email");
                 })
                 .orElse(Response.notFound("Operador con email " + email + " no encontrado"));
-    }
-
-    /**
-     * Crear operador por ADMIN con auditoría
-     * POST /operadores/create-by-admin
-     */
-    @PostMapping("/create-by-admin")
-    public ResponseEntity<Object> createOperatorByAdmin(@RequestBody OperadorDTO request) {
-        try {
-            // Priorizar el performedBy del request, luego AuditContext, luego default
-            String performedBy = request.getPerformedBy();
-            if (performedBy == null || performedBy.trim().isEmpty()) {
-                performedBy = AuditContext.getCurrentUser();
-                if (performedBy == null || performedBy.trim().isEmpty()) {
-                    performedBy = "ADMIN";
-                }
-            }
-            request.setPerformedBy(performedBy);
-
-            // Usar el service que ahora maneja la lógica de auditoría
-            OperadorDTO saved = service.saveOrUpdate(request, performedBy);
-            return Response.ok(saved, "Operador creado correctamente por administrador");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            return Response.dbError(e.getMessage());
-        } catch (Exception e) {
-            return Response.serverError("Error al crear el operador: " + e.getMessage());
-        }
     }
 
     /**
