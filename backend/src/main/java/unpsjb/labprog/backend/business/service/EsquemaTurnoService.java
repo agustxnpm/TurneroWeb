@@ -215,7 +215,7 @@ public class EsquemaTurnoService {
             for (EsquemaTurnoDTO.DiaHorarioDTO horario : dto.getHorarios()) {
                 boolean disponible = disponibilidades.stream().anyMatch(disponibilidad -> 
                     disponibilidad.getHorarios().stream().anyMatch(diaHorario -> 
-                        diaHorario.getDia().equalsIgnoreCase(horario.getDia()) &&
+                        normalizarDia(diaHorario.getDia()).equalsIgnoreCase(normalizarDia(horario.getDia())) &&
                         (horario.getHoraInicio().equals(diaHorario.getHoraInicio()) || !horario.getHoraInicio().isBefore(diaHorario.getHoraInicio())) &&
                         (horario.getHoraFin().equals(diaHorario.getHoraFin()) || !horario.getHoraFin().isAfter(diaHorario.getHoraFin()))
                     )
@@ -319,7 +319,7 @@ public class EsquemaTurnoService {
 
             boolean disponible = disponibilidades.stream().anyMatch(disponibilidad -> 
                 disponibilidad.getHorarios().stream().anyMatch(diaHorario -> 
-                    diaHorario.getDia().equalsIgnoreCase(horario.getDia()) &&
+                    normalizarDia(diaHorario.getDia()).equalsIgnoreCase(normalizarDia(horario.getDia())) &&
                     (horario.getHoraInicio().equals(diaHorario.getHoraInicio()) || !horario.getHoraInicio().isBefore(diaHorario.getHoraInicio())) &&
                     (horario.getHoraFin().equals(diaHorario.getHoraFin()) || !horario.getHoraFin().isAfter(diaHorario.getHoraFin()))
                 )
