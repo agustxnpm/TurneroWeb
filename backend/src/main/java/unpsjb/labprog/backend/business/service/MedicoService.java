@@ -65,6 +65,7 @@ public class MedicoService {
      * - ADMINISTRADOR/OPERADOR: Solo médicos que trabajan en su centro (via StaffMedico)
      * - PACIENTE: Ve todos los médicos (acceso global)
      */
+    @Transactional(readOnly = true)
     public List<MedicoDTO> findAll() {
         Integer centroId = TenantContext.getFilteredCentroId();
         
@@ -92,6 +93,7 @@ public class MedicoService {
      * 
      * @return Lista de mapas con información básica de todos los médicos
      */
+    @Transactional(readOnly = true)
     public List<java.util.Map<String, Object>> findAllMedicosBasicInfo() {
         return repository.findAll().stream()
                 .map(medico -> {
@@ -484,7 +486,11 @@ public class MedicoService {
     }
 
     /**
-     * Método de búsqueda paginada con filtros y ordenamiento dinámico para médicos
+     * Método de búsqueda paginada con filtros y ordenamiento dinámico para médicos.
+     * Aplica filtrado automático multi-tenencia:
+     * - SUPERADMIN: Ve todos los médicos globalmente
+     * - ADMINISTRADOR/OPERADOR: Solo médicos que trabajan en su centro (via StaffMedico)
+     * - PACIENTE: Ve todos los médicos (acceso global)
      *
      * @param page Número de página (0-based)
      * @param size Tamaño de página
@@ -510,8 +516,53 @@ public class MedicoService {
         // Crear Pageable con paginación y ordenamiento
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        // Ejecutar consulta con filtros
-        Page<Medico> result = repository.findByFiltros(nombre, especialidad, estado, pageable);
+        // Aplicar filtro multi-tenencia
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        Page<Medico> result;
+        if (centroId != null) {
+            // Usuario limitado por centro - obtener médicos del centro y aplicar filtros manualmente
+            Page<Medico> medicosCentro = repository.findByCentroAtencionId(centroId, pageable);
+            
+            // Aplicar filtros sobre los médicos del centro
+            List<Medico> medicosFiltrados = medicosCentro.getContent().stream()
+                .filter(m -> {
+                    // Filtro por nombre
+                    if (nombre != null && !nombre.trim().isEmpty()) {
+                        String nombreLower = nombre.toLowerCase();
+                        String nombreCompleto = (m.getNombre() + " " + m.getApellido()).toLowerCase();
+                        if (!nombreCompleto.contains(nombreLower)) {
+                            return false;
+                        }
+                    }
+                    
+                    // Filtro por especialidad
+                    if (especialidad != null && !especialidad.trim().isEmpty()) {
+                        String especialidadLower = especialidad.toLowerCase();
+                        boolean tieneEspecialidad = m.getEspecialidades() != null && 
+                            m.getEspecialidades().stream()
+                                .anyMatch(e -> e.getNombre().toLowerCase().contains(especialidadLower));
+                        if (!tieneEspecialidad) {
+                            return false;
+                        }
+                    }
+                    
+                    // Filtro por estado (activo/inactivo no aplica a médicos por ahora)
+                    // TODO: Implementar estado si es necesario
+                    
+                    return true;
+                })
+                .collect(Collectors.toList());
+            
+            result = new org.springframework.data.domain.PageImpl<>(
+                medicosFiltrados, 
+                pageable, 
+                medicosCentro.getTotalElements()
+            );
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global con filtros
+            result = repository.findByFiltros(nombre, especialidad, estado, pageable);
+        }
 
         // Convertir a DTOs
         return result.map(this::toDTO);
@@ -566,7 +617,11 @@ public class MedicoService {
 
     private Medico toEntity(MedicoDTO dto) {
         Medico medico = new Medico();
-        medico.setId(dto.getId());
+        // Solo establecer el ID si es diferente de null y de 0
+        // Para creaciones, el ID debe ser null para que JPA lo genere
+        if (dto.getId() != null && dto.getId() != 0) {
+            medico.setId(dto.getId());
+        }
         medico.setNombre(dto.getNombre());
         medico.setApellido(dto.getApellido());
         if (dto.getDni() != null && dto.getDni().matches("\\d+")) {

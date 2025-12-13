@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { EspecialidadService } from './especialidad.service';
 import { Especialidad } from './especialidad';
 import { ModalService } from '../modal/modal.service';
+import { DataPackage } from '../data.package';
 
 @Component({
   selector: 'app-especialidad-detail',
@@ -17,6 +18,10 @@ export class EspecialidadDetailComponent {
   especialidad: Especialidad = { id: 0, nombre: '', descripcion: '' };
   modoEdicion = false;
   esNuevo = false;
+  
+  // Propiedades para navegación de retorno desde centro de atención
+  returnUrl: string | null = null;
+  centroId: number | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -31,6 +36,11 @@ export class EspecialidadDetailComponent {
 
   get(): void {
     const path = this.route.snapshot.routeConfig?.path;
+    
+    // Capturar parámetros de retorno desde centro de atención
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    const centroIdParam = this.route.snapshot.queryParamMap.get('centroId');
+    this.centroId = centroIdParam ? +centroIdParam : null;
 
     if (path === 'especialidades/new') {
       this.modoEdicion = true;
@@ -72,23 +82,51 @@ export class EspecialidadDetailComponent {
 
   save(): void {
     if (this.esNuevo) {
-      this.especialidadService.create(this.especialidad).subscribe({
-        next: () => {
-          this.router.navigate(['/especialidades']);
+      // Para creación, no enviar el ID (el backend lo genera)
+      const especialidadParaCrear = {
+        nombre: this.especialidad.nombre,
+        descripcion: this.especialidad.descripcion
+      };
+      
+      this.especialidadService.create(especialidadParaCrear as Especialidad).subscribe({
+        next: (response: DataPackage<Especialidad>) => {
+          // Verificar status_code del body (no el HTTP status)
+          if (response.status_code && response.status_code !== 200) {
+            const errorMsg = response.status_text || 'Error al crear la especialidad';
+            this.modalService.alert('Error', errorMsg);
+            return;
+          }
+          
+          const especialidadCreada = response.data;
+          this.modalService.alert('Éxito', 'Especialidad creada correctamente');
+          
+          // Si hay returnUrl, navegar de vuelta al centro con la especialidad preseleccionada
+          if (this.returnUrl && this.centroId) {
+            this.router.navigate([this.returnUrl], {
+              queryParams: { 
+                activeTab: 'especialidades',
+                especialidadId: especialidadCreada.id
+              }
+            });
+          } else {
+            this.router.navigate(['/especialidades']);
+          }
         },
         error: (error) => {
           console.error('Error al crear la especialidad:', error);
-          alert('Error al crear la especialidad.');
+          const errorMsg = error?.error?.status_text || 'Error al crear la especialidad.';
+          this.modalService.alert('Error', errorMsg);
         }
       });
     } else {
       this.especialidadService.update(this.especialidad.id, this.especialidad).subscribe({
         next: () => {
+          this.modalService.alert('Éxito', 'Especialidad actualizada correctamente');
           this.router.navigate(['/especialidades']);
         },
         error: (error) => {
           console.error('Error al actualizar la especialidad:', error);
-          alert('Error al actualizar la especialidad.');
+          this.modalService.alert('Error', 'Error al actualizar la especialidad.');
         }
       });
     }
@@ -113,8 +151,15 @@ export class EspecialidadDetailComponent {
       });
       this.modoEdicion = false;
     } else {
-      // Si es una nueva especialidad, volvemos al listado
-      this.router.navigate(['/especialidades']);
+      // Si hay returnUrl, volver al centro de atención
+      if (this.returnUrl && this.centroId) {
+        this.router.navigate([this.returnUrl], {
+          queryParams: { activeTab: 'especialidades' }
+        });
+      } else {
+        // Si es una nueva especialidad, volvemos al listado
+        this.router.navigate(['/especialidades']);
+      }
     }
   }
 
@@ -150,6 +195,12 @@ export class EspecialidadDetailComponent {
   }
 
   goBack(): void {
-    this.router.navigate(['/especialidades']);
+    if (this.returnUrl && this.centroId) {
+      this.router.navigate([this.returnUrl], {
+        queryParams: { activeTab: 'especialidades' }
+      });
+    } else {
+      this.router.navigate(['/especialidades']);
+    }
   }
 }

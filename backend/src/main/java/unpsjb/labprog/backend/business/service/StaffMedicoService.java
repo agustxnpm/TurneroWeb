@@ -208,7 +208,10 @@ public class StaffMedicoService {
 
     private StaffMedico toEntity(StaffMedicoDTO dto) {
         StaffMedico staff = new StaffMedico();
-        staff.setId(dto.getId());
+        // Solo setear ID si es válido (mayor a 0)
+        if (dto.getId() != null && dto.getId() > 0) {
+            staff.setId(dto.getId());
+        }
         staff.setPorcentaje(dto.getPorcentaje());
 
         // 1. Médico - priorizar ID si está presente

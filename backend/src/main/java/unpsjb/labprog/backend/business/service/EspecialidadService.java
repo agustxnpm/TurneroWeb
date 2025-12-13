@@ -197,7 +197,11 @@ public class EspecialidadService {
 
     private Especialidad toEntity(EspecialidadDTO dto) {
         Especialidad especialidad = new Especialidad();
-        especialidad.setId(dto.getId());
+        // Solo establecer el ID si es diferente de null y de 0
+        // Para creaciones, el ID debe ser null para que JPA lo genere
+        if (dto.getId() != null && dto.getId() != 0) {
+            especialidad.setId(dto.getId());
+        }
         especialidad.setNombre(dto.getNombre());
         especialidad.setDescripcion(dto.getDescripcion());
         return especialidad;

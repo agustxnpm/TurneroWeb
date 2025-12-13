@@ -20,6 +20,15 @@ export class PacienteService {
     return this.http.get<DataPackage<Paciente[]>>(this.url);
   }
 
+  /** 
+   * Obtiene TODOS los pacientes sin filtros restrictivos.
+   * Útil para formularios de asignación donde se necesita ver todos los pacientes disponibles.
+   * A diferencia de all(), este endpoint no filtra por centro ni turnos existentes.
+   */
+  allForAssignment(): Observable<DataPackage<Paciente[]>> {
+    return this.http.get<DataPackage<Paciente[]>>(`${this.url}/para-asignar`);
+  }
+
   /** Obtiene un paciente por ID */
   get(id: number): Observable<DataPackage<Paciente>> {
     return this.http.get<DataPackage<Paciente>>(`${this.url}/${id}`);

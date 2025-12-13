@@ -59,19 +59,29 @@
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label fw-semibold">Seleccionar Médico:</label>
-          <select
-            [(ngModel)]="medicoSeleccionado"
-            (ngModelChange)="onMedicoSeleccionado()"
-            class="modern-select form-control"
-          >
-            <option [ngValue]="null">Seleccione un médico...</option>
-            <option
-              *ngFor="let medico of medicosDisponiblesParaAsociar"
-              [ngValue]="medico"
+          <div class="input-group">
+            <select
+              [(ngModel)]="medicoSeleccionado"
+              (ngModelChange)="onMedicoSeleccionado()"
+              class="modern-select form-control"
             >
-              Dr. {{ medico.nombre }} {{ medico.apellido }}
-            </option>
-          </select>
+              <option [ngValue]="null">Seleccione un médico...</option>
+              <option
+                *ngFor="let medico of medicosDisponiblesParaAsociar"
+                [ngValue]="medico"
+              >
+                Dr. {{ medico.nombre }} {{ medico.apellido }}
+              </option>
+            </select>
+            <button type="button" class="btn btn-outline-primary" (click)="onCrearNuevoMedico()" 
+                    title="Crear nuevo médico">
+              <i class="fa fa-plus"></i> Nuevo
+            </button>
+          </div>
+          <small class="text-muted mt-1 d-block">
+            <i class="fa fa-info-circle me-1"></i>
+            Si el médico que necesita no existe, puede registrar uno nuevo.
+          </small>
         </div>
         <div class="col-md-6">
           <label class="form-label fw-semibold">Especialidad:</label>

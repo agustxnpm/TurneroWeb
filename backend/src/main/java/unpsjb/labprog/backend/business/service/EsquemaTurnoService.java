@@ -166,7 +166,29 @@ public class EsquemaTurnoService {
         String consultorioFilter = (consultorio != null && !consultorio.trim().isEmpty()) ? consultorio.trim() : null;
         String centroFilter = (centro != null && !centro.trim().isEmpty()) ? centro.trim() : null;
         
-        // Ejecutar búsqueda con filtros
+        // Aplicar filtro multi-tenencia automáticamente
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        // Si el usuario tiene centro asignado (ADMIN/OPERADOR), buscar y filtrar por nombre del centro
+        if (centroId != null) {
+            // Buscar todos los esquemas y filtrar manualmente por centro
+            Page<EsquemaTurno> result = esquemaTurnoRepository.findByFiltros(staffMedicoFilter, consultorioFilter, centroFilter, pageRequest);
+            
+            // Filtrar por centro del usuario
+            List<EsquemaTurno> esquemasDelCentro = result.getContent().stream()
+                .filter(esquema -> esquema.getConsultorio() != null && 
+                                  esquema.getConsultorio().getCentroAtencion() != null &&
+                                  esquema.getConsultorio().getCentroAtencion().getId().equals(centroId))
+                .collect(java.util.stream.Collectors.toList());
+            
+            return new org.springframework.data.domain.PageImpl<>(
+                esquemasDelCentro.stream().map(this::toDTO).collect(java.util.stream.Collectors.toList()),
+                pageRequest,
+                esquemasDelCentro.size()
+            );
+        }
+        
+        // SUPERADMIN: acceso global sin filtro de centro
         return esquemaTurnoRepository.findByFiltros(staffMedicoFilter, consultorioFilter, centroFilter, pageRequest)
                 .map(this::toDTO);
     }
@@ -358,6 +380,24 @@ public class EsquemaTurnoService {
                     hayConflictoDeHorarios(existente.getHorarios(), dto.getHorarios()));
             
             if (hayConflictoConsultorio) {
+                // Obtener detalles del esquema conflictivo para el mensaje de error
+                EsquemaTurno esquemaConflictivo = esquemasEnConsultorio.stream()
+                    .filter(existente -> !existente.getId().equals(esquemaTurno.getId()) &&
+                                        hayConflictoDeHorarios(existente.getHorarios(), dto.getHorarios()))
+                    .findFirst()
+                    .orElse(null);
+                
+                String nombreConsultorio = esquemaTurno.getConsultorio().getNombre();
+                String detalleConflicto = "";
+                
+                if (esquemaConflictivo != null && esquemaConflictivo.getStaffMedico() != null && 
+                    esquemaConflictivo.getStaffMedico().getMedico() != null) {
+                    String nombreMedicoConflictivo = esquemaConflictivo.getStaffMedico().getMedico().getNombre() + 
+                                                    " " + esquemaConflictivo.getStaffMedico().getMedico().getApellido();
+                    detalleConflicto = " Ya existe un esquema de turno para el Dr. " + nombreMedicoConflictivo + 
+                                      " en el mismo horario.";
+                }
+                
                 // Intentar resolver automáticamente usando el algoritmo de distribución
                 Integer consultorioAlternativo = resolverConflictoConsultorioAutomaticamente(esquemaTurno);
                 
@@ -371,7 +411,9 @@ public class EsquemaTurnoService {
                                      consultorioAlternativo + " al médico " + 
                                      esquemaTurno.getStaffMedico().getMedico().getNombre());
                 } else {
-                    throw new IllegalStateException("Conflicto: No se encontró consultorio disponible para resolver el conflicto de horarios.");
+                    throw new IllegalStateException("El consultorio '" + nombreConsultorio + 
+                        "' ya está ocupado en el horario seleccionado." + detalleConflicto + 
+                        " Por favor, seleccione otro consultorio o un horario diferente.");
                 }
             }
         }

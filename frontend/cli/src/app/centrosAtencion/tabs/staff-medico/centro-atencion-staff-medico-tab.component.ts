@@ -11,7 +11,7 @@ import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { StaffMedico } from "../../../staffMedicos/staffMedico";
-import { Medico } from "../../../medicos/medico";
+import { Medico, MedicoBasicInfo } from "../../../medicos/medico";
 import { Especialidad } from "../../../especialidades/especialidad";
 import { DisponibilidadMedico } from "../../../disponibilidadMedicos/disponibilidadMedico";
 import { DisponibilidadModalComponent } from "./disponibilidad-modal.component";
@@ -28,8 +28,8 @@ export class CentroAtencionStaffMedicoTabComponent
   implements OnInit, OnChanges
 {
   @Input() staffMedicoCentro: StaffMedico[] = [];
-  @Input() medicosDisponiblesParaAsociar: Medico[] = [];
-  @Input() medicoSeleccionado: Medico | null = null;
+  @Input() medicosDisponiblesParaAsociar: MedicoBasicInfo[] = [];
+  @Input() medicoSeleccionado: MedicoBasicInfo | null = null;
   @Input() especialidadSeleccionada: Especialidad | null = null;
   @Input() especialidadesMedico: Especialidad[] = [];
   @Input() mensajeStaff: string = "";
@@ -39,8 +39,9 @@ export class CentroAtencionStaffMedicoTabComponent
   @Input() disponibilidadesStaff: {
     [staffMedicoId: number]: DisponibilidadMedico[];
   } = {};
+  @Input() centroId: number | null = null;
 
-  @Output() medicoSeleccionadoChange = new EventEmitter<Medico | null>();
+  @Output() medicoSeleccionadoChange = new EventEmitter<MedicoBasicInfo | null>();
   @Output() especialidadSeleccionadaChange =
     new EventEmitter<Especialidad | null>();
   @Output() medicoSeleccionado$ = new EventEmitter<void>();
@@ -56,6 +57,7 @@ export class CentroAtencionStaffMedicoTabComponent
   @Output() crearNuevaDisponibilidad = new EventEmitter<StaffMedico>();
   @Output() disponibilidadCreada = new EventEmitter<DisponibilidadMedico>();
   @Output() asociarEspecialidadFaltanteDesdeStaff = new EventEmitter<void>();
+  @Output() crearNuevoMedico = new EventEmitter<void>();
 
   // Propiedades para el modo de asociar
   modoAsociarMedico: boolean = false;
@@ -173,6 +175,11 @@ export class CentroAtencionStaffMedicoTabComponent
   onAsociarEspecialidadFaltante(): void {
     console.log("onAsociarEspecialidadFaltante clicked");
     this.asociarEspecialidadFaltanteDesdeStaff.emit();
+  }
+
+  onCrearNuevoMedico(): void {
+    console.log("onCrearNuevoMedico clicked");
+    this.crearNuevoMedico.emit();
   }
 
   onDesasociarMedico(staff: StaffMedico): void {

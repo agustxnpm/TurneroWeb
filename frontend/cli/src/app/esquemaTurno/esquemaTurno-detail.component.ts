@@ -398,12 +398,18 @@ export class EsquemaTurnoDetailComponent {
     }
 
     this.esquemaTurnoService.create(payload).subscribe({
-      next: () => {
-        this.navigateBack();
+      next: (dataPackage) => {
+        if (dataPackage.status_code === 200) {
+          this.navigateBack();
+        } else {
+          console.error('Error en respuesta:', dataPackage.status_text);
+          this.modalService.alert('Error', dataPackage.status_text || 'Error al guardar el esquema de turno.');
+        }
       },
       error: (err) => {
         console.error('Error al guardar el esquema de turno:', err);
-        this.modalService.alert('Error', 'Error al guardar el esquema de turno.');
+        const mensaje = err?.error?.status_text || err?.message || 'Error al guardar el esquema de turno.';
+        this.modalService.alert('Error', mensaje);
       }
     });
   }

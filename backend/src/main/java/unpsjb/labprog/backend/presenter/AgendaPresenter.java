@@ -131,9 +131,18 @@ public class AgendaPresenter {
                 continue; // Skip esquemas del médico autenticado
             }
             
-            // FILTRAR POR CENTRO DE ATENCIÓN
-            if (centroId != null && esquema.getConsultorio().getCentroAtencion() != null) {
-                if (!esquema.getConsultorio().getCentroAtencion().getId().equals(centroId)) {
+            // FILTRAR POR CENTRO DE ATENCIÓN (multi-tenancy)
+            // Si el usuario es ADMIN/OPERADOR, forzar filtro por su centro
+            Integer centroIdFiltro = centroId;
+            if (centroIdFiltro == null && currentUser != null && 
+                (currentUser.getRole() == Role.ADMINISTRADOR || currentUser.getRole() == Role.OPERADOR)) {
+                if (currentUser.getCentroAtencion() != null) {
+                    centroIdFiltro = currentUser.getCentroAtencion().getId();
+                }
+            }
+            
+            if (centroIdFiltro != null && esquema.getConsultorio().getCentroAtencion() != null) {
+                if (!esquema.getConsultorio().getCentroAtencion().getId().equals(centroIdFiltro)) {
                     continue; // Skip este esquema si no coincide el centro
                 }
             }

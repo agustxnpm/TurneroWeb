@@ -51,6 +51,17 @@ public class PacientePresenter {
         return Response.ok(pacientes, "Pacientes recuperados correctamente");
     }
 
+    /**
+     * Endpoint para obtener TODOS los pacientes sin filtros restrictivos.
+     * Útil para formularios de asignación donde se necesita ver todos los pacientes disponibles.
+     * A diferencia de GET /pacientes, este endpoint no filtra por centro ni turnos existentes.
+     */
+    @GetMapping("/para-asignar")
+    public ResponseEntity<Object> findAllForAssignment() {
+        List<PacienteDTO> pacientes = service.findAllForAssignment();
+        return Response.ok(pacientes, "Pacientes disponibles para asignación recuperados correctamente");
+    }
+
     @RequestMapping(value = "/page", method = RequestMethod.GET)
     public ResponseEntity<Object> findByPage(
             @RequestParam(defaultValue = "0") int page,

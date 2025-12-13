@@ -101,6 +101,19 @@ public class PacienteService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene TODOS los pacientes sin filtros restrictivos.
+     * Útil para formularios de asignación donde se necesita ver todos los pacientes disponibles.
+     * - SUPERADMIN: Ve todos los pacientes
+     * - ADMIN/OPERADOR/MEDICO: Ve todos los pacientes (sin restricción por turnos existentes)
+     */
+    public List<PacienteDTO> findAllForAssignment() {
+        // Retornar todos los pacientes sin filtrar por centro o turnos
+        return repository.findAll().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
     public Optional<PacienteDTO> findById(Integer id) {
         return repository.findById(id).map(this::toDTO);
     }

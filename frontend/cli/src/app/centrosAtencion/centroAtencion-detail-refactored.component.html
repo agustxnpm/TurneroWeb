@@ -84,9 +84,11 @@
         [especialidadSeleccionada]="especialidadSeleccionada"
         [mensaje]="mensaje"
         [tipoMensaje]="tipoMensaje"
+        [centroId]="centroAtencion.id || null"
         (especialidadSeleccionadaChange)="especialidadSeleccionada = $event"
         (asociarEspecialidad)="asociarEspecialidad()"
-        (desasociarEspecialidad)="desasociarEspecialidad($event)">
+        (desasociarEspecialidad)="desasociarEspecialidad($event)"
+        (crearNuevaEspecialidad)="crearNuevaEspecialidad()">
       </app-centro-atencion-especialidades-tab>
     </div>
 
@@ -134,6 +136,7 @@
         [staffMedicoExpandido]="staffMedicoExpandido"
         [disponibilidadesStaff]="disponibilidadesStaff"
         [especialidadFaltanteParaAsociar]="especialidadFaltanteParaAsociar"
+        [centroId]="centroAtencion.id || null"
         (medicoSeleccionadoChange)="medicoSeleccionado = $event"
         (especialidadSeleccionadaChange)="onEspecialidadSeleccionadaChange($event)"
         (medicoSeleccionado$)="onMedicoSeleccionado()"
@@ -145,7 +148,8 @@
         (gestionarDisponibilidadAvanzada)="gestionarDisponibilidadAvanzada($event)"
         (crearNuevaDisponibilidad)="crearNuevaDisponibilidad($event)"
         (disponibilidadCreada)="onDisponibilidadCreada($event)"
-        (asociarEspecialidadFaltanteDesdeStaff)="asociarEspecialidadFaltanteDesdeStaff()">
+        (asociarEspecialidadFaltanteDesdeStaff)="asociarEspecialidadFaltanteDesdeStaff()"
+        (crearNuevoMedico)="crearNuevoMedico()">
       </app-centro-atencion-staff-medico-tab>
     </div>
 

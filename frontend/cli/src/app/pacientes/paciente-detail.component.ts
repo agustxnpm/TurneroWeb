@@ -7,6 +7,7 @@ import { Paciente } from "./paciente";
 import { DataPackage } from "../data.package";
 import { ModalService } from "../modal/modal.service";
 import { AuthService } from "../inicio-sesion/auth.service";
+import { ToastService } from "../services/toast.service";
 
 @Component({
   selector: "app-paciente-detail",
@@ -35,7 +36,8 @@ export class PacienteDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private modalService: ModalService,
-    private authService: AuthService
+    private authService: AuthService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -196,20 +198,36 @@ export class PacienteDetailComponent implements OnInit {
         }
 
         // Si llegamos aquí, es una respuesta exitosa
-        const roleText = userRole === "ADMINISTRADOR" ? " por administrador" : 
-                        userRole === "OPERADOR" ? " por operador" : "";
         const successMessage = this.esNuevo() 
-          ? `Paciente creado correctamente${roleText}`
+          ? "Paciente creado con éxito"
           : "Paciente actualizado correctamente";
 
-        this.modalService.alert("Éxito", successMessage);
-        // Redirigir según el contexto
-        const path = this.route.snapshot.routeConfig?.path;
-        if (path === "paciente-perfil") {
-          this.router.navigate(["/paciente-dashboard"]);
-        } else {
-          this.router.navigate(["/pacientes"]);
-        }
+        // Mostrar toast en lugar de modal
+        this.toastService.success(successMessage);
+        
+        // Verificar si hay returnUrl en query params
+        this.route.queryParams.subscribe(params => {
+          const returnUrl = params['returnUrl'];
+          
+          if (returnUrl) {
+            // Si hay returnUrl y se creó un paciente, redirigir con el ID
+            if (this.esNuevo() && response.data?.id) {
+              this.router.navigate([returnUrl], {
+                queryParams: { pacienteId: response.data.id }
+              });
+            } else {
+              this.router.navigate([returnUrl]);
+            }
+          } else {
+            // Comportamiento normal
+            const path = this.route.snapshot.routeConfig?.path;
+            if (path === "paciente-perfil") {
+              this.router.navigate(["/paciente-dashboard"]);
+            } else {
+              this.router.navigate(["/pacientes"]);
+            }
+          }
+        });
       },
       error: (err) => {
         console.log("Respuesta recibida en error:", err);

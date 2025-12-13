@@ -16,10 +16,12 @@ export class CentroAtencionEspecialidadesTabComponent implements OnInit {
   @Input() especialidadSeleccionada: Especialidad | null = null;
   @Input() mensaje: string = '';
   @Input() tipoMensaje: string = '';
+  @Input() centroId: number | null = null;
 
   @Output() especialidadSeleccionadaChange = new EventEmitter<Especialidad | null>();
   @Output() asociarEspecialidad = new EventEmitter<void>();
   @Output() desasociarEspecialidad = new EventEmitter<Especialidad>();
+  @Output() crearNuevaEspecialidad = new EventEmitter<void>();
 
   // Propiedades para el modo de asociar
   modoAsociarEspecialidad: boolean = false;
@@ -48,5 +50,9 @@ export class CentroAtencionEspecialidadesTabComponent implements OnInit {
 
   onDesasociarEspecialidad(especialidad: Especialidad): void {
     this.desasociarEspecialidad.emit(especialidad);
+  }
+
+  onCrearNuevaEspecialidad(): void {
+    this.crearNuevaEspecialidad.emit();
   }
 }
