@@ -228,11 +228,17 @@ export class OperadorDashboardComponent implements OnInit {
       "DIC",
     ];
     const monthIndex = meses.indexOf(turno.month);
-    return new Date(
-      turno.year || new Date().getFullYear(),
-      monthIndex,
-      parseInt(turno.day)
-    );
+    // ✅ CORREGIDO: Convertir a ISO string para evitar problemas de zona horaria local
+    // Si turno.fecha es string formato "dd-MM-yyyy", convertir a "yyyy-MM-dd"
+    let dateString = turno.fecha;
+    if (turno.fecha && typeof turno.fecha === 'string') {
+      const parts = turno.fecha.split('-');
+      if (parts.length === 3) {
+        dateString = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convertir a yyyy-MM-dd
+      }
+    }
+    // Usar fecha completa sin hora para evitar problemas de zona horaria
+    return new Date(dateString + 'T00:00:00');
   }
 
   setFilter(filter: "pending" | "upcoming" | "past" | "all") {

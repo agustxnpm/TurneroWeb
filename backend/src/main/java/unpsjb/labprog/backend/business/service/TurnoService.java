@@ -593,7 +593,7 @@ public class TurnoService {
         configuracionService.validarConfiguracionesRecordatorios();
 
         ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(zoneId);  // ✅ CORREGIDO: usar zona horaria de Argentina
         LocalTime horaActual = LocalTime.now(zoneId);
         long diasRestantes = ChronoUnit.DAYS.between(hoy, turno.getFecha());
 
@@ -661,7 +661,7 @@ public class TurnoService {
 
     // Cancelación automática actualizada
 
-    @Scheduled(cron = "0 0 0 * * ?") // Diariamente a las 00:00
+    @Scheduled(cron = "0 0 0 * * ?", zone = "America/Argentina/Buenos_Aires") // ✅ CORREGIDO: especificar zona
     @Transactional
     public void cancelarTurnosNoConfirmadosAutomaticamente() {
         if (!configuracionService.isHabilitadaCancelacionAutomatica()) {
@@ -669,7 +669,8 @@ public class TurnoService {
             return;
         }
 
-        LocalDate hoy = LocalDate.now();
+        ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
+        LocalDate hoy = LocalDate.now(zoneId);  // ✅ CORREGIDO: usar zona horaria de Argentina
         int diasMin = configuracionService.getDiasMinConfirmacion();
         LocalDate fechaLimite = hoy.plusDays(diasMin);
 
