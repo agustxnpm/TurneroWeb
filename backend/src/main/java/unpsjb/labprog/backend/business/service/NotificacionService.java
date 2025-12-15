@@ -14,6 +14,8 @@ import unpsjb.labprog.backend.model.Notificacion;
 import unpsjb.labprog.backend.model.TipoNotificacion;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,7 +39,7 @@ public class NotificacionService {
         notificacion.setTurnoId(turnoId);
         notificacion.setUsuarioCreador(usuarioCreador);
         notificacion.setLeida(false);
-        notificacion.setFechaCreacion(LocalDateTime.now());
+        notificacion.setFechaCreacion(ZonedDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")).toLocalDateTime());
         
         Notificacion saved = notificacionRepository.save(notificacion);
         return convertToDTO(saved);

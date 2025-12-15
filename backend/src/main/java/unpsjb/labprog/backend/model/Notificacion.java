@@ -1,6 +1,8 @@
 package unpsjb.labprog.backend.model;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -57,12 +59,12 @@ public class Notificacion {
     @PrePersist
     protected void onCreate() {
         if (fechaCreacion == null) {
-            fechaCreacion = LocalDateTime.now();
+            fechaCreacion = ZonedDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")).toLocalDateTime();
         }
     }
     
     public void marcarComoLeida() {
         this.leida = true;
-        this.fechaLeida = LocalDateTime.now();
+        this.fechaLeida = ZonedDateTime.now(ZoneId.of("America/Argentina/Buenos_Aires")).toLocalDateTime();
     }
 }
