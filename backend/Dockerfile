@@ -1,7 +1,7 @@
 # Dockerfile para Render (Producción)
 # Build stage
 # CAMBIO 1: Usamos la imagen Debian "slim" para evitar problemas de musl libc
-FROM maven:3-eclipse-temurin-17-slim AS build
+FROM maven:3.9.6-eclipse-temurin-17-jdk AS build
 
 WORKDIR /app
 
