@@ -48,6 +48,7 @@ import { PatientGuard } from "./guards/patient.guard";
 import { MedicoGuard } from "./guards/medico.guard";
 import { OperadorGuard } from "./guards/operador.guard";
 import { AdminOperadorGuard } from "./guards/admin-operador.guard";
+import { AdminOperadorMedicoGuard } from "./guards/admin-operador-medico.guard";
 import { SuperAdminGuard } from "./guards/super-admin.guard";
 import { CentroAtencionAccessGuard } from "./guards/centro-atencion-access.guard";
 import { MiCentroRedirectGuard } from "./guards/mi-centro-redirect.guard";
@@ -198,11 +199,6 @@ export const routes: Routes = [
     component: MedicoPerfilComponent,
     canActivate: [MedicoGuard],
   },
-  {
-    path: "turnos/new",
-    component: TurnoDetailComponent,
-    canActivate: [MedicoGuard],
-  },
 
   { path: "debug/tokens", component: TokenStatusComponent }, // ruta para debug de tokens
   // Lista de Espera Routes
@@ -231,7 +227,7 @@ export const routes: Routes = [
   {
     path: "turnos/new",
     component: TurnoDetailComponent,
-    canActivate: [AdminOperadorGuard],
+    canActivate: [AdminOperadorMedicoGuard],
   },
   {
     path: "turnos/advanced-search",
@@ -246,12 +242,12 @@ export const routes: Routes = [
   {
     path: "turnos/:id",
     component: TurnoDetailComponent,
-    canActivate: [AdminGuard],
+    canActivate: [AdminOperadorGuard],
   },
   {
     path: "turnos/:id/edit",
     component: TurnoDetailComponent,
-    canActivate: [AdminGuard],
+    canActivate: [AdminOperadorGuard],
   },
   {
     path: "agenda",

@@ -397,8 +397,8 @@ export class OperadorDashboardComponent implements OnInit {
   }
 
   reprogramarTurno(turno: any) {
-    // Redirigir al componente de reagendamiento con el ID del turno
-    this.router.navigate(["/operador-reagendar-turno", turno.id]); // Asumiendo una ruta específica para operador
+    // Redirigir a la agenda del operador para reagendar el turno
+    this.router.navigate(["/operador-agenda"], { queryParams: { turnoId: turno.id } });
   }
 
   cancelarTurno(turno: any) {
