@@ -22,7 +22,7 @@ services:
       - "8080:8080"
     environment:
       # Conectamos con el servicio 'db' definido arriba
-      DB_URL: jdbc:postgresql://db:5432/turnerodb 
+      DB_URL: jdbc:postgresql://db:5432/turnerodb
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       # Configuración JWT y Mail
@@ -30,6 +30,8 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       APP_URL: http://168.197.48.210
+      APP_ALLOWED_ORIGINS: ${APP_ALLOWED_ORIGINS}
+      SECURITY_DEV_MODE: ${SECURITY_DEV_MODE}
     depends_on:
       - db
 

@@ -1,17 +1,27 @@
 # Etapa 1: Construcción (Build)
 FROM node:18-alpine as build
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-# Compila la app para producción. Esto crea la carpeta /dist
+# Copiamos package.json desde la subcarpeta cli
+COPY cli/package*.json ./
+# Instalamos dependencias ignorando conflictos antiguos
+RUN npm install --legacy-peer-deps
+# Copiamos el código fuente
+COPY cli/ . . 
+# Compilamos para producción
 RUN npm run build -- --configuration production
 
 # Etapa 2: Servidor Web (Nginx)
 FROM nginx:alpine
-# Copiamos los archivos compilados de la etapa anterior al servidor Nginx
-COPY --from=build /app/dist/cli /usr/share/nginx/html
-# Copiamos una configuración básica de Nginx (opcional, pero recomendada para Angular)
+
+# 1. LIMPIEZA: Borramos los archivos por defecto de Nginx (incluyendo ese index.html viejo)
+RUN rm -rf /usr/share/nginx/html/*
+
+# 2. CORRECCIoN CRiTICA: Copiamos el contenido de la carpeta 'browser' que genera Angular 19
+# Nota: Si en el futuro cambia la estructura, ajusta esta ruta.
+COPY --from=build /app/dist/cli/browser /usr/share/nginx/html
+
+# Copiamos tu configuración personalizada de Nginx
 COPY nginx-custom.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
