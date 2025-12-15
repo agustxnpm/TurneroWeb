@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -64,47 +65,79 @@ public class PasswordResetService {
      * @return CompletableFuture que se completa cuando el proceso termina
      * @throws IllegalArgumentException si el email no existe
      */
+    @Async
     public CompletableFuture<Void> initiatePasswordReset(String email) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                Optional<User> userOpt = userRepository.findByEmail(email);
-                if (userOpt.isEmpty()) {
-                    logger.warn("Intento de recuperación de contraseña para email no existente: {}", email);
-                    throw new IllegalArgumentException("No existe un usuario con el email proporcionado");
-                }
-                
-                User user = userOpt.get();
-                
-                // Verificar si ya hay muchos tokens válidos para este usuario
-                long validTokens = tokenRepository.countValidTokensForUser(user, LocalDateTime.now());
-                if (validTokens >= maxTokensPerUser) {
-                    logger.warn("Usuario {} ha excedido el límite de tokens de recuperación", email);
-                    // Invalidar tokens antiguos
-                    tokenRepository.invalidateAllUserTokens(user);
-                }
-                
-                // Generar nuevo token
-                String token = generateSecureToken();
-                LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(tokenExpirationMinutes);
-                
-                // Crear y guardar el token
-                PasswordResetToken resetToken = new PasswordResetToken(token, user, expiresAt);
-                tokenRepository.save(resetToken);
-                
-                // Construir el enlace de recuperación
-                String resetLink = appUrl + "/reset-password?token=" + token;
-                
-                // Enviar email asíncrono
-                emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
-                
-                logger.info("Token de recuperación generado para usuario: {} (expira: {})", 
-                           email, expiresAt);
-                
-            } catch (Exception e) {
-                logger.error("Error al procesar recuperación de contraseña para {}: {}", email, e.getMessage());
-                throw new RuntimeException("Error interno del servidor al procesar la solicitud", e);
+        try {
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                logger.warn("Intento de recuperación de contraseña para email no existente: {}", email);
+                throw new IllegalArgumentException("No existe un usuario con el email proporcionado");
             }
-        });
+            
+            User user = userOpt.get();
+            
+            // Verificar si ya hay muchos tokens válidos para este usuario
+            long validTokens = tokenRepository.countValidTokensForUser(user, LocalDateTime.now());
+            if (validTokens >= maxTokensPerUser) {
+                logger.warn("Usuario {} ha excedido el límite de tokens de recuperación", email);
+                // Invalidar tokens antiguos
+                tokenRepository.invalidateAllUserTokens(user);
+            }
+            
+            // Generar nuevo token
+            String token = generateSecureToken();
+            LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(tokenExpirationMinutes);
+            
+            // Crear y guardar el token
+            PasswordResetToken resetToken = new PasswordResetToken(token, user, expiresAt);
+            tokenRepository.save(resetToken);
+            
+            // Construir el enlace de recuperación
+            String resetLink = appUrl + "/reset-password?token=" + token;
+            
+            // Enviar email (llamada síncrona, ya estamos en thread @Async)
+            emailService.sendHtmlEmail(user.getEmail(), "Restablecer contraseña", buildPasswordResetEmailBody(resetLink));
+            
+            logger.info("Token de recuperación generado para usuario: {} (expira: {})", 
+                       email, expiresAt);
+            
+            return CompletableFuture.completedFuture(null);
+            
+        } catch (Exception e) {
+            logger.error("Error al procesar recuperación de contraseña para {}: {}", email, e.getMessage(), e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+    
+    /**
+     * Construye el cuerpo HTML para el email de recuperación de contraseña.
+     */
+    private String buildPasswordResetEmailBody(String resetLink) {
+        return String.format(
+            """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Restablecer contraseña</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #2c5aa0;">Restablecer contraseña</h2>
+                    <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+                    <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="%s" style="background-color: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Restablecer contraseña</a>
+                    </div>
+                    <p><strong>Este enlace expirará en 24 horas por seguridad.</strong></p>
+                    <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                    <p style="font-size: 12px; color: #666;">Este es un correo automático, por favor no respondas.</p>
+                </div>
+            </body>
+            </html>
+            """,
+            resetLink);
     }
     
     /**

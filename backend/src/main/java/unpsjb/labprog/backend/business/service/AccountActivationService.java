@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,60 +56,94 @@ public class AccountActivationService {
     @Value("${app.url}")
     private String frontendUrl;
     
+    // Nombre de la aplicación
+    @Value("${app.name}")
+    private String appName;
+    
     /**
      * Inicia el proceso de activación enviando un email con el token.
      * 
      * @param email Email del usuario
      * @return CompletableFuture para procesamiento asíncrono
      */
+    @Async
     public CompletableFuture<Void> initiateAccountActivation(String email) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                // Buscar el usuario por email
-                Optional<User> userOpt = userRepository.findByEmail(email);
-                if (userOpt.isEmpty()) {
-                    logger.warn("Intento de activación para email no registrado: {}", email);
-                    return; // No revelar si el email existe
-                }
-                
-                User user = userOpt.get();
-                
-                // Verificar si ya está activado
-                if (user.isEmailVerified()) {
-                    logger.info("Intento de activación para cuenta ya verificada: {}", email);
-                    return;
-                }
-                
-                // Verificar límite de tokens activos
-                int activeTokens = tokenRepository.countActiveTokensByUser(user, LocalDateTime.now());
-                if (activeTokens >= maxTokensPerUser) {
-                    logger.warn("Usuario {} ha excedido el límite de tokens de activación activos", email);
-                    return;
-                }
-                
-                // Generar nuevo token
-                String token = generateSecureToken();
-                LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(tokenExpirationMinutes);
-                
-                AccountActivationToken activationToken = new AccountActivationToken(token, user, expiresAt);
-                tokenRepository.save(activationToken);
-                
-                // Construir enlace de activación
-                String activationLink = frontendUrl + "/activate-account?token=" + token;
-                
-                // Enviar email de activación
-                emailService.sendAccountActivationEmail(
-                    email, 
-                    activationLink, 
-                    user.getNombre() + " " + user.getApellido()
-                );
-                
-                logger.info("Token de activación enviado para usuario: {}", email);
-                
-            } catch (Exception e) {
-                logger.error("Error al procesar activación para {}: {}", email, e.getMessage());
+        try {
+            // Buscar el usuario por email
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                logger.warn("Intento de activación para email no registrado: {}", email);
+                return CompletableFuture.completedFuture(null); // No revelar si el email existe
             }
-        });
+            
+            User user = userOpt.get();
+            
+            // Verificar si ya está activado
+            if (user.isEmailVerified()) {
+                logger.info("Intento de activación para cuenta ya verificada: {}", email);
+                return CompletableFuture.completedFuture(null);
+            }
+            
+            // Verificar límite de tokens activos
+            int activeTokens = tokenRepository.countActiveTokensByUser(user, LocalDateTime.now());
+            if (activeTokens >= maxTokensPerUser) {
+                logger.warn("Usuario {} ha excedido el límite de tokens de activación activos", email);
+                return CompletableFuture.completedFuture(null);
+            }
+            
+            // Generar nuevo token
+            String token = generateSecureToken();
+            LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(tokenExpirationMinutes);
+            
+            AccountActivationToken activationToken = new AccountActivationToken(token, user, expiresAt);
+            tokenRepository.save(activationToken);
+            
+            // Construir enlace de activación
+            String activationLink = frontendUrl + "/activate-account?token=" + token;
+            
+            // Enviar email de activación (llamada síncrona, ya estamos en thread @Async)
+            emailService.sendHtmlEmail(
+                email, 
+                appName + " - Activar tu cuenta",
+                buildAccountActivationEmailBody(activationLink, user.getNombre() + " " + user.getApellido())
+            );
+            
+            logger.info("Token de activación enviado para usuario: {}", email);
+            return CompletableFuture.completedFuture(null);
+            
+        } catch (Exception e) {
+            logger.error("Error al procesar activación para {}: {}", email, e.getMessage(), e);
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+    
+    /**
+     * Construye el cuerpo HTML para el email de activación.
+     */
+    private String buildAccountActivationEmailBody(String activationLink, String userName) {
+        return String.format(
+            """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Activar cuenta</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #2c5aa0;">¡Bienvenido a %s, %s!</h2>
+                    <p>Tu cuenta ha sido creada exitosamente. Para comenzar a usar nuestros servicios, necesitas activar tu cuenta.</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="%s" style="background-color: #17a2b8; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block;">Activar cuenta</a>
+                    </div>
+                    <p>Una vez activada tu cuenta, podrás acceder a todas las funcionalidades del sistema.</p>
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                    <p style="font-size: 12px; color: #666;">Este es un correo automático, por favor no respondas.</p>
+                </div>
+            </body>
+            </html>
+            """,
+            appName, userName, activationLink);
     }
     
     /**
