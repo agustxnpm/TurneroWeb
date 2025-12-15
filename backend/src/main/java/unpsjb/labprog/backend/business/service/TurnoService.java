@@ -581,82 +581,22 @@ public class TurnoService {
         return toDTO(savedTurno);
     }
 
-    // Método mejorado para validar ventana de confirmación
+    // Método simplificado para validar confirmación de turno
+    // Solo verifica que el turno no sea para una fecha pasada
+    // La cancelación automática de turnos no confirmados sigue funcionando via @Scheduled
     private void validarVentanaConfirmacion(Turno turno, String rol) {
-        // Administradores y operadores pueden confirmar sin restricciones
-        if ("ADMINISTRADOR".equals(rol) || "OPERADOR".equals(rol)) {
-            return;
-        }
-
-        // Validar consistencia de configuraciones
-        configuracionService.validarConfiguracionesTurnos();
-        configuracionService.validarConfiguracionesRecordatorios();
-
         ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
-        LocalDate hoy = LocalDate.now(zoneId);  // ✅ CORREGIDO: usar zona horaria de Argentina
-        LocalTime horaActual = LocalTime.now(zoneId);
-        long diasRestantes = ChronoUnit.DAYS.between(hoy, turno.getFecha());
-
-        int diasMin = configuracionService.getDiasMinConfirmacion();
-        int diasMax = configuracionService.getDiasMaxNoConfirm();
-        LocalTime horaCorte = configuracionService.getHoraCorteConfirmacion();
-        LocalTime ahoraHora = LocalTime.now(zoneId);
-
-        // Calcular ventana de confirmación
-        LocalDate fechaInicioConfirmacion = turno.getFecha().minusDays(diasMax);
-        LocalDate fechaFinConfirmacion = turno.getFecha().minusDays(diasMin);
-
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-
-        // 🧩 LOGS DE DEPURACIÓN
-        System.out.println("🕒 --- VALIDACIÓN DE CONFIRMACIÓN DE TURNO ---");
-        System.out.println("📅 Fecha actual: " + hoy);
-        System.out.println("🕓 Hora actual: " + horaActual);
-        System.out.println("📅 Fecha del turno: " + turno.getFecha());
-        System.out.println("🕑 Hora del turno: " + turno.getHoraInicio());
-        System.out.println("📉 Días restantes: " + diasRestantes);
-        System.out.println(
-                "⚙️  Configuración -> Mínimo: " + diasMin + ", Máximo: " + diasMax + ", Hora corte: " + horaCorte);
-        System.out.println("👤 Rol del usuario: " + rol);
-        System.out.println("🕓 Hora actual: " + ahoraHora);
-        System.out.println("--------------------------------------------------");
-
-        // Validaciones
-        if (diasRestantes <= 0) {
-            throw new IllegalStateException(
-                    "Este turno ya ocurrió o es para hoy. Solo se pueden confirmar turnos con anticipación. " +
-                            "Por favor, comunicate con el centro de atención si necesitás reprogramarlo.");
+        LocalDate hoy = LocalDate.now(zoneId);
+        
+        // Solo validar que el turno no sea para una fecha pasada
+        if (turno.getFecha().isBefore(hoy)) {
+            throw new IllegalArgumentException(
+                    "No se puede confirmar un turno para una fecha pasada");
         }
-
-        if (diasRestantes < diasMin) {
-            throw new IllegalStateException(String.format(
-                    "No podés confirmar este turno porque faltan menos de %d días. " +
-                            "Los turnos deben confirmarse con al menos %d días de anticipación (hasta el %s antes de las %s).",
-                    diasMin, diasMin,
-                    fechaFinConfirmacion.format(dateFormatter),
-                    horaCorte.format(timeFormatter)));
-        }
-
-        if (diasRestantes > diasMax) {
-            throw new IllegalStateException(String.format(
-                    "Aún no podés confirmar este turno. " +
-                            "Las confirmaciones se habilitan entre %d y %d días antes de la fecha del turno, " +
-                            "es decir, entre el %s y el %s (hora límite %s).",
-                    diasMax, diasMin,
-                    fechaInicioConfirmacion.format(dateFormatter),
-                    fechaFinConfirmacion.format(dateFormatter),
-                    horaCorte.format(timeFormatter)));
-        }
-
-        if (diasRestantes == diasMin && horaActual.isAfter(horaCorte)) {
-            throw new IllegalStateException(String.format(
-                    "Ya pasó la hora límite de confirmación (%s). " +
-                            "Podías confirmar este turno hasta las %s del día %s.",
-                    horaCorte.format(timeFormatter),
-                    horaCorte.format(timeFormatter),
-                    fechaFinConfirmacion.format(dateFormatter)));
-        }
+        
+        //  Los turnos pueden confirmarse en cualquier momento antes de la fecha del turno
+        //  La cancelación automática de turnos no confirmados sigue activa (ver método cancelarTurnosNoConfirmadosAutomaticamente)
+        System.out.println("✅ Validación de confirmación: Turno para " + turno.getFecha() + " puede confirmarse (hoy: " + hoy + ", rol: " + rol + ")");
     }
 
     // Cancelación automática actualizada
