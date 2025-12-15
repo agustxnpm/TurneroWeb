@@ -1,12 +1,12 @@
 # Dockerfile para Render (Producción)
 # Build stage
-FROM maven:3-eclipse-temurin-17-alpine AS build
+# CAMBIO 1: Usamos la imagen Debian "slim" para evitar problemas de musl libc
+FROM maven:3-eclipse-temurin-17-slim AS build
 
 WORKDIR /app
 
 # Copiar archivos de configuración de Maven primero (para aprovechar cache de Docker)
 COPY pom.xml .
-
 # Descargar dependencias (se cachea si pom.xml no cambia)
 RUN mvn dependency:go-offline -B
 
@@ -17,7 +17,8 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+# CAMBIO 2 (CRÍTICO): Usamos la imagen Debian "slim"
+FROM eclipse-temurin:17-jre-slim
 
 WORKDIR /app
 
@@ -31,5 +32,4 @@ EXPOSE 8080
 ENV PORT=8080
 
 # Comando para ejecutar la aplicación
-# IMPORTANTE: Usar shell form para que ${PORT} se expanda correctamente
 ENTRYPOINT exec java -Dserver.port=${PORT} -jar app.jar

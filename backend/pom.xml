@@ -81,12 +81,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
-
-		<dependency>
-			<groupId>org.eclipse.angus</groupId>
-			<artifactId>jakarta.mail</artifactId>
-			<scope>runtime</scope>
-		</dependency>
 		
 		<!-- Spring Security -->
 		<dependency>
