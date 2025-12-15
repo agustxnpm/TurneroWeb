@@ -583,35 +583,76 @@ DO $$
 DECLARE
     r RECORD;
     max_id BIGINT;
-    seq_name TEXT;
+    next_val BIGINT;
 BEGIN
     RAISE NOTICE '🔄 Actualizando secuencias de PostgreSQL...';
+    RAISE NOTICE '================================================';
     
-    -- Iterar sobre todas las tablas con columnas seriales/identity
+    -- Mapeo completo de tabla → secuencia
+    -- Incluye tanto convención estándar (*_id_seq) como GenerationType.AUTO (*_seq)
     FOR r IN (
-        SELECT 
-            table_name, 
-            column_name,
-            pg_get_serial_sequence(quote_ident(table_schema) || '.' || quote_ident(table_name), column_name) as sequence_name
-        FROM information_schema.columns
-        WHERE 
-            table_schema = 'public' 
-            AND column_default LIKE 'nextval%'
-            AND table_name NOT LIKE 'pg_%'  -- Excluir tablas del sistema
+        SELECT * FROM (VALUES
+            ('account_activation_tokens', 'account_activation_tokens_id_seq'),
+            ('administrador', 'administrador_id_seq'),
+            ('audit_log', 'audit_log_id_seq'),
+            ('centro_atencion', 'centro_atencion_seq'),
+            ('configuracion_excepcional', 'configuracion_excepcional_seq'),
+            ('configuracion', 'configuracion_seq'),
+            ('consultorio', 'consultorio_id_seq'),
+            ('deep_link_token', 'deep_link_token_id_seq'),
+            ('disponibilidad_medico', 'disponibilidad_medico_seq'),
+            ('encuesta_invitacion', 'encuesta_invitacion_seq'),
+            ('encuesta_plantilla', 'encuesta_plantilla_seq'),
+            ('encuesta_respuesta', 'encuesta_respuesta_seq'),
+            ('especialidad', 'especialidad_seq'),
+            ('esquema_turno', 'esquema_turno_seq'),
+            ('lista_espera', 'lista_espera_seq'),
+            ('medico', 'medico_seq'),
+            ('notificaciones', 'notificaciones_id_seq'),
+            ('obra_social', 'obra_social_seq'),
+            ('operador', 'operador_id_seq'),
+            ('paciente', 'paciente_seq'),
+            ('password_reset_tokens', 'password_reset_tokens_id_seq'),
+            ('preferencia_horaria', 'preferencia_horaria_seq'),
+            ('pregunta', 'pregunta_seq'),
+            ('staff_medico', 'staff_medico_seq'),
+            ('turno', 'turno_seq'),
+            ('users', 'users_id_seq')
+        ) AS t(table_name, sequence_name)
     ) LOOP
-        -- Obtener el MAX(id) de la tabla
-        EXECUTE format('SELECT COALESCE(MAX(%I), 0) FROM %I', r.column_name, r.table_name) INTO max_id;
-        
-        -- Actualizar la secuencia al MAX(id) + 1
-        IF max_id > 0 THEN
-            EXECUTE format('SELECT setval(%L, %s, true)', r.sequence_name, max_id);
-            RAISE NOTICE '   ✅ %: secuencia actualizada a %', r.table_name, max_id + 1;
-        ELSE
-            RAISE NOTICE '   ⚠️  %: tabla vacía, secuencia sin cambios', r.table_name;
-        END IF;
+        BEGIN
+            -- Verificar si la tabla existe
+            IF EXISTS (SELECT 1 FROM information_schema.tables 
+                       WHERE table_schema = 'public' 
+                       AND table_name = r.table_name) THEN
+                
+                -- Obtener MAX(id) de la tabla
+                EXECUTE format('SELECT COALESCE(MAX(id), 0) FROM %I', r.table_name) INTO max_id;
+                
+                -- Actualizar secuencia con setval(seq, max_id, is_called=true)
+                -- is_called=true significa que max_id ya fue emitido, próximo será max_id+1
+                IF max_id > 0 THEN
+                    EXECUTE format('SELECT setval(%L, %s, true)', r.sequence_name, max_id);
+                    RAISE NOTICE '   ✅ % (seq: %): MAX(id)=%, next=%', 
+                                 r.table_name, r.sequence_name, max_id, max_id + 1;
+                ELSE
+                    -- Tabla vacía: inicializar secuencia en 1
+                    EXECUTE format('SELECT setval(%L, 1, false)', r.sequence_name);
+                    RAISE NOTICE '   ⚠️  % (seq: %): tabla vacía, next=1', 
+                                 r.table_name, r.sequence_name;
+                END IF;
+            ELSE
+                RAISE NOTICE '   ⏭️  Tabla % no existe (seq: %)', r.table_name, r.sequence_name;
+            END IF;
+            
+        EXCEPTION
+            WHEN OTHERS THEN
+                RAISE WARNING '   ❌ Error en tabla %: %', r.table_name, SQLERRM;
+        END;
     END LOOP;
     
-    RAISE NOTICE '✅ Todas las secuencias actualizadas correctamente';
+    RAISE NOTICE '================================================';
+    RAISE NOTICE '✅ Proceso de actualización de secuencias completado';
 END $$;
 
 -- =====================================
