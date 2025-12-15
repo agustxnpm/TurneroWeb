@@ -651,6 +651,35 @@ public class PacienteService {
         
         return pacienteOpt.orElse(null);
     }
+    
+    /**
+     * Busca un Paciente por el User autenticado con preferencias horarias precargadas
+     * Usa JOIN FETCH para evitar LazyInitializationException al acceder a las preferencias
+     * fuera de la transacción
+     * 
+     * @param user Usuario autenticado de Spring Security
+     * @return Paciente asociado al usuario con preferencias cargadas, o null si no existe
+     */
+    @Transactional(readOnly = true)
+    public Paciente findByUserWithPreferencias(User user) {
+        if (user == null) {
+            return null;
+        }
+        
+        // Buscar paciente por email con preferencias precargadas
+        Optional<Paciente> pacienteOpt = repository.findByUserEmailWithPreferencias(user.getEmail());
+        
+        if (pacienteOpt.isPresent()) {
+            Paciente paciente = pacienteOpt.get();
+            logger.debug("✅ Paciente encontrado para usuario: {} (ID: {}) con {} preferencias horarias", 
+                        user.getEmail(), paciente.getId(), 
+                        paciente.getPreferenciasHorarias() != null ? paciente.getPreferenciasHorarias().size() : 0);
+        } else {
+            logger.warn("⚠️ No se encontró paciente para usuario: {}", user.getEmail());
+        }
+        
+        return pacienteOpt.orElse(null);
+    }
 
     /**
      * Obtiene todas las preferencias horarias del paciente asociado al usuario autenticado

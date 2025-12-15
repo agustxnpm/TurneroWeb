@@ -177,13 +177,14 @@ public class AgendaPresenter {
 
         System.out.println("✅ [AgendaPresenter] Total eventos generados después de filtros: " + todosLosEventos.size());
         
-        // 🕐 FILTRO DE PREFERENCIAS HORARIAS: Solo para pacientes autenticados
-        if (filtrarPorPreferencia && currentUser != null && currentUser.getRole() == Role.PACIENTE) {
-            Paciente paciente = pacienteService.findByUser(currentUser);
+        // 🕐 FILTRO DE PREFERENCIAS HORARIAS: Para cualquier usuario autenticado que tenga perfil de paciente
+        if (filtrarPorPreferencia && currentUser != null) {
+            // Buscar paciente asociado al usuario, independientemente de su rol principal
+            Paciente paciente = pacienteService.findByUserWithPreferencias(currentUser);
             
             if (paciente != null && paciente.getPreferenciasHorarias() != null && !paciente.getPreferenciasHorarias().isEmpty()) {
                 Set<PreferenciaHoraria> preferencias = paciente.getPreferenciasHorarias();
-                System.out.println("🕐 [AgendaPresenter] Filtrando " + todosLosEventos.size() + " turnos por " + preferencias.size() + " preferencias horarias");
+                System.out.println("🕐 [AgendaPresenter] Filtrando " + todosLosEventos.size() + " turnos por " + preferencias.size() + " preferencias horarias para usuario " + currentUser.getEmail() + " (Rol: " + currentUser.getRole() + ")");
                 
                 List<TurnoDTO> turnosFiltrados = todosLosEventos.stream()
                     .filter(turno -> {
@@ -200,6 +201,14 @@ public class AgendaPresenter {
                             boolean mismoDia = pref.getDiaDeLaSemana().equals(diaDelTurno);
                             boolean dentroRango = !horaInicioTurno.isBefore(pref.getHoraDesde()) && 
                                                  horaInicioTurno.isBefore(pref.getHoraHasta());
+                            
+                            // Debug: Mostrar comparaciones
+                            if (mismoDia) {
+                                System.out.println("   🔍 Turno " + fechaTurno + " " + horaInicioTurno + " coincide día " + diaDelTurno + 
+                                                 " | Rango pref: " + pref.getHoraDesde() + "-" + pref.getHoraHasta() + 
+                                                 " | En rango: " + dentroRango);
+                            }
+                            
                             return mismoDia && dentroRango;
                         });
                         
@@ -210,7 +219,11 @@ public class AgendaPresenter {
                 System.out.println("✅ [AgendaPresenter] " + turnosFiltrados.size() + " turnos coinciden con preferencias");
                 return turnosFiltrados;
             } else {
-                System.out.println("⚠️ [AgendaPresenter] Paciente sin preferencias configuradas, devolviendo todos los turnos");
+                if (paciente == null) {
+                    System.out.println("⚠️ [AgendaPresenter] Usuario " + currentUser.getEmail() + " no tiene perfil de paciente asociado");
+                } else {
+                    System.out.println("⚠️ [AgendaPresenter] Paciente ID " + paciente.getId() + " sin preferencias configuradas, devolviendo todos los turnos");
+                }
             }
         }
         

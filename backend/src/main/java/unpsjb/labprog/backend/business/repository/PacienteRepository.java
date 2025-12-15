@@ -26,6 +26,15 @@ public interface PacienteRepository extends JpaRepository<Paciente, Integer> {
      */
     @Query("SELECT p FROM Paciente p WHERE LOWER(p.email) = LOWER(:email)")
     Optional<Paciente> findByUserEmail(@Param("email") String email);
+    
+    /**
+     * Busca un paciente por email del usuario con preferencias horarias precargadas (EAGER)
+     * Usa JOIN FETCH para evitar LazyInitializationException
+     * @param email Email del usuario
+     * @return Optional con el paciente y sus preferencias si existe
+     */
+    @Query("SELECT p FROM Paciente p LEFT JOIN FETCH p.preferenciasHorarias WHERE LOWER(p.email) = LOWER(:email)")
+    Optional<Paciente> findByUserEmailWithPreferencias(@Param("email") String email);
 
     /**
      * Método para búsqueda paginada con filtros combinados y ordenamiento dinámico
