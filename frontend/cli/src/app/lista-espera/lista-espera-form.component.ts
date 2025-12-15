@@ -269,16 +269,16 @@ export class ListaEsperaFormComponent implements OnInit {
           next: (resp) => {
             if (resp.status_code === 200) {
               console.log('✅ Solicitud creada exitosamente:', resp.data);
-              this.toastService.showSuccess('Solicitud guardada con éxito', 'Lista de Espera');
+              this.toastService.success('Solicitud guardada con éxito');
               this.router.navigate(['/paciente-dashboard']);
             } else {
               console.error('❌ Error creando solicitud:', resp.status_text);
-              this.toastService.showError(`Error: ${resp.status_text}`, 'Lista de Espera');
+              this.toastService.error(`Error: ${resp.status_text}`);
             }
           },
           error: (err) => {
             console.error('❌ Error creando solicitud:', err);
-            this.toastService.showError('Error al guardar la solicitud', 'Lista de Espera');
+            this.toastService.error('Error al guardar la solicitud');
           }
         });
       } else {
