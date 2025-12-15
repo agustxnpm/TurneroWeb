@@ -5,6 +5,8 @@ services:
   db:
     image: postgres:15-alpine
     restart: always
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: turnerodb
       POSTGRES_USER: ${DB_USERNAME}     # Variables que definiremos en el servidor
