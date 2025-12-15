@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EncuestaService {
-  private baseUrl = 'rest/encuestas';
+  private baseUrl = environment.production ? `${environment.apiUrl}/encuestas` : 'rest/encuestas';
 
   constructor(private http: HttpClient) {}
 

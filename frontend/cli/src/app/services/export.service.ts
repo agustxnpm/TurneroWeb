@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { environment } from '../../environments/environment';
 
 /**
  * Servicio para exportar datos a diferentes formatos (CSV, PDF)
@@ -13,7 +14,7 @@ import html2canvas from 'html2canvas';
   providedIn: 'root'
 })
 export class ExportService {
-  private url = 'rest/export';
+  private url = environment.production ? `${environment.apiUrl}/export` : 'rest/export';
 
   constructor(private http: HttpClient) { }
 

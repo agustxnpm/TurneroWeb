@@ -3,11 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { DataPackage } from '../data.package';
 import { DiaExcepcional } from './diaExcepcional';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DiasExcepcionalesService {
+  private baseUrl = environment.production ? `${environment.apiUrl}/agenda/dias-excepcionales` : 'rest/agenda/dias-excepcionales';
   private diasExcepcionales = new BehaviorSubject<DiaExcepcional[]>([]);
   public diasExcepcionales$ = this.diasExcepcionales.asObservable();
 
@@ -88,7 +90,7 @@ export class DiasExcepcionalesService {
       params = params.set('centroId', centroId.toString());
     }
 
-    return this.http.get<DataPackage<DiaExcepcional[]>>('rest/agenda/dias-excepcionales', { params });
+    return this.http.get<DataPackage<DiaExcepcional[]>>(this.baseUrl, { params });
   }
 
   /**

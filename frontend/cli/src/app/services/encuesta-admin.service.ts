@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class EncuestaAdminService {
-  private baseUrl = 'rest/admin/encuestas';
-  private centrosUrl = 'rest/centrosAtencion'; // A ajustar según 
-  private especialidadesUrl = 'rest/especialidades'; //  ajustar según 
+  private baseUrl = environment.production ? `${environment.apiUrl}/admin/encuestas` : 'rest/admin/encuestas';
+  private centrosUrl = environment.production ? `${environment.apiUrl}/centrosAtencion` : 'rest/centrosAtencion';
+  private especialidadesUrl = environment.production ? `${environment.apiUrl}/especialidades` : 'rest/especialidades'; 
 
   constructor(private http: HttpClient) { }
 

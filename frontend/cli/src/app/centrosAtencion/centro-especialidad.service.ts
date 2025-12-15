@@ -3,12 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DataPackage } from '../data.package';
 import { CentroEspecialidad } from './centro-especialidad';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CentroEspecialidadService {
-  private baseUrl = '/rest/centrosAtencion';
+  private baseUrl = environment.production ? `${environment.apiUrl}/centrosAtencion` : 'rest/centrosAtencion';
 
   constructor(private http: HttpClient) {}
 
