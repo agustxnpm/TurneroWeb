@@ -1267,13 +1267,13 @@ public class TurnoService {
             case "TUESDAY":
                 return "MARTES";
             case "WEDNESDAY":
-                return "MIÉRCOLES";
+                return "MIERCOLES"; // SIN TILDE - debe coincidir con la DB
             case "THURSDAY":
                 return "JUEVES";
             case "FRIDAY":
                 return "VIERNES";
             case "SATURDAY":
-                return "SÁBADO";
+                return "SABADO"; // SIN TILDE - debe coincidir con la DB
             case "SUNDAY":
                 return "DOMINGO";
             default:
