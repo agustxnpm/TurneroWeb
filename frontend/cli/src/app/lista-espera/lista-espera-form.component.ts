@@ -12,6 +12,7 @@ import { UserContextService } from '../services/user-context.service';
 import { ListaEsperaService } from './lista-espera.service';
 import { Router } from '@angular/router';
 import { ModalService } from '../modal/modal.service';
+import { ToastService } from '../services/toast.service';
 
 
 @Component({
@@ -81,7 +82,8 @@ export class ListaEsperaFormComponent implements OnInit {
     private userContextService: UserContextService, // Inyectar UserContextService para acceder al primaryRole
     private listaEsperaService: ListaEsperaService, // Inyectar para manejar create/update directamente en modo paciente
     private router: Router, // Inyectar para redirigir después de guardar
-    private modalService: ModalService // Inyectar si el form se usa en modal (opcional, si aplica)
+    private modalService: ModalService, // Inyectar si el form se usa en modal (opcional, si aplica)
+    private toastService: ToastService // Servicio de notificaciones toast
   ) {
     this.form = this.fb.group({
       pacienteId: ['', Validators.required],
@@ -267,16 +269,16 @@ export class ListaEsperaFormComponent implements OnInit {
           next: (resp) => {
             if (resp.status_code === 200) {
               console.log('✅ Solicitud creada exitosamente:', resp.data);
-              alert('Solicitud guardada con éxito');
+              this.toastService.showSuccess('Solicitud guardada con éxito', 'Lista de Espera');
               this.router.navigate(['/paciente-dashboard']);
             } else {
               console.error('❌ Error creando solicitud:', resp.status_text);
-              alert(`Error: ${resp.status_text}`);
+              this.toastService.showError(`Error: ${resp.status_text}`, 'Lista de Espera');
             }
           },
           error: (err) => {
             console.error('❌ Error creando solicitud:', err);
-            alert('Error al guardar la solicitud');
+            this.toastService.showError('Error al guardar la solicitud', 'Lista de Espera');
           }
         });
       } else {
