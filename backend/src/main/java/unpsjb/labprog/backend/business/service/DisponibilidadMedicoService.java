@@ -219,15 +219,36 @@ public class DisponibilidadMedicoService {
     private DisponibilidadMedico toEntity(DisponibilidadMedicoDTO dto) {
         DisponibilidadMedico disponibilidad = new DisponibilidadMedico();
         disponibilidad.setId(dto.getId());
-        disponibilidad.setStaffMedico(
-                staffMedicoRepository.findById(dto.getStaffMedicoId())
-                        .orElseThrow(() -> new IllegalArgumentException("StaffMedico no encontrado con ID: " + dto.getStaffMedicoId())));
         
-        // Establecer especialidad si se proporciona especialidadId
+        var staffMedico = staffMedicoRepository.findById(dto.getStaffMedicoId())
+                .orElseThrow(() -> new IllegalArgumentException("StaffMedico no encontrado con ID: " + dto.getStaffMedicoId()));
+        disponibilidad.setStaffMedico(staffMedico);
+        
+        // Validar y establecer especialidad
         if (dto.getEspecialidadId() != null) {
             Especialidad especialidad = especialidadRepository.findById(dto.getEspecialidadId())
                     .orElseThrow(() -> new IllegalArgumentException("Especialidad no encontrada con ID: " + dto.getEspecialidadId()));
+            
+            // VALIDACIÓN CRÍTICA: La especialidad de la disponibilidad DEBE coincidir con la del StaffMedico
+            if (staffMedico.getEspecialidad() != null && 
+                !staffMedico.getEspecialidad().getId().equals(especialidad.getId())) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Inconsistencia de datos: La especialidad de la disponibilidad (%s, ID: %d) no coincide con la especialidad del Staff Médico (%s, ID: %d). " +
+                        "Para crear una disponibilidad en %s, debe usar el Staff Médico correspondiente a esa especialidad.",
+                        especialidad.getNombre(), especialidad.getId(),
+                        staffMedico.getEspecialidad().getNombre(), staffMedico.getEspecialidad().getId(),
+                        especialidad.getNombre()
+                    )
+                );
+            }
+            
             disponibilidad.setEspecialidad(especialidad);
+        } else {
+            // Si no se proporciona especialidadId, usar automáticamente la del StaffMedico
+            if (staffMedico.getEspecialidad() != null) {
+                disponibilidad.setEspecialidad(staffMedico.getEspecialidad());
+            }
         }
         
         disponibilidad.setHorarios(dto.getHorarios().stream().map(horarioDTO -> {

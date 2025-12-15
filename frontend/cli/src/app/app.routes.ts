@@ -50,6 +50,7 @@ import { OperadorGuard } from "./guards/operador.guard";
 import { AdminOperadorGuard } from "./guards/admin-operador.guard";
 import { SuperAdminGuard } from "./guards/super-admin.guard";
 import { CentroAtencionAccessGuard } from "./guards/centro-atencion-access.guard";
+import { MiCentroRedirectGuard } from "./guards/mi-centro-redirect.guard";
 
 import { OperadorDashboardComponent } from "./operador/operador-dashboard.component";
 //import { OperadorAgendaComponent } from "./operador/operador-agenda.component";
@@ -80,6 +81,13 @@ export const routes: Routes = [
   {
     path: "link-verificacion",
     component: DeepLinkBridgeComponent
+  },
+
+  // Ruta de redirección dinámica a "Mi Centro" (OPERADOR/ADMINISTRADOR)
+  {
+    path: "mi-centro",
+    canActivate: [MiCentroRedirectGuard],
+    children: [] // No se necesita componente, el guard maneja la redirección
   },
 
   // Rutas de Operador (protegidas por OperadorGuard)
@@ -313,7 +321,7 @@ export const routes: Routes = [
   {
     path: "centrosAtencion/:id",
     component: CentroAtencionDetailRefactoredComponent,
-    canActivate: [CentroAtencionAccessGuard], // SUPERADMIN (cualquier centro) o ADMIN (solo su centro)
+    canActivate: [CentroAtencionAccessGuard], // SUPERADMIN (cualquier centro), ADMIN/OPERADOR (solo su centro)
   },
   {
     path: "consultorios",

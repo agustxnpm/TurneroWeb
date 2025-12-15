@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EncuestaAdminService } from '../../services/encuesta-admin.service';
+import { UserContextService } from '../../services/user-context.service';
 import { debounceTime, distinctUntilChanged, Subject, switchMap } from 'rxjs';
 import { ModalService } from '../../modal/modal.service';
 
@@ -50,6 +51,8 @@ export class GestionEncuestasComponent implements OnInit {
   selectedEspecialidad: any = null;  // Cambiado: objeto en vez de ID
   searchCentro: string = '';
   searchEspecialidad: string = '';
+  centroDeshabilitado: boolean = false;
+  userCentroId: number | null = null;
 
   // Nuevo: propiedades para resultados filtrados (ya no getters)
   centrosFiltrados: any[] = [];
@@ -65,10 +68,24 @@ export class GestionEncuestasComponent implements OnInit {
 
   constructor(
     private adminService: EncuestaAdminService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private userContextService: UserContextService
   ) { }
 
   ngOnInit(): void {
+    // Detectar si el usuario es ADMIN/OPERADOR y pre-setear su centro
+    const context = this.userContextService.getCurrentContext();
+    const isAdmin = this.userContextService.isAdmin;
+    const isOperador = this.userContextService.isOperador;
+    
+    if ((isAdmin || isOperador) && context.centroAtencionId) {
+      this.userCentroId = context.centroAtencionId;
+      this.centroDeshabilitado = true;
+      // Pre-cargar el centro del usuario
+      // Nota: El backend ya filtrará las plantillas por centro
+      console.log(`🏥 Usuario ADMIN/OPERADOR detectado - Centro ID: ${this.userCentroId}`);
+    }
+    
     this.reload();
     // Configurar debouncing para centros
     this.searchTermsCentro.pipe(

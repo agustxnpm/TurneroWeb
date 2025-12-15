@@ -1007,9 +1007,12 @@ public class TurnoService {
         }
 
         // No se pueden cancelar turnos el mismo día de la cita sin justificación válida
-        LocalDate hoy = LocalDate.now();
-        if (turno.getFecha().equals(hoy)) {
-            throw new IllegalStateException("No se pueden cancelar turnos el mismo día de la cita");
+        // La validación permite cancelar hasta el día anterior (antes de las 00:00 del día de la cita)
+        // Usar zona horaria de Argentina para comparación correcta
+        LocalDate hoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
+        if (!turno.getFecha().isAfter(hoy)) {
+            // El turno es hoy o ya pasó
+            throw new IllegalStateException("No se pueden cancelar turnos el mismo día de la cita o turnos pasados");
         }
     }
 

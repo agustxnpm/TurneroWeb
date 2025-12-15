@@ -385,20 +385,31 @@ export class DisponibilidadModalComponent {
             if (this.horariosSeSolapan(nuevoHorario, horarioExistente)) {
 
               // Determinar si el conflicto es en el mismo centro o en otro centro
-              const esMismoCentro = disponibilidad.staffMedicoId === this.staffMedico.id;
+              // CORRECCIÓN: Comparar centroAtencionId en lugar de staffMedicoId
+              let esMismoCentro = false;
+              let centroNombreExistente = 'otro centro de atención';
+              let especialidadNombreExistente = 'otra especialidad';
+
+              // Intentar obtener información del centro desde el objeto staffMedico
+              if (disponibilidad.staffMedico?.centroAtencionId && this.staffMedico.centroAtencionId) {
+                esMismoCentro = disponibilidad.staffMedico.centroAtencionId === this.staffMedico.centroAtencionId;
+              } else if (disponibilidad.staffMedicoId) {
+                // Si no tenemos el objeto completo, usar el mapa de información
+                const staffInfo = this.todosLosStaffMedico.find(s => s.id === disponibilidad.staffMedicoId);
+                if (staffInfo && this.staffMedico.centroAtencionId) {
+                  esMismoCentro = staffInfo.centroAtencionId === this.staffMedico.centroAtencionId;
+                }
+              }
 
               if (esMismoCentro) {
                 // Conflicto en el mismo centro (con otra especialidad)
-                const especialidadNombre = this.especialidadNombre || 'la especialidad actual';
                 conflictos.push(
-                  `${nuevoHorario.dia}: ${nuevoHorario.horaInicio}-${nuevoHorario.horaFin} se superpone con horario existente en ${especialidadNombre} (${horarioExistente.horaInicio}-${horarioExistente.horaFin})`
+                  `${nuevoHorario.dia}: ${nuevoHorario.horaInicio}-${nuevoHorario.horaFin} se superpone con horario existente en ${especialidadNombreExistente} (${horarioExistente.horaInicio}-${horarioExistente.horaFin})`
                 );
               } else {
                 // CONFLICTO INTERCENTROS - Más crítico
-                // Obtener información del centro desde staffMedicoId
-                const centroNombre = 'otro centro de atención';
                 conflictos.push(
-                  `⚠️ CONFLICTO INTER-CENTRO - ${nuevoHorario.dia}: ${nuevoHorario.horaInicio}-${nuevoHorario.horaFin} se superpone con horario en "${centroNombre}" (${horarioExistente.horaInicio}-${horarioExistente.horaFin}). Un médico no puede atender en múltiples centros al mismo tiempo.`
+                  `⚠️ CONFLICTO INTER-CENTRO - ${nuevoHorario.dia}: ${nuevoHorario.horaInicio}-${nuevoHorario.horaFin} se superpone con horario en "${centroNombreExistente}" (${horarioExistente.horaInicio}-${horarioExistente.horaFin}). Un médico no puede atender en múltiples centros al mismo tiempo.`
                 );
               }
             }
@@ -499,17 +510,37 @@ export class DisponibilidadModalComponent {
     operacion.subscribe({
       next: (response) => {
         this.guardando = false;
-        this.mensajeExito = mensajeExito;
         
-        // Cerrar modal después de un breve delay
-        setTimeout(() => {
-          this.activeModal.close(response.data);
-        }, 1000);
+        // CORRECCIÓN: Validar status_code del DataPackage en lugar de asumir éxito
+        if (response.status_code === 200 || response.status_code === 201) {
+          this.mensajeExito = mensajeExito;
+          
+          // Cerrar modal después de un breve delay
+          setTimeout(() => {
+            this.activeModal.close(response.data);
+          }, 1000);
+        } else {
+          // Manejar respuesta con status_code diferente de 200/201
+          this.mensajeError = response.status_text || `Error al ${this.modoEdicion ? 'actualizar' : 'crear'} la disponibilidad.`;
+          console.error('❌ Respuesta con status_code inesperado:', response);
+        }
       },
       error: (error) => {
         this.guardando = false;
         console.error(`Error al ${this.modoEdicion ? 'actualizar' : 'crear'} la disponibilidad:`, error);
-        this.mensajeError = error?.error?.message || `Error al ${this.modoEdicion ? 'actualizar' : 'crear'} la disponibilidad. Intente nuevamente.`;
+        
+        // CORRECCIÓN: Usar status_text del DataPackage en lugar de message
+        const errorMessage = error?.error?.status_text || error?.error?.message || `Error al ${this.modoEdicion ? 'actualizar' : 'crear'} la disponibilidad. Intente nuevamente.`;
+        
+        this.mensajeError = errorMessage;
+        
+        // Log adicional para debugging
+        console.error('📋 Detalle del error:', {
+          status_code: error?.error?.status_code,
+          status_text: error?.error?.status_text,
+          http_status: error?.status,
+          full_error: error
+        });
       }
     });
   }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import unpsjb.labprog.backend.Response;
 import unpsjb.labprog.backend.business.service.DashboardService;
 import unpsjb.labprog.backend.dto.FiltrosDashboardDTO;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @RestController
 @RequestMapping("admin-dashboard")
@@ -32,7 +33,11 @@ public class DashboardPresenter {
             FiltrosDashboardDTO filtros = new FiltrosDashboardDTO();
             filtros.setFechaDesde(fechaDesde != null && !fechaDesde.isEmpty() ? LocalDate.parse(fechaDesde) : null);
             filtros.setFechaHasta(fechaHasta != null && !fechaHasta.isEmpty() ? LocalDate.parse(fechaHasta) : null);
-            filtros.setCentroId(centroId);
+            
+            // Forzar filtro por centro para usuarios con tenant (ADMIN/OPERADOR)
+            Integer filteredCentroId = TenantContext.getFilteredCentroId();
+            filtros.setCentroId(filteredCentroId != null ? filteredCentroId : centroId);
+            
             filtros.setConsultorioId(consultorioId);
             filtros.setStaffMedicoId(staffMedicoId);
             filtros.setEspecialidadId(especialidadId);
@@ -54,7 +59,11 @@ public class DashboardPresenter {
             FiltrosDashboardDTO filtros = new FiltrosDashboardDTO();
             filtros.setFechaDesde(fechaDesde != null && !fechaDesde.isEmpty() ? LocalDate.parse(fechaDesde) : null);
             filtros.setFechaHasta(fechaHasta != null && !fechaHasta.isEmpty() ? LocalDate.parse(fechaHasta) : null);
-            filtros.setCentroId(centroId);
+            
+            // Forzar filtro por centro para usuarios con tenant (ADMIN/OPERADOR)
+            Integer filteredCentroId = TenantContext.getFilteredCentroId();
+            filtros.setCentroId(filteredCentroId != null ? filteredCentroId : centroId);
+            
             filtros.setConsultorioId(consultorioId);
 
             var metrics = dashboardService.getMetricasOcupacion(filtros);
@@ -76,7 +85,11 @@ public class DashboardPresenter {
             FiltrosDashboardDTO filtros = new FiltrosDashboardDTO();
             filtros.setFechaDesde(fechaDesde != null && !fechaDesde.isEmpty() ? LocalDate.parse(fechaDesde) : null);
             filtros.setFechaHasta(fechaHasta != null && !fechaHasta.isEmpty() ? LocalDate.parse(fechaHasta) : null);
-            filtros.setCentroId(centroId);
+            
+            // Forzar filtro por centro para usuarios con tenant (ADMIN/OPERADOR)
+            Integer filteredCentroId = TenantContext.getFilteredCentroId();
+            filtros.setCentroId(filteredCentroId != null ? filteredCentroId : centroId);
+            
             filtros.setConsultorioId(consultorioId);
             filtros.setStaffMedicoId(staffMedicoId);
             filtros.setEspecialidadId(especialidadId);
@@ -129,7 +142,10 @@ public class DashboardPresenter {
             FiltrosDashboardDTO filtros = new FiltrosDashboardDTO();
             filtros.setFechaDesde(fechaDesde != null && !fechaDesde.isEmpty() ? LocalDate.parse(fechaDesde) : null);
             filtros.setFechaHasta(fechaHasta != null && !fechaHasta.isEmpty() ? LocalDate.parse(fechaHasta) : null);
-            filtros.setCentroId(centroId);
+            
+            // Forzar filtro por centro para usuarios con tenant (ADMIN/OPERADOR)
+            Integer filteredCentroId = TenantContext.getFilteredCentroId();
+            filtros.setCentroId(filteredCentroId != null ? filteredCentroId : centroId);
 
             var encuestas = dashboardService.getEncuestasDetalladas(filtros);
             return Response.ok(encuestas, "Encuestas obtenidas correctamente");

@@ -6,8 +6,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { PacienteService } from '../pacientes/paciente.service';
 import { Paciente } from '../pacientes/paciente';
-import { HttpClient } from '@angular/common/http';
 import { DiasExcepcionalesService } from './dias-excepcionales.service';
+import { ToastService } from '../services/toast.service';
+import { TurnoService } from '../turnos/turno.service';
 
 interface SlotDisponible {
   id: number;
@@ -89,10 +90,11 @@ export class AdminAgendaComponent implements OnInit, OnDestroy {
   constructor(
     private agendaService: AgendaService,
     private pacienteService: PacienteService, // Inyecta el servicio de pacientes
-    private http: HttpClient, // Inyecta HttpClient
     private cdr: ChangeDetectorRef,
     private router: Router, // Inyecta el Router
-    private diasExcepcionalesService: DiasExcepcionalesService // Inyecta el servicio de días excepcionales
+    private diasExcepcionalesService: DiasExcepcionalesService, // Inyecta el servicio de días excepcionales
+    private toastService: ToastService, // Inyecta el servicio de toast
+    private turnoService: TurnoService // Inyecta el servicio de turnos
   ) { }
 
   ngOnInit() {
@@ -731,9 +733,9 @@ export class AdminAgendaComponent implements OnInit, OnDestroy {
 
     // console.log('Enviando turno DTO (admin):', turnoDTO);
 
-    this.http.post(`/rest/turno/asignar`, turnoDTO).subscribe({
+    this.turnoService.asignarTurno(turnoDTO).subscribe({
       next: () => {
-        alert('Turno asignado correctamente.');
+        this.toastService.success('Turno asignado correctamente');
         
         // Actualizar inmediatamente el slot en el array local
         this.actualizarSlotAsignado(this.slotSeleccionado!.id);
@@ -748,7 +750,7 @@ export class AdminAgendaComponent implements OnInit, OnDestroy {
       error: (err: any) => {
         // console.error('Error al asignar el turno:', err);
         const errorMessage = err?.error?.status_text || 'No se pudo asignar el turno. Intente nuevamente.';
-        alert(errorMessage);
+        this.toastService.error(errorMessage);
         this.isAssigning = false;
       },
     });

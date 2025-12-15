@@ -5,6 +5,7 @@ import { TurnoService } from '../turnos/turno.service';
 import { CentroAtencionService } from '../centrosAtencion/centroAtencion.service';
 import { StaffMedicoService } from '../staffMedicos/staffMedico.service';
 import { ExportService } from '../services/export.service';
+import { UserContextService } from '../services/user-context.service';
 import { CentroAtencion } from '../centrosAtencion/centroAtencion';
 import { PaginationComponent } from '../pagination/pagination.component';
 
@@ -26,6 +27,7 @@ export class ReporteAtencionComponent implements OnInit {
     centrosAtencion: CentroAtencion[] = [];
     staffMedicos: any[] = [];
     staffMedicosFiltrados: any[] = [];
+    centroDeshabilitado: boolean = false;
 
     loading = false;
     mostrarListaMedicos = false;
@@ -41,7 +43,8 @@ export class ReporteAtencionComponent implements OnInit {
         private turnoService: TurnoService,
         private centroService: CentroAtencionService,
         private staffMedicoService: StaffMedicoService,
-        private exportService: ExportService
+        private exportService: ExportService,
+        private userContextService: UserContextService
     ) {
         this.filterForm = this.fb.group({
             staffMedicoId: [null],
@@ -53,6 +56,19 @@ export class ReporteAtencionComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        // Obtener centro de atención del usuario si es ADMIN/OPERADOR
+        const context = this.userContextService.getCurrentContext();
+        const isAdmin = this.userContextService.isAdmin;
+        const isOperador = this.userContextService.isOperador;
+        
+        if ((isAdmin || isOperador) && context.centroAtencionId) {
+            // Pre-setear el centro en el formulario
+            this.filterForm.patchValue({
+                centroAtencionId: context.centroAtencionId
+            });
+            this.centroDeshabilitado = true; // Deshabilitar selector para ADMIN/OPERADOR
+        }
+        
         this.cargarCentrosAtencion();
         this.cargarStaffMedicos();
     }

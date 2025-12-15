@@ -63,6 +63,10 @@ public class EncuestaService {
         return plantillaRepository.findAll();
     }
 
+    public List<EncuestaPlantilla> listarPlantillasPorCentro(CentroAtencion centro) {
+        return plantillaRepository.findByCentroAtencion(centro);
+    }
+
     public Optional<EncuestaPlantilla> findPlantillaById(Integer id) {
         return plantillaRepository.findById(id);
     }

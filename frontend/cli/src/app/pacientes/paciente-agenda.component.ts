@@ -15,6 +15,8 @@ import { DiasExcepcionalesService } from "../agenda/dias-excepcionales.service";
 import { DeepLinkService } from "../services/deep-link.service";
 import { AuthService, Role } from "../inicio-sesion/auth.service";
 import { UserContextService } from "../services/user-context.service";
+import { ToastService } from "../services/toast.service";
+import { ModalService } from "../modal/modal.service";
 import { CentrosMapaModalComponent } from "../modal/centros-mapa-modal.component";
 import { Turno } from "../turnos/turno";
 import { Especialidad } from "../especialidades/especialidad";
@@ -131,7 +133,9 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
-    private userContextService: UserContextService
+    private userContextService: UserContextService,
+    private toastService: ToastService,
+    private modalService: ModalService
   ) { }
 
   // 🎯 GETTERS para mantener compatibilidad con el template durante la migración
@@ -870,7 +874,7 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
   // Seleccionar slot
   seleccionarSlot(slot: SlotDisponible, event?: MouseEvent) {
     if (slot.ocupado) {
-      alert(
+      this.toastService.error(
         "Este turno ya está ocupado. Por favor, selecciona otro horario disponible."
       );
       return;
@@ -903,11 +907,11 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
             : excepcionAfectante.tipo === "MANTENIMIENTO"
               ? "Mantenimiento"
               : "Atención Especial";
-        alert(
+        this.toastService.warning(
           `Este horario no está disponible por ${tipoLabel}. Por favor, selecciona otro horario.`
         );
       } else {
-        alert(
+        this.toastService.warning(
           "Este horario no está disponible. Por favor, selecciona otro horario."
         );
       }
@@ -943,8 +947,6 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
     };
 
     this.showBookingModal = true;
-    // Bloquear scroll del body cuando se abre el modal
-    document.body.style.overflow = 'hidden';
   }
 
   // Calcular posición del modal cerca del elemento clickeado
@@ -1029,8 +1031,8 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
 
     if (turnosEnCentro.length === 0) {
       // No hay turnos en este centro
-      alert(
-        `❌ El centro "${centro.nombre}" no tiene turnos disponibles en este momento.\n\nPor favor, selecciona otro centro o intenta más tarde.`
+      this.toastService.warning(
+        `El centro "${centro.nombre}" no tiene turnos disponibles en este momento. Por favor, selecciona otro centro o intenta más tarde.`
       );
       return;
     }
@@ -1068,10 +1070,14 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
         mensaje += `• Médico seleccionado: ${nombreMedico}\n`;
       }
 
-      mensaje += `\n¿Deseas limpiar los filtros y buscar solo en este centro?`;
+      const descripcion = '¿Deseas limpiar los filtros y buscar solo en este centro?';
 
-      if (confirm(mensaje)) {
-        // Limpiar otros filtros y solo aplicar el centro
+      this.modalService.confirm(
+        'Turnos no compatibles con filtros',
+        mensaje,
+        descripcion
+      ).then(() => {
+        // Usuario confirmó - Limpiar otros filtros y solo aplicar el centro
         this.especialidadSeleccionada = "";
         this.staffMedicoSeleccionado = null;
         this.centroAtencionSeleccionado = centro.id || null;
@@ -1083,10 +1089,12 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
         // Cerrar el modal
         this.cerrarMapaModal();
 
-        alert(
-          `✅ Mostrando ${turnosEnCentro.length} turnos disponibles en "${centro.nombre}"`
+        this.toastService.success(
+          `Mostrando ${turnosEnCentro.length} turnos disponibles en "${centro.nombre}"`
         );
-      }
+      }).catch(() => {
+        // Usuario canceló - no hacer nada
+      });
       return;
     }
 
@@ -1101,8 +1109,8 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
     this.cerrarMapaModal();
 
     // Mostrar mensaje de confirmación
-    alert(
-      `✅ Encontrados ${turnosCompatibles.length} turnos disponibles en "${centro.nombre}"`
+    this.toastService.success(
+      `Encontrados ${turnosCompatibles.length} turnos disponibles en "${centro.nombre}"`
     );
   }
 
@@ -1130,8 +1138,9 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
 
     const pacienteId = localStorage.getItem("pacienteId");
     if (!pacienteId) {
-      alert(
-        "Error: No se encontró la información del paciente. Por favor, inicie sesión nuevamente."
+      this.modalService.alert(
+        'Error de Autenticación',
+        "No se encontró la información del paciente. Por favor, inicie sesión nuevamente."
       );
       return;
     }
@@ -1157,9 +1166,12 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
 
     console.log("Enviando turno DTO:", turnoDTO);
 
-    this.http.post(`/rest/turno/asignar`, turnoDTO).subscribe({
+    this.turnoService.asignarTurno(turnoDTO).subscribe({
       next: () => {
-        alert("¡Turno reservado exitosamente!");
+        this.modalService.alert(
+          '¡Reserva Exitosa!',
+          '¡Turno reservado exitosamente!'
+        );
 
         // Actualizar inmediatamente el slot en el array local
         this.actualizarSlotReservado(this.slotSeleccionado!.id);
@@ -1174,7 +1186,10 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
       error: (err: any) => {
         console.error("Error al reservar el turno:", err);
         const errorMessage = err?.error?.status_text || "No se pudo reservar el turno. Intente nuevamente.";
-        alert(errorMessage);
+        this.modalService.alert(
+          'Error al Reservar',
+          errorMessage
+        );
         this.isBooking = false;
       },
     });
@@ -1186,8 +1201,6 @@ export class PacienteAgendaComponent implements OnInit, OnDestroy {
     this.selectedTurnoDisponible = null;
     this.slotSeleccionado = null;
     this.isBooking = false;
-    // Restaurar scroll del body cuando se cierra el modal
-    document.body.style.overflow = 'auto';
   }
 
   // Métodos de limpieza de filtros

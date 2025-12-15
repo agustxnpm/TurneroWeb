@@ -15,7 +15,8 @@
           id="centroSelect"
           class="form-select" 
           [(ngModel)]="centroAtencionId"
-          (change)="onCentroChange()">
+          (change)="onCentroChange()"
+          [disabled]="centroDeshabilitado">
           <option [value]="null">Todos los centros</option>
           <option *ngFor="let centro of centrosAtencion" [value]="centro.id">
             {{ centro.nombre }}
@@ -64,9 +65,5 @@
       </div>
     </div>
 
-    <div class="filter-info" *ngIf="centroSeleccionado">
-      <span class="material-symbols-outlined">info</span>
-      Filtrando por: <strong>{{ centroSeleccionado.nombre }}</strong>
-    </div>
   </div>
 </div>

@@ -9,11 +9,12 @@ import { UserContextService } from '../services/user-context.service';
  * Reglas:
  * - SUPERADMIN: Puede acceder a cualquier centro (crear, ver, editar)
  * - ADMINISTRADOR: Solo puede acceder a SU centro asignado (solo ver/configurar)
+ * - OPERADOR: Solo puede acceder a SU centro asignado (solo ver/configurar)
  * - Otros roles: Acceso denegado
  * 
  * Uso en rutas:
  * - /centrosAtencion/new -> Solo SUPERADMIN
- * - /centrosAtencion/:id -> SUPERADMIN (cualquier ID) o ADMIN (solo su ID)
+ * - /centrosAtencion/:id -> SUPERADMIN (cualquier ID) o ADMIN/OPERADOR (solo su ID)
  */
 @Injectable({
   providedIn: 'root'
@@ -41,6 +42,7 @@ export class CentroAtencionAccessGuard implements CanActivate {
 
     const isSuperAdmin = this.userContextService.isSuperAdmin;
     const isAdmin = this.userContextService.isAdmin;
+    const isOperador = this.userContextService.isOperador;
     const userCentroId = this.userContextService.tenantId;
     const requestedCentroId = route.params['id'];
 
@@ -57,11 +59,11 @@ export class CentroAtencionAccessGuard implements CanActivate {
       return false;
     }
 
-    // 4. ADMINISTRADOR: Solo puede acceder a SU centro
-    if (isAdmin) {
-      // Verificar que el admin tenga un centro asignado
+    // 4. ADMINISTRADOR u OPERADOR: Solo pueden acceder a SU centro
+    if (isAdmin || isOperador) {
+      // Verificar que tengan un centro asignado
       if (!userCentroId) {
-        console.error('🚫 CentroAtencionAccessGuard: ADMIN sin centro asignado');
+        console.error(`🚫 CentroAtencionAccessGuard: ${isAdmin ? 'ADMIN' : 'OPERADOR'} sin centro asignado`);
         this.router.navigate(['/']);
         return false;
       }
@@ -71,10 +73,10 @@ export class CentroAtencionAccessGuard implements CanActivate {
       
       // Verificar que está intentando acceder a SU centro
       if (userCentroId === requestedId) {
-        console.log(`✅ CentroAtencionAccessGuard: ADMIN accediendo a su centro (ID: ${userCentroId})`);
+        console.log(`✅ CentroAtencionAccessGuard: ${isAdmin ? 'ADMIN' : 'OPERADOR'} accediendo a su centro (ID: ${userCentroId})`);
         return true;
       } else {
-        console.warn(`🚫 CentroAtencionAccessGuard: ADMIN intentando acceder a centro no autorizado (Su centro: ${userCentroId}, Solicitado: ${requestedId})`);
+        console.warn(`🚫 CentroAtencionAccessGuard: ${isAdmin ? 'ADMIN' : 'OPERADOR'} intentando acceder a centro no autorizado (Su centro: ${userCentroId}, Solicitado: ${requestedId})`);
         // Redirigir a SU centro en lugar de denegar completamente
         this.router.navigate(['/centrosAtencion', userCentroId]);
         return false;
@@ -82,7 +84,7 @@ export class CentroAtencionAccessGuard implements CanActivate {
     }
 
     // 5. Otros roles: Acceso denegado
-    console.warn('🚫 CentroAtencionAccessGuard: Acceso denegado - requiere rol SUPERADMIN o ADMINISTRADOR');
+    console.warn('🚫 CentroAtencionAccessGuard: Acceso denegado - requiere rol SUPERADMIN, ADMINISTRADOR u OPERADOR');
     this.router.navigate(['/']);
     return false;
   }

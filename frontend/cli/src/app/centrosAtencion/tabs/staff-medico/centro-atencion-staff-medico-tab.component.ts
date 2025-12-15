@@ -388,9 +388,42 @@ export class CentroAtencionStaffMedicoTabComponent
   }
 
   /**
-   * Obtiene el primer staff entry de un médico (para operaciones que necesitan un staff específico)
+   * Obtiene el staff médico correspondiente a una especialidad específica
+   * @param medico Médico agrupado con múltiples especialidades
+   * @param especialidad Especialidad para la cual se busca el staff médico
+   * @returns Staff médico correspondiente a la especialidad
+   */
+  getStaffMedicoPorEspecialidad(medico: any, especialidad: any): StaffMedico | null {
+    if (!medico.staffEntries || medico.staffEntries.length === 0) {
+      console.error('❌ No hay staff entries para el médico:', medico);
+      return null;
+    }
+    
+    // Buscar el staff médico que corresponde a la especialidad
+    const staffEncontrado = medico.staffEntries.find(
+      (staff: StaffMedico) => staff.especialidadId === especialidad.id
+    );
+    
+    if (!staffEncontrado) {
+      console.error(
+        `❌ No se encontró staff médico para el médico ${medico.medico?.nombre} ${medico.medico?.apellido} ` +
+        `con especialidad ${especialidad.nombre} (ID: ${especialidad.id})`
+      );
+      return null;
+    }
+    
+    console.log(
+      `✅ Staff médico encontrado: ID ${staffEncontrado.id} para especialidad ${especialidad.nombre}`
+    );
+    return staffEncontrado;
+  }
+
+  /**
+   * @deprecated Usar getStaffMedicoPorEspecialidad() en su lugar
+   * Obtiene el primer staff entry de un médico (puede ser incorrecto si tiene múltiples especialidades)
    */
   getPrimerStaffDelMedico(medico: any): StaffMedico {
+    console.warn('⚠️ getPrimerStaffDelMedico() está deprecado. Usar getStaffMedicoPorEspecialidad()');
     return medico.staffEntries[0];
   }
 
@@ -451,12 +484,24 @@ export class CentroAtencionStaffMedicoTabComponent
    * Abre el modal para gestionar disponibilidades de una especialidad específica
    */
   abrirModalDisponibilidadEspecialidad(medico: any, especialidad: any): void {
-    const primerStaff = this.getPrimerStaffDelMedico(medico);
+    // CORRECCIÓN CRÍTICA: Buscar el staff médico correspondiente a la especialidad
+    const staffEspecialidad = this.getStaffMedicoPorEspecialidad(medico, especialidad);
 
-    if (!primerStaff || !primerStaff.id) {
-      console.error("No se puede encontrar el staff del médico");
+    if (!staffEspecialidad || !staffEspecialidad.id) {
+      alert(
+        `Error: No se encontró el registro de Staff Médico para ${medico.medico?.nombre} ${medico.medico?.apellido} ` +
+        `en la especialidad ${especialidad.nombre}.\n\n` +
+        `Asegúrese de que el médico esté correctamente asociado a esta especialidad en este centro.`
+      );
       return;
     }
+
+    console.log(
+      `🔍 Abriendo modal de disponibilidad para:\n` +
+      `   Médico: ${medico.medico?.nombre} ${medico.medico?.apellido}\n` +
+      `   Especialidad: ${especialidad.nombre} (ID: ${especialidad.id})\n` +
+      `   Staff ID: ${staffEspecialidad.id}`
+    );
 
     const modalRef = this.modalService.open(DisponibilidadModalComponent, {
       size: "lg",
@@ -465,7 +510,8 @@ export class CentroAtencionStaffMedicoTabComponent
     });
 
     // Configurar el modal con información específica de la especialidad
-    modalRef.componentInstance.staffMedico = primerStaff;
+    // IMPORTANTE: Usar el staff médico correcto para la especialidad
+    modalRef.componentInstance.staffMedico = staffEspecialidad;
     modalRef.componentInstance.especialidadId = especialidad.id; // ID de la especialidad específica
     modalRef.componentInstance.especialidadNombre = especialidad.nombre; // Nombre para mostrar en el modal
 
