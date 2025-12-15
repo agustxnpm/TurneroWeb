@@ -572,29 +572,47 @@ END $$;
 
 
 -- =====================================
--- 11. ACTUALIZAR SECUENCIAS
+-- 11. ACTUALIZAR SECUENCIAS (CRÍTICO)
 -- =====================================
+-- Después de insertar datos con IDs explícitos, las secuencias de PostgreSQL
+-- NO se actualizan automáticamente. Esto causa errores de "duplicate key"
+-- cuando Hibernate intenta generar nuevos IDs.
+-- Este bloque actualiza TODAS las secuencias al valor MAX(id) + 1
 
-SELECT setval(pg_get_serial_sequence('obra_social', 'id'), 
-              COALESCE((SELECT MAX(id) FROM obra_social), 1), true);
-              
-SELECT setval(pg_get_serial_sequence('especialidad', 'id'), 
-              COALESCE((SELECT MAX(id) FROM especialidad), 1), true);
-
-SELECT setval(pg_get_serial_sequence('centro_atencion', 'id'), 
-              COALESCE((SELECT MAX(id) FROM centro_atencion), 1), true);
-              
-SELECT setval(pg_get_serial_sequence('consultorio', 'id'), 
-              COALESCE((SELECT MAX(id) FROM consultorio), 1), true);
-              
-SELECT setval(pg_get_serial_sequence('paciente', 'id'), 
-              COALESCE((SELECT MAX(id) FROM paciente), 1), true);
-              
-SELECT setval(pg_get_serial_sequence('medico', 'id'), 
-              COALESCE((SELECT MAX(id) FROM medico), 1), true);
-
-SELECT setval(pg_get_serial_sequence('staff_medico', 'id'), 
-              COALESCE((SELECT MAX(id) FROM staff_medico), 1), true);
+DO $$
+DECLARE
+    r RECORD;
+    max_id BIGINT;
+    seq_name TEXT;
+BEGIN
+    RAISE NOTICE '🔄 Actualizando secuencias de PostgreSQL...';
+    
+    -- Iterar sobre todas las tablas con columnas seriales/identity
+    FOR r IN (
+        SELECT 
+            table_name, 
+            column_name,
+            pg_get_serial_sequence(quote_ident(table_schema) || '.' || quote_ident(table_name), column_name) as sequence_name
+        FROM information_schema.columns
+        WHERE 
+            table_schema = 'public' 
+            AND column_default LIKE 'nextval%'
+            AND table_name NOT LIKE 'pg_%'  -- Excluir tablas del sistema
+    ) LOOP
+        -- Obtener el MAX(id) de la tabla
+        EXECUTE format('SELECT COALESCE(MAX(%I), 0) FROM %I', r.column_name, r.table_name) INTO max_id;
+        
+        -- Actualizar la secuencia al MAX(id) + 1
+        IF max_id > 0 THEN
+            EXECUTE format('SELECT setval(%L, %s, true)', r.sequence_name, max_id);
+            RAISE NOTICE '   ✅ %: secuencia actualizada a %', r.table_name, max_id + 1;
+        ELSE
+            RAISE NOTICE '   ⚠️  %: tabla vacía, secuencia sin cambios', r.table_name;
+        END IF;
+    END LOOP;
+    
+    RAISE NOTICE '✅ Todas las secuencias actualizadas correctamente';
+END $$;
 
 -- =====================================
 -- RESUMEN DE ESTRUCTURA MULTI-TENANT:
