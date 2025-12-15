@@ -152,9 +152,11 @@ export class PacienteReagendarTurnoComponent implements OnInit {
           // Filtrar slots que no sean el turno actual
           if (!this.currentTurno) return true;
           
-          const currentDateTime = new Date(`${this.currentTurno.fecha}T${this.currentTurno.horaInicio}`);
-          const slotDateTime = new Date(`${slot.fecha}T${slot.horaInicio}`);
-          return slotDateTime.getTime() !== currentDateTime.getTime();
+          // ✅ CORREGIDO: Usar strings de fecha para evitar problemas de zona horaria
+          // Comparar como strings format "YYYY-MM-DD HH:MM:SS" para evitar ambigüedades
+          const currentDateTimeStr = `${this.currentTurno.fecha}T${this.currentTurno.horaInicio}`;
+          const slotDateTimeStr = `${slot.fecha}T${slot.horaInicio}`;
+          return slotDateTimeStr !== currentDateTimeStr;
         });
         
         console.log('Slots disponibles cargados:', this.slotsDisponibles);

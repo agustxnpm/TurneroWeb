@@ -9,7 +9,11 @@
         </div>
       </div>
 
-      <app-filtros-dashboard [centrosAtencion]="centrosAtencion" (aplicar)="onAplicarFiltros($event)">
+      <app-filtros-dashboard 
+        [centrosAtencion]="centrosAtencion" 
+        [centroPreseteado]="centroIdPreseteado"
+        [centroDeshabilitado]="centroDeshabilitado"
+        (aplicar)="onAplicarFiltros($event)">
       </app-filtros-dashboard>
 
       <!-- Botones de Exportación -->

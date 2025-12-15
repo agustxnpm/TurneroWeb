@@ -12,6 +12,12 @@ import { CentroAtencion } from '../../centrosAtencion/centroAtencion';
 })
 export class FiltrosDashboardComponent {
   @Input() centrosAtencion: CentroAtencion[] = [];
+  @Input() set centroPreseteado(value: number | null) {
+    if (value && !this.centroAtencionId) {
+      this.centroAtencionId = value;
+    }
+  }
+  @Input() centroDeshabilitado: boolean = false;
   
   fechaDesde: string | null = null;
   fechaHasta: string | null = null;

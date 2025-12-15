@@ -58,4 +58,22 @@ public interface StaffMedicoRepository extends JpaRepository<StaffMedico, Intege
                                     @Param("consultorio") String consultorio,
                                     Pageable pageable);
 
+    /**
+     * Busca StaffMedico por DNI del médico
+     * Usado para encontrar el staff médico asociado a un usuario con rol MEDICO
+     * @param dni DNI del médico
+     * @return StaffMedico o null
+     */
+    @Query("SELECT sm FROM StaffMedico sm WHERE sm.medico.dni = :dni")
+    List<StaffMedico> findByMedico_Dni(@Param("dni") Long dni);
+    
+    /**
+     * Verifica si un médico ya está vinculado a un centro (sin importar especialidad)
+     * @param medicoId ID del médico
+     * @param centroId ID del centro de atención
+     * @return true si el médico ya trabaja en ese centro
+     */
+    @Query("SELECT COUNT(sm) > 0 FROM StaffMedico sm WHERE sm.medico.id = :medicoId AND sm.centroAtencion.id = :centroId")
+    boolean existsByMedicoIdAndCentroId(@Param("medicoId") Integer medicoId, @Param("centroId") Integer centroId);
+
 }

@@ -13,3 +13,18 @@ export interface Medico {
   // Mantenemos especialidad para compatibilidad hacia atrás (deprecated)
   especialidad?: Especialidad; 
 }
+
+/**
+ * Información básica de médico disponible para asociar a un centro.
+ * Solo contiene datos no sensibles (sin email, teléfono, etc.)
+ */
+export interface MedicoBasicInfo {
+  id: number;
+  nombre: string;
+  apellido: string;
+  matricula: string;
+  especialidades: Array<{
+    id: number;
+    nombre: string;
+  }>;
+}

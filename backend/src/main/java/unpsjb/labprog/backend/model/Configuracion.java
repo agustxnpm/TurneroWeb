@@ -4,6 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -32,6 +34,15 @@ public class Configuracion {
     private String tipoValor; // "INTEGER", "STRING", "BOOLEAN", "DOUBLE"
 
     private String categoria; // Para agrupar configuraciones: "TURNOS", "NOTIFICACIONES", etc.
+
+    /**
+     * Centro de atención al que aplica esta configuración (Multi-tenencia).
+     * - NULL: Configuración global que aplica a todos los centros
+     * - NOT NULL: Configuración específica de un centro (override de la global)
+     */
+    @ManyToOne
+    @JoinColumn(name = "centro_atencion_id", nullable = true)
+    private CentroAtencion centroAtencion;
 
     public Configuracion(String clave, Integer valorInt, String descripcion, String categoria) {
         this.clave = clave;

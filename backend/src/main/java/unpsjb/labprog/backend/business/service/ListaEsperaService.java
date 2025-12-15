@@ -8,6 +8,7 @@ import unpsjb.labprog.backend.dto.ListaEsperaDTO;
 import unpsjb.labprog.backend.dto.TurnoDTO;
 import unpsjb.labprog.backend.model.*;
 import unpsjb.labprog.backend.config.AuditContext;
+import unpsjb.labprog.backend.config.TenantContext;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -49,15 +50,29 @@ public class ListaEsperaService {
     private TurnoRepository turnoRepository;
 
     /**
-     * Obtiene todas las entradas de la lista de espera
+     * Obtiene todas las entradas de la lista de espera con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todas las listas de espera globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo listas de espera de su centro
+     * - PACIENTE: Ve todas las listas de espera (acceso global)
      * 
      * @return Lista completa de solicitudes en espera
      */
-    // Obtener todas las solicitudes de lista de espera
     public List<ListaEsperaDTO> findAll() {
-        return repository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por lista de espera del centro
+            CentroAtencion centro = centroAtencionRepository.findById(centroId)
+                    .orElseThrow(() -> new IllegalStateException("Centro de atención no encontrado: " + centroId));
+            return repository.findByCentroAtencion(centro).stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll().stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+        }
     }
 
     /**

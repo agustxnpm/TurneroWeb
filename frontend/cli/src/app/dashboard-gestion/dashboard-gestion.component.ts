@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DashboardService } from '../services/dashboard.service';
 import { CentroAtencionService } from '../centrosAtencion/centroAtencion.service';
 import { ExportService } from '../services/export.service';
+import { UserContextService } from '../services/user-context.service';
 import { CentroAtencion } from '../centrosAtencion/centroAtencion';
 import { OcupacionConsultorio } from './ocupacion-consultorio';
 import { KpiCardComponent } from '../components/kpi-card/kpi-card.component';
@@ -27,6 +28,8 @@ export class DashboardGestionComponent implements OnInit {
   ocupacionEntries: OcupacionConsultorio[] = [];
   turnosLabels: string[] = [];
   turnosData: number[] = [];
+  centroIdPreseteado: number | null = null;
+  centroDeshabilitado: boolean = false;
 
   // Filtros actuales del dashboard
   private filtrosActuales: any = {};
@@ -35,7 +38,8 @@ export class DashboardGestionComponent implements OnInit {
     private dashboardService: DashboardService,
     private centroAtencionService: CentroAtencionService,
     private exportService: ExportService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private userContextService: UserContextService
   ) { }
 
   // ===== Calidad y predictivas =====
@@ -43,11 +47,23 @@ export class DashboardGestionComponent implements OnInit {
   predictivas: any[] = [];
 
   ngOnInit(): void {
+    // Obtener centro de atención del usuario si es ADMIN/OPERADOR
+    const context = this.userContextService.getCurrentContext();
+    const isAdmin = this.userContextService.isAdmin;
+    const isOperador = this.userContextService.isOperador;
+    
+    if ((isAdmin || isOperador) && context.centroAtencionId) {
+      this.centroIdPreseteado = context.centroAtencionId;
+      this.centroDeshabilitado = true; // Deshabilitar selector para ADMIN/OPERADOR
+      // Pre-aplicar filtros con el centro del usuario
+      this.filtrosActuales = { centroId: this.centroIdPreseteado };
+    }
+    
     this.cargarCentrosAtencion();
-    this.cargarMetricas();
-    this.cargarOcupacion();
-    this.cargarCalidad();
-    this.cargarPredictivas();
+    this.cargarMetricas(this.filtrosActuales);
+    this.cargarOcupacion(this.filtrosActuales);
+    this.cargarCalidad(this.filtrosActuales);
+    this.cargarPredictivas(this.filtrosActuales);
   }
 
   cargarCentrosAtencion() {

@@ -34,6 +34,10 @@ export class MedicoDetailComponent implements OnInit {
   selectedEspecialidad: Especialidad | null = null;
   modoEdicion = false;
   esNuevo = false;
+  
+  // Propiedades para navegación de retorno desde centro de atención
+  returnUrl: string | null = null;
+  centroId: number | null = null;
 
   constructor(
     private medicoService: MedicoService,
@@ -45,6 +49,11 @@ export class MedicoDetailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Capturar parámetros de retorno desde centro de atención
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    const centroIdParam = this.route.snapshot.queryParamMap.get('centroId');
+    this.centroId = centroIdParam ? +centroIdParam : null;
+    
     const path = this.route.snapshot.routeConfig?.path;
     if (path === "medicos/new") {
       this.modoEdicion = true;
@@ -202,9 +211,8 @@ export class MedicoDetailComponent implements OnInit {
       const userEmail = this.authService.getUserEmail();
       const userData = this.authService.getUserData();
       
-      // Preparar el médico con la información de auditoría  
+      // Preparar el médico con la información de auditoría (sin ID para creación)
       const medicoToCreate = {
-        id: this.medico.id,
         nombre: this.medico.nombre,
         apellido: this.medico.apellido,
         dni: this.medico.dni,
@@ -213,7 +221,7 @@ export class MedicoDetailComponent implements OnInit {
         matricula: this.medico.matricula,
         especialidades: this.medico.especialidades,
         performedBy: userEmail || userData?.email || userRole || "UNKNOWN"
-      };
+      } as unknown as Medico; // Type assertion para creación (backend genera el ID)
 
       if (userRole === "ADMINISTRADOR") {
         op = this.medicoService.createByAdmin(medicoToCreate);
@@ -248,7 +256,19 @@ export class MedicoDetailComponent implements OnInit {
           : "Médico actualizado correctamente";
           
         this.modalService.alert("Éxito", successMessage);
-        this.router.navigate(['/medicos']);
+        
+        // Si hay returnUrl, navegar de vuelta al centro con el médico preseleccionado
+        if (this.returnUrl && this.centroId && this.esNuevo) {
+          const medicoCreado = response.data as Medico;
+          this.router.navigate([this.returnUrl], {
+            queryParams: { 
+              activeTab: 'staff',
+              medicoId: medicoCreado.id
+            }
+          });
+        } else {
+          this.router.navigate(['/medicos']);
+        }
       },
       error: (err) => {
         console.log("Respuesta recibida en error:", err);
@@ -269,7 +289,13 @@ export class MedicoDetailComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/medicos']);
+    if (this.returnUrl && this.centroId) {
+      this.router.navigate([this.returnUrl], {
+        queryParams: { activeTab: 'staff' }
+      });
+    } else {
+      this.router.navigate(['/medicos']);
+    }
   }
 
   cancelar(): void {
@@ -281,7 +307,14 @@ export class MedicoDetailComponent implements OnInit {
       });
       this.modoEdicion = false;
     } else {
-      this.goBack();
+      // Si hay returnUrl, volver al centro de atención
+      if (this.returnUrl && this.centroId) {
+        this.router.navigate([this.returnUrl], {
+          queryParams: { activeTab: 'staff' }
+        });
+      } else {
+        this.goBack();
+      }
     }
   }
 

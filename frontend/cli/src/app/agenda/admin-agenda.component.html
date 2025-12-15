@@ -450,17 +450,64 @@
             <div class="assignment-field">
               <label class="form-label">
                 <span class="material-symbols-outlined">person</span>
-                Seleccionar Paciente
+                Buscar Paciente
               </label>
-              <select
-                class="form-select"
-                [(ngModel)]="pacienteId"
-              >
-                <option value="">Seleccione un paciente...</option>
-                <option *ngFor="let paciente of pacientes" [value]="paciente.id">
-                  {{ paciente.nombre }} {{ paciente.apellido }} (ID: {{ paciente.id }})
-                </option>
-              </select>
+              <div class="input-group position-relative">
+                <input 
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="searchText"
+                  (input)="filtrarPacientes()"
+                  (focus)="onSearchFocus()"
+                  placeholder="Buscar por nombre, apellido o DNI..."
+                  autocomplete="off"
+                />
+                <button 
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  *ngIf="pacienteId"
+                  (click)="limpiarSeleccion()"
+                  title="Limpiar selección">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+                <button 
+                  type="button"
+                  class="btn btn-success"
+                  (click)="crearNuevoPaciente()"
+                  title="Crear nuevo paciente">
+                  <span class="material-symbols-outlined">add</span>
+                  Nuevo
+                </button>
+                
+                <!-- Dropdown de resultados -->
+                <div class="typeahead-dropdown" *ngIf="showDropdown && pacientesFiltrados.length > 0">
+                  <div 
+                    *ngFor="let paciente of pacientesFiltrados"
+                    class="typeahead-item"
+                    [class.selected]="paciente.id === pacienteId"
+                    (click)="seleccionarPaciente(paciente)">
+                    <span class="material-symbols-outlined">person</span>
+                    <div class="typeahead-text">
+                      <span class="patient-name">{{ paciente.nombre }} {{ paciente.apellido }}</span>
+                      <span class="patient-dni" *ngIf="paciente.dni">DNI: {{ paciente.dni }}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Mensaje cuando no hay resultados -->
+                <div class="typeahead-dropdown" *ngIf="showDropdown && searchText && pacientesFiltrados.length === 0">
+                  <div class="typeahead-empty">
+                    <span class="material-symbols-outlined">search_off</span>
+                    No se encontraron pacientes
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Muestra el paciente seleccionado -->
+              <div class="selected-patient-badge" *ngIf="pacienteId">
+                <span class="material-symbols-outlined">check_circle</span>
+                <span>Paciente seleccionado: <strong>{{ getNombrePacienteSeleccionado() }}</strong></span>
+              </div>
             </div>
           </div>
 

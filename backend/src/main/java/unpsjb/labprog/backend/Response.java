@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 public class Response {
 
 public static ResponseEntity<Object> response(HttpStatus status, String message, Object responseObj) {
-System.out.println("DEBUG: response() llamado con status: " + status);
 Map<String, Object> map = new HashMap<>();
 map.put("status_code", status.value()); 
 map.put("status_text", message);
@@ -33,7 +32,9 @@ return response(HttpStatus.OK, msj, responseObj);
 public static ResponseEntity<Object> notFound(String msj) {
         return response(HttpStatus.NOT_FOUND, msj, null);
     }
-
+    public static ResponseEntity<Object> forbidden(String msj) {
+        return response(HttpStatus.FORBIDDEN, msj, null);
+    }
 public static ResponseEntity<Object> error(Object responseObj, String msj) {
 return response(HttpStatus.BAD_REQUEST, msj, responseObj);
 }

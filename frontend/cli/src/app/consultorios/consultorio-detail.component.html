@@ -169,7 +169,22 @@
             <span class="material-symbols-outlined me-2">apartment</span>
             Centro de Atención*
           </label>
+          
+          <!-- Campo deshabilitado para ADMINISTRADOR (auto-asignado) -->
           <input
+            *ngIf="userContextService.isAdmin"
+            type="text"
+            id="centroSearchDisabled"
+            class="form-control"
+            name="centroSearchDisabled"
+            [(ngModel)]="centroSearch"
+            disabled
+            aria-label="Centro de atención (auto-asignado)"
+          />
+          
+          <!-- Campo habilitado para SUPERADMIN (puede elegir cualquier centro) -->
+          <input
+            *ngIf="!userContextService.isAdmin"
             type="text"
             id="centroSearch"
             class="form-control"
@@ -183,9 +198,8 @@
             autocomplete="off"
             aria-label="Buscar centro de atención"
           />
+          
           <small class="form-text text-muted d-flex align-items-center gap-xs mt-xs">
-            <span class="material-symbols-outlined" style="font-size: 1rem;">info</span>
-            Centro de atención al que pertenece este consultorio
           </small>
         </div>
       </div>

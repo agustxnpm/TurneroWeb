@@ -200,26 +200,20 @@
 
           <!-- ASIGNAR CENTRO DE ATENCIÓN -->
           <div class="mb-3 assignment-box">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <label class="form-label mb-0"><strong>🏥 Centro de Atención:</strong></label>
-              <button *ngIf="getPlantillaSeleccionada()?.centroAtencion" class="btn btn-sm btn-outline-danger"
-                (click)="desasignarCentro()" title="Quitar centro asignado">
-                🗑️ Quitar
-              </button>
-            </div>
 
-            <!-- Campo de búsqueda -->
-            <input type="text" class="form-control mb-2" [(ngModel)]="searchCentro"
+
+            <!-- Campo de búsqueda (solo para SUPERADMIN) -->
+            <input *ngIf="!centroDeshabilitado" type="text" class="form-control mb-2" [(ngModel)]="searchCentro"
               placeholder="🔍 Buscar centro por nombre..." (ngModelChange)="onSearchCentro($event)" />
 
-            <!-- Centro seleccionado -->
-            <div *ngIf="selectedCentro" class="alert alert-success py-2 mb-2">
+            <!-- Centro seleccionado (solo para SUPERADMIN) -->
+            <div *ngIf="!centroDeshabilitado && selectedCentro" class="alert alert-success py-2 mb-2">
               ✅ Seleccionado: <strong>{{ selectedCentro.nombre }}</strong>
               <button class="btn btn-sm btn-outline-secondary float-end py-0" (click)="selectedCentro = null">✖</button>
             </div>
 
-            <!-- Lista de centros filtrados -->
-            <div *ngIf="!selectedCentro && (searchCentro || centrosFiltrados.length > 0)"
+            <!-- Lista de centros filtrados (solo para SUPERADMIN) -->
+            <div *ngIf="!centroDeshabilitado && !selectedCentro && (searchCentro || centrosFiltrados.length > 0)"
               class="list-group max-height-200 mb-2">
               <button *ngFor="let centro of centrosFiltrados.slice(0, 5)" type="button"
                 class="list-group-item list-group-item-action" (click)="seleccionarCentro(centro)">
@@ -235,7 +229,7 @@
               </div>
             </div>
 
-            <button class="btn btn-success w-100" (click)="asignarCentro()"
+            <button *ngIf="!centroDeshabilitado" class="btn btn-success w-100" (click)="asignarCentro()"
               [disabled]="!selectedPlantillaId || !selectedCentro">
               <span *ngIf="!selectedCentro">🔍 Busca y selecciona un centro</span>
               <span *ngIf="selectedCentro">✅ Asignar "{{ selectedCentro.nombre }}"</span>

@@ -235,18 +235,6 @@ export const MENU_CONFIG: MenuSection[] = [
         description: 'Gestionar centros médicos'
       },
       {
-        label: 'Consultorios',
-        route: '/consultorios',
-        icon: 'meeting_room',
-        description: 'Administrar consultorios'
-      },
-      {
-        label: 'Especialidades',
-        route: '/especialidades',
-        icon: 'medical_information',
-        description: 'Gestionar especialidades médicas'
-      },
-      {
         label: 'Médicos',
         route: '/medicos',
         icon: 'medical_services',
@@ -259,18 +247,6 @@ export const MENU_CONFIG: MenuSection[] = [
         description: 'Asignaciones y vinculaciones'
       },
       {
-        label: 'Disponibilidad',
-        route: '/disponibilidades-medico',
-        icon: 'event_available',
-        description: 'Horarios disponibles'
-      },
-      {
-        label: 'Esquemas de Turno',
-        route: '/esquema-turno',
-        icon: 'calendar_view_month',
-        description: 'Configurar esquemas'
-      },
-      {
         label: 'Obras Sociales',
         route: '/obraSocial',
         icon: 'health_and_safety',
@@ -281,12 +257,6 @@ export const MENU_CONFIG: MenuSection[] = [
         route: '/operadores',
         icon: 'support_agent',
         description: 'Operadores',
-      },
-      {
-        label: 'Gestionar Admins',
-        route: '/admin/users',
-        icon: 'admin_panel_settings',
-        description: 'Crear y administrar cuentas de administrador'
       },
       {
         label: 'Estadísticas Lista Espera',
@@ -329,6 +299,60 @@ export const MENU_CONFIG: MenuSection[] = [
   },
 
   // ========================================
+  // SECCIÓN: SUPERADMIN (Gestión Multi-Tenant)
+  // ========================================
+  {
+    id: 'superadmin',
+    label: 'Panel SuperAdmin',
+    icon: 'shield_person',
+    role: Role.SUPERADMIN,
+    order: 5,
+    items: [
+      {
+        label: 'Dashboard Global',
+        route: '/superadmin-dashboard',
+        icon: 'dashboard',
+        description: 'Panel de control global del sistema'
+      },
+      {
+        label: 'Gestión de Centros',
+        route: '/centrosAtencion',
+        icon: 'domain',
+        description: 'ABM de Centros de Atención (multi-tenant)'
+      },
+      {
+        label: 'Gestión de Admins',
+        route: '/admin/users',
+        icon: 'admin_panel_settings',
+        description: 'Crear y asignar administradores a centros'
+      },
+      {
+        label: 'Auditoría Global',
+        route: '/superadmin-auditoria',
+        icon: 'policy',
+        description: 'Ver logs de auditoría de todos los centros'
+      },
+      {
+        label: 'Métricas del Sistema',
+        route: '/superadmin-metricas',
+        icon: 'analytics',
+        description: 'Estadísticas globales de todos los centros'
+      },
+      {
+        divider: true,
+        label: '',
+        icon: ''
+      },
+      {
+        label: 'Acceso Admin',
+        route: '/admin-dashboard',
+        icon: 'visibility',
+        description: 'Ver panel de administrador (soporte)'
+      }
+    ]
+  },
+
+  // ========================================
   // SECCIÓN: GESTIÓN GENERAL (solo para OPERADOR)
   // ========================================
   // Esta sección solo se muestra para usuarios con rol OPERADOR
@@ -341,22 +365,10 @@ export const MENU_CONFIG: MenuSection[] = [
     order: 6, // Después del panel de operador
     items: [
       {
-        label: 'Centros de Atención',
-        route: '/centrosAtencion',
+        label: 'Mi Centro',
+        route: '/mi-centro', // Ruta dinámica que redirige a /centroAtencion/{id} basado en userContext
         icon: 'local_hospital',
-        description: 'Ver centros médicos'
-      },
-      {
-        label: 'Consultorios',
-        route: '/consultorios',
-        icon: 'meeting_room',
-        description: 'Ver consultorios'
-      },
-      {
-        label: 'Especialidades',
-        route: '/especialidades',
-        icon: 'medical_information',
-        description: 'Ver especialidades'
+        description: 'Gestión centralizada de mi centro'
       }
     ]
   }

@@ -6,11 +6,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import unpsjb.labprog.backend.business.repository.ConfiguracionRepository;
 import unpsjb.labprog.backend.model.Configuracion;
+import unpsjb.labprog.backend.config.TenantContext;
 
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -19,8 +21,39 @@ public class ConfiguracionService {
     @Autowired
     private ConfiguracionRepository configuracionRepository;
 
+    /**
+     * Busca una configuración aplicando la lógica de override por centro.
+     * 1. Si el usuario está asociado a un centro, busca primero override específico del centro
+     * 2. Si no hay override o el usuario es global, busca configuración global (centroAtencion = null)
+     * 3. Si no existe ninguna, retorna empty
+     * 
+     * @param clave Clave de la configuración a buscar
+     * @return Optional con la configuración encontrada (override o global)
+     */
+    private Optional<Configuracion> findConfiguracionConOverride(String clave) {
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - buscar primero override del centro
+            Optional<Configuracion> overrideCentro = configuracionRepository.findAll().stream()
+                .filter(c -> c.getClave().equals(clave) && 
+                            c.getCentroAtencion() != null && 
+                            c.getCentroAtencion().getId().equals(centroId))
+                .findFirst();
+            
+            if (overrideCentro.isPresent()) {
+                return overrideCentro; // Usar override del centro
+            }
+        }
+        
+        // Buscar configuración global (centroAtencion = null)
+        return configuracionRepository.findAll().stream()
+            .filter(c -> c.getClave().equals(clave) && c.getCentroAtencion() == null)
+            .findFirst();
+    }
+
     public int getDiasMinConfirmacion() {
-        return configuracionRepository.findByClave("turnos.dias_min_confirmacion")
+        return findConfiguracionConOverride("turnos.dias_min_confirmacion")
                 .map(Configuracion::getValorInt)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("turnos.dias_min_confirmacion", 2,
@@ -30,7 +63,7 @@ public class ConfiguracionService {
     }
 
     public int getDiasMaxNoConfirm() {
-        return configuracionRepository.findByClave("turnos.dias_max_no_confirm")
+        return findConfiguracionConOverride("turnos.dias_max_no_confirm")
                 .map(Configuracion::getValorInt)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("turnos.dias_max_no_confirm", 7,
@@ -41,7 +74,7 @@ public class ConfiguracionService {
     }
 
     public LocalTime getHoraCorteConfirmacion() {
-        String horaStr = configuracionRepository.findByClave("turnos.hora_corte_confirmacion")
+        String horaStr = findConfiguracionConOverride("turnos.hora_corte_confirmacion")
                 .map(Configuracion::getValorString)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("turnos.hora_corte_confirmacion", "00:00",
@@ -52,7 +85,7 @@ public class ConfiguracionService {
     }
 
     public boolean isHabilitadaCancelacionAutomatica() {
-        return configuracionRepository.findByClave("turnos.habilitar_cancelacion_automatica")
+        return findConfiguracionConOverride("turnos.habilitar_cancelacion_automatica")
                 .map(Configuracion::getValorBoolean)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("turnos.habilitar_cancelacion_automatica", true,
@@ -85,20 +118,20 @@ public class ConfiguracionService {
     }
 
     /**
-     * Obtiene una configuración por su clave
+     * Obtiene una configuración específica aplicando override por centro si corresponde.
+     * Busca primero override del centro del usuario, luego configuración global.
      * 
-     * @param clave La clave de la configuración (e.g.,
-     *              "turnos.dias_max_no_confirm")
+     * @param clave La clave de la configuración (e.g., "turnos.dias_max_no_confirm")
      * @return Configuracion o null si no existe
      */
     public Configuracion getConfiguracion(String clave) {
-        return configuracionRepository.findByClave(clave).orElse(null);
+        return findConfiguracionConOverride(clave).orElse(null);
     }
 
     // === CONFIGURACIONES DE RECORDATORIOS ===
 
     public boolean isHabilitadosRecordatorios() {
-        return configuracionRepository.findByClave("turnos.habilitar_recordatorios")
+        return findConfiguracionConOverride("turnos.habilitar_recordatorios")
                 .map(Configuracion::getValorBoolean)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("turnos.habilitar_recordatorios", true,
@@ -108,7 +141,7 @@ public class ConfiguracionService {
     }
 
     public int getDiasRecordatorioConfirmacion() {
-        return configuracionRepository.findByClave("turnos.dias_recordatorio_confirmacion")
+        return findConfiguracionConOverride("turnos.dias_recordatorio_confirmacion")
                 .map(Configuracion::getValorInt)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("turnos.dias_recordatorio_confirmacion", 4,
@@ -118,7 +151,7 @@ public class ConfiguracionService {
     }
 
     public LocalTime getHoraEnvioRecordatorios() {
-        String horaStr = configuracionRepository.findByClave("turnos.hora_envio_recordatorios")
+        String horaStr = findConfiguracionConOverride("turnos.hora_envio_recordatorios")
                 .map(Configuracion::getValorString)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("turnos.hora_envio_recordatorios", "09:00",
@@ -131,7 +164,7 @@ public class ConfiguracionService {
     // === CONFIGURACIONES DE NOTIFICACIONES ===
 
     public boolean isHabilitadoEmailNotificaciones() {
-        return configuracionRepository.findByClave("notificaciones.habilitar_email")
+        return findConfiguracionConOverride("notificaciones.habilitar_email")
                 .map(Configuracion::getValorBoolean)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("notificaciones.habilitar_email", true,
@@ -141,7 +174,7 @@ public class ConfiguracionService {
     }
 
     public boolean isHabilitadoSmsNotificaciones() {
-        return configuracionRepository.findByClave("notificaciones.habilitar_sms")
+        return findConfiguracionConOverride("notificaciones.habilitar_sms")
                 .map(Configuracion::getValorBoolean)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("notificaciones.habilitar_sms", false,
@@ -153,7 +186,7 @@ public class ConfiguracionService {
     // === CONFIGURACIONES DE SISTEMA ===
 
     public String getNombreClinica() {
-        return configuracionRepository.findByClave("sistema.nombre_clinica")
+        return findConfiguracionConOverride("sistema.nombre_clinica")
                 .map(Configuracion::getValorString)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("sistema.nombre_clinica", "Clínica Médica",
@@ -163,7 +196,7 @@ public class ConfiguracionService {
     }
 
     public String getEmailNotificaciones() {
-        return configuracionRepository.findByClave("sistema.email_notificaciones")
+        return findConfiguracionConOverride("sistema.email_notificaciones")
                 .map(Configuracion::getValorString)
                 .orElseGet(() -> {
                     crearConfiguracionPorDefecto("sistema.email_notificaciones", "notificaciones@clinica.com",

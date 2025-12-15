@@ -14,11 +14,12 @@ import { AuthService, Role } from "./inicio-sesion/auth.service";
 import { UserContextService, UserContext } from "./services/user-context.service";
 import { SidebarComponent } from "./components/sidebar.component";
 import { MenuService } from "./services/menu.service";
+import { ToastComponent } from "./components/toast/toast.component";
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [RouterOutlet, NgbDropdownModule, CommonModule, RouterLink, SidebarComponent],
+  imports: [RouterOutlet, NgbDropdownModule, CommonModule, RouterLink, SidebarComponent, ToastComponent],
   templateUrl: "./app.component.html",
   styleUrl: "./app.component.css", 
 })

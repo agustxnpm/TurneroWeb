@@ -27,6 +27,7 @@ import unpsjb.labprog.backend.business.service.ExportService;
 import unpsjb.labprog.backend.business.service.RecordatorioService;
 import unpsjb.labprog.backend.business.service.TurnoService;
 import unpsjb.labprog.backend.config.JwtTokenProvider;
+import unpsjb.labprog.backend.config.TenantContext;
 import unpsjb.labprog.backend.dto.CancelacionDataDTO;
 import unpsjb.labprog.backend.dto.TurnoDTO;
 import unpsjb.labprog.backend.dto.TurnoFilterDTO;
@@ -188,9 +189,13 @@ public class TurnoPresenter {
                 }
             }
 
+            // Forzar filtro por centro para usuarios con tenant (ADMIN/OPERADOR)
+            Integer filteredCentroId = TenantContext.getFilteredCentroId();
+            Integer finalCentroId = filteredCentroId != null ? filteredCentroId : centroAtencionId;
+
             Page<TurnoDTO> pageResult = service.getTurnosCompletadosFiltrados(
                     staffMedicoId,
-                    centroAtencionId,
+                    finalCentroId,
                     fechaDesdeParsed,
                     fechaHastaParsed,
                     page,

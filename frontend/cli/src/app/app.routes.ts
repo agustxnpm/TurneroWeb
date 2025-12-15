@@ -48,6 +48,9 @@ import { PatientGuard } from "./guards/patient.guard";
 import { MedicoGuard } from "./guards/medico.guard";
 import { OperadorGuard } from "./guards/operador.guard";
 import { AdminOperadorGuard } from "./guards/admin-operador.guard";
+import { SuperAdminGuard } from "./guards/super-admin.guard";
+import { CentroAtencionAccessGuard } from "./guards/centro-atencion-access.guard";
+import { MiCentroRedirectGuard } from "./guards/mi-centro-redirect.guard";
 
 import { OperadorDashboardComponent } from "./operador/operador-dashboard.component";
 //import { OperadorAgendaComponent } from "./operador/operador-agenda.component";
@@ -78,6 +81,13 @@ export const routes: Routes = [
   {
     path: "link-verificacion",
     component: DeepLinkBridgeComponent
+  },
+
+  // Ruta de redirección dinámica a "Mi Centro" (OPERADOR/ADMINISTRADOR)
+  {
+    path: "mi-centro",
+    canActivate: [MiCentroRedirectGuard],
+    children: [] // No se necesita componente, el guard maneja la redirección
   },
 
   // Rutas de Operador (protegidas por OperadorGuard)
@@ -301,17 +311,17 @@ export const routes: Routes = [
   {
     path: "centrosAtencion",
     component: CentrosAtencionComponent,
-    canActivate: [AdminOperadorGuard],
+    canActivate: [SuperAdminGuard], // Solo SUPERADMIN ve el listado completo
   },
   {
     path: "centrosAtencion/new",
     component: CentroAtencionDetailRefactoredComponent,
-    canActivate: [AdminOperadorGuard],
+    canActivate: [CentroAtencionAccessGuard], // Solo SUPERADMIN crea centros (validado en guard)
   },
   {
     path: "centrosAtencion/:id",
     component: CentroAtencionDetailRefactoredComponent,
-    canActivate: [AdminOperadorGuard],
+    canActivate: [CentroAtencionAccessGuard], // SUPERADMIN (cualquier centro), ADMIN/OPERADOR (solo su centro)
   },
   {
     path: "consultorios",

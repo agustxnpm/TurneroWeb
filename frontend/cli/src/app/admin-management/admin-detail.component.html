@@ -115,6 +115,36 @@
         </small>
       </div>
 
+      <!-- Centro de Atención (Solo SUPERADMIN) -->
+      <div class="col-12" *ngIf="isSuperAdmin">
+        <label for="centroAtencionId" class="form-label">
+          <span class="material-symbols-outlined me-2">local_hospital</span>
+          Centro de Atención <span class="text-danger">*</span>
+        </label>
+        <select
+          formControlName="centroAtencionId"
+          id="centroAtencionId"
+          class="form-select"
+          [class.is-invalid]="form.get('centroAtencionId')?.invalid && form.get('centroAtencionId')?.touched"
+          [disabled]="loadingCentros"
+        >
+          <option value="" disabled selected>
+            {{ loadingCentros ? 'Cargando centros...' : 'Seleccione un centro de atención' }}
+          </option>
+          <option *ngFor="let centro of centrosDisponibles" [value]="centro.id">
+            {{ centro.nombre }} - {{ centro.localidad }}, {{ centro.provincia }}
+          </option>
+        </select>
+        <div *ngIf="form.get('centroAtencionId')?.invalid && form.get('centroAtencionId')?.touched" class="text-danger d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">error</span>
+          <small>Debe seleccionar un centro de atención</small>
+        </div>
+        <small class="text-muted d-flex align-items-center gap-xs mt-xs">
+          <span class="material-symbols-outlined">info</span>
+          El administrador solo podrá gestionar usuarios y recursos de este centro
+        </small>
+      </div>
+
       <!-- Información sobre contraseña automática -->
       <div class="col-12" *ngIf="!route.snapshot.params['id']">
         <div class="info-badge">

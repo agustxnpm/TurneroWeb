@@ -16,7 +16,10 @@ export class ConsultorioService {
 
   constructor(private http: HttpClient) {}
 
-  /** Obtiene todos los consultorios */
+  /** 
+   * Obtiene todos los consultorios
+   * NOTA: El backend filtra automáticamente por centro si el usuario es ADMIN/OPERADOR (multi-tenancy)
+   */
   getAll(): Observable<DataPackage<Consultorio[]>> {
     return this.http.get<DataPackage<Consultorio[]>>(this.url);
   }

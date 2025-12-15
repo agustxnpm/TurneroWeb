@@ -13,6 +13,7 @@ export interface UserContext {
   allRoles: Role[];
   isAuthenticated: boolean;
   profileCompleted?: boolean; // Indica si el perfil está completo (para usuarios de Google)
+  centroAtencionId?: number; // ID del centro de atención (null para SUPERADMIN y PACIENTE)
 }
 
 /**
@@ -64,6 +65,7 @@ export class UserContextService {
     primaryRole: string;
     allRoles?: string[];
     profileCompleted?: boolean;
+    centroAtencionId?: number;
   }): void {
 
     const primaryRole = this.parseRole(userData.primaryRole);
@@ -77,7 +79,8 @@ export class UserContextService {
       primaryRole,
       allRoles,
       isAuthenticated: true,
-      profileCompleted: userData.profileCompleted ?? true // Default true para usuarios normales
+      profileCompleted: userData.profileCompleted ?? true, // Default true para usuarios normales
+      centroAtencionId: userData.centroAtencionId // Null para SUPERADMIN y PACIENTE
     };
 
     // Actualizar estado reactivo
@@ -181,6 +184,83 @@ export class UserContextService {
   }
 
   // ===============================
+  // GETTERS INTELIGENTES MULTI-TENANT
+  // ===============================
+
+  /**
+   * Verifica si el usuario es SUPERADMIN
+   * @returns true si el rol principal es SUPERADMIN
+   */
+  get isSuperAdmin(): boolean {
+    return this.userContextSubject.value.primaryRole === Role.SUPERADMIN;
+  }
+
+  /**
+   * Verifica si el usuario es ADMINISTRADOR
+   * @returns true si el rol principal es ADMINISTRADOR
+   */
+  get isAdmin(): boolean {
+    return this.userContextSubject.value.primaryRole === Role.ADMINISTRADOR;
+  }
+
+  /**
+   * Verifica si el usuario es OPERADOR
+   * @returns true si el rol principal es OPERADOR
+   */
+  get isOperador(): boolean {
+    return this.userContextSubject.value.primaryRole === Role.OPERADOR;
+  }
+
+  /**
+   * Verifica si el usuario es MEDICO
+   * @returns true si el rol principal es MEDICO
+   */
+  get isMedico(): boolean {
+    return this.userContextSubject.value.primaryRole === Role.MEDICO;
+  }
+
+  /**
+   * Verifica si el usuario es PACIENTE
+   * @returns true si el rol principal es PACIENTE
+   */
+  get isPaciente(): boolean {
+    return this.userContextSubject.value.primaryRole === Role.PACIENTE;
+  }
+
+  /**
+   * Obtiene el ID del centro de atención del usuario
+   * Retorna null para SUPERADMIN (acceso global) y PACIENTE (sin restricción de centro)
+   * @returns ID del centro o null
+   */
+  get tenantId(): number | null {
+    const context = this.userContextSubject.value;
+    
+    // SUPERADMIN y PACIENTE tienen acceso global (sin filtrado por centro)
+    if (context.primaryRole === Role.SUPERADMIN || context.primaryRole === Role.PACIENTE) {
+      return null;
+    }
+    
+    // ADMINISTRADOR, OPERADOR, MEDICO: retornar ID del centro
+    return context.centroAtencionId ?? null;
+  }
+
+  /**
+   * Verifica si el usuario tiene acceso restringido por centro
+   * @returns true si el usuario está limitado a un centro específico
+   */
+  get isTenantRestricted(): boolean {
+    return this.tenantId !== null;
+  }
+
+  /**
+   * Verifica si el usuario tiene acceso global (sin restricción de centro)
+   * @returns true si el usuario puede ver datos de todos los centros
+   */
+  get hasGlobalAccess(): boolean {
+    return this.tenantId === null;
+  }
+
+  // ===============================
   // MÉTODOS PRIVADOS
   // ===============================
 
@@ -269,6 +349,7 @@ export class UserContextService {
       [Role.MEDICO]: [Role.MEDICO, Role.PACIENTE],
       [Role.OPERADOR]: [Role.OPERADOR, Role.PACIENTE],
       [Role.ADMINISTRADOR]: [Role.ADMINISTRADOR, Role.MEDICO, Role.OPERADOR, Role.PACIENTE],
+      [Role.SUPERADMIN]: [Role.SUPERADMIN, Role.ADMINISTRADOR, Role.MEDICO, Role.OPERADOR, Role.PACIENTE]
     };
 
     return roleHierarchy[primaryRole] || [Role.PACIENTE];

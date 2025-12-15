@@ -87,6 +87,49 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer>, JpaSpeci
             @Param("fechaDesde") LocalDate fechaDesde,
             @Param("fechaHasta") LocalDate fechaHasta,
             Pageable pageable);
+    
+    /**
+     * Búsqueda paginada avanzada con filtros y centro de atención (MULTI-TENENCIA)
+     * Permite filtrar por centro además de los demás criterios
+     * 
+     * @param centroId    Filtro por ID del centro de atención (opcional, null para ver todos)
+     * @param paciente    Filtro por nombre o apellido del paciente (LIKE, opcional)
+     * @param medico      Filtro por nombre o apellido del médico (LIKE, opcional)
+     * @param consultorio Filtro por nombre del consultorio (LIKE, opcional)
+     * @param estado      Filtro por estado del turno (opcional)
+     * @param fechaDesde  Filtro por fecha desde (opcional)
+     * @param fechaHasta  Filtro por fecha hasta (opcional)
+     * @param pageable    Configuración de paginación y ordenamiento
+     * @return Página de turnos filtrados y ordenados
+     */
+    @Query("""
+            SELECT t FROM Turno t
+            JOIN t.paciente p
+            LEFT JOIN t.staffMedico sm
+            LEFT JOIN sm.medico m
+            JOIN t.consultorio c
+            JOIN t.centroAtencion ca
+            WHERE (:centroId IS NULL OR ca.id = :centroId)
+               AND (:paciente IS NULL OR
+                   LOWER(p.nombre) LIKE LOWER(CONCAT('%', :paciente, '%')) OR
+                   LOWER(p.apellido) LIKE LOWER(CONCAT('%', :paciente, '%')))
+               AND (:medico IS NULL OR
+                    LOWER(m.nombre) LIKE LOWER(CONCAT('%', :medico, '%')) OR
+                    LOWER(m.apellido) LIKE LOWER(CONCAT('%', :medico, '%')))
+               AND (:consultorio IS NULL OR
+                    LOWER(c.nombre) LIKE LOWER(CONCAT('%', :consultorio, '%')))
+               AND (:estado IS NULL OR t.estado = :estado)
+               AND (CAST(:fechaDesde AS date) IS NULL OR t.fecha >= CAST(:fechaDesde AS date))
+               AND (CAST(:fechaHasta AS date) IS NULL OR t.fecha <= CAST(:fechaHasta AS date))
+            """)
+    Page<Turno> findByFiltrosWithCentro(@Param("centroId") Integer centroId,
+            @Param("paciente") String paciente,
+            @Param("medico") String medico,
+            @Param("consultorio") String consultorio,
+            @Param("estado") EstadoTurno estado,
+            @Param("fechaDesde") LocalDate fechaDesde,
+            @Param("fechaHasta") LocalDate fechaHasta,
+            Pageable pageable);
 
     Page<Turno> findByStaffMedico_Id(Integer staffMedicoId, Pageable pageable);
 
@@ -97,6 +140,48 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer>, JpaSpeci
     List<Turno> findByConsultorio_CentroAtencion_Id(Integer centroId);
 
     Page<Turno> findByConsultorio_CentroAtencion_Id(Integer centroId, Pageable pageable);
+
+    // ===== MÉTODOS MULTI-TENENCIA =====
+    
+    /**
+     * Busca todos los turnos de un centro de atención (MULTI-TENENCIA)
+     * @param centroId ID del centro de atención
+     * @return Lista de turnos del centro
+     */
+    List<Turno> findByCentroAtencion_Id(Integer centroId);
+    
+    /**
+     * Busca turnos de un centro con paginación (MULTI-TENENCIA)
+     * @param centroId ID del centro de atención
+     * @param pageable Configuración de paginación
+     * @return Página de turnos del centro
+     */
+    Page<Turno> findByCentroAtencion_Id(Integer centroId, Pageable pageable);
+    
+    /**
+     * Busca turnos de un centro con ordenamiento (MULTI-TENANCIA)
+     * @param centroId ID del centro de atención
+     * @param sort Configuración de ordenamiento
+     * @return Lista ordenada de turnos del centro
+     */
+    List<Turno> findByCentroAtencion_Id(Integer centroId, Sort sort);
+    
+    /**
+     * Busca turnos de un centro por estado (MULTI-TENANCIA)
+     * @param centroId ID del centro de atención
+     * @param estado Estado del turno
+     * @return Lista de turnos del centro con el estado especificado
+     */
+    List<Turno> findByCentroAtencion_IdAndEstado(Integer centroId, EstadoTurno estado);
+    
+    /**
+     * Busca turnos de un centro por estado con paginación (MULTI-TENANCIA)
+     * @param centroId ID del centro de atención
+     * @param estado Estado del turno
+     * @param pageable Configuración de paginación
+     * @return Página de turnos del centro con el estado especificado
+     */
+    Page<Turno> findByCentroAtencion_IdAndEstado(Integer centroId, EstadoTurno estado, Pageable pageable);
 
     List<Turno> findByConsultorio_Id(Integer consultorioId);
 

@@ -18,6 +18,7 @@ import unpsjb.labprog.backend.business.repository.EspecialidadRepository;
 import unpsjb.labprog.backend.dto.DisponibilidadMedicoDTO;
 import unpsjb.labprog.backend.model.DisponibilidadMedico;
 import unpsjb.labprog.backend.model.Especialidad;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class DisponibilidadMedicoService {
@@ -34,19 +35,61 @@ public class DisponibilidadMedicoService {
     @Autowired
     private unpsjb.labprog.backend.business.repository.EsquemaTurnoRepository esquemaTurnoRepository;
 
+    /**
+     * Obtiene todas las disponibilidades con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todas las disponibilidades globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo disponibilidades de su centro (via StaffMedico)
+     * - PACIENTE: Ve todas las disponibilidades (acceso global)
+     */
     public List<DisponibilidadMedicoDTO> findAll() {
-        return repository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por disponibilidades del centro (via StaffMedico)
+            return repository.findByStaffMedico_CentroAtencionId(centroId).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
     }
 
     public Optional<DisponibilidadMedicoDTO> findById(Integer id) {
         return repository.findById(id).map(this::toDTO);
     }
 
+    /**
+     * Obtiene página de disponibilidades con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todas las disponibilidades globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo disponibilidades de su centro (via StaffMedico)
+     * - PACIENTE: Ve todas las disponibilidades (acceso global)
+     */
     public Page<DisponibilidadMedicoDTO> findByPage(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size))
-                .map(this::toDTO);
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        PageRequest pageRequest = PageRequest.of(page, size);
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por disponibilidades del centro
+            List<DisponibilidadMedico> dispList = repository.findByStaffMedico_CentroAtencionId(centroId);
+            // Convertir a Page manualmente
+            int start = (int) pageRequest.getOffset();
+            int end = Math.min((start + pageRequest.getPageSize()), dispList.size());
+            return new org.springframework.data.domain.PageImpl<>(
+                dispList.subList(start, end).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList()),
+                pageRequest,
+                dispList.size()
+            );
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll(pageRequest)
+                    .map(this::toDTO);
+        }
     }
 
     public Page<DisponibilidadMedicoDTO> findByPage(int page, int size, String staffMedico, String especialidad, String dia, String sortBy, String sortDir) {
@@ -176,15 +219,36 @@ public class DisponibilidadMedicoService {
     private DisponibilidadMedico toEntity(DisponibilidadMedicoDTO dto) {
         DisponibilidadMedico disponibilidad = new DisponibilidadMedico();
         disponibilidad.setId(dto.getId());
-        disponibilidad.setStaffMedico(
-                staffMedicoRepository.findById(dto.getStaffMedicoId())
-                        .orElseThrow(() -> new IllegalArgumentException("StaffMedico no encontrado con ID: " + dto.getStaffMedicoId())));
         
-        // Establecer especialidad si se proporciona especialidadId
+        var staffMedico = staffMedicoRepository.findById(dto.getStaffMedicoId())
+                .orElseThrow(() -> new IllegalArgumentException("StaffMedico no encontrado con ID: " + dto.getStaffMedicoId()));
+        disponibilidad.setStaffMedico(staffMedico);
+        
+        // Validar y establecer especialidad
         if (dto.getEspecialidadId() != null) {
             Especialidad especialidad = especialidadRepository.findById(dto.getEspecialidadId())
                     .orElseThrow(() -> new IllegalArgumentException("Especialidad no encontrada con ID: " + dto.getEspecialidadId()));
+            
+            // VALIDACIÓN CRÍTICA: La especialidad de la disponibilidad DEBE coincidir con la del StaffMedico
+            if (staffMedico.getEspecialidad() != null && 
+                !staffMedico.getEspecialidad().getId().equals(especialidad.getId())) {
+                throw new IllegalArgumentException(
+                    String.format(
+                        "Inconsistencia de datos: La especialidad de la disponibilidad (%s, ID: %d) no coincide con la especialidad del Staff Médico (%s, ID: %d). " +
+                        "Para crear una disponibilidad en %s, debe usar el Staff Médico correspondiente a esa especialidad.",
+                        especialidad.getNombre(), especialidad.getId(),
+                        staffMedico.getEspecialidad().getNombre(), staffMedico.getEspecialidad().getId(),
+                        especialidad.getNombre()
+                    )
+                );
+            }
+            
             disponibilidad.setEspecialidad(especialidad);
+        } else {
+            // Si no se proporciona especialidadId, usar automáticamente la del StaffMedico
+            if (staffMedico.getEspecialidad() != null) {
+                disponibilidad.setEspecialidad(staffMedico.getEspecialidad());
+            }
         }
         
         disponibilidad.setHorarios(dto.getHorarios().stream().map(horarioDTO -> {

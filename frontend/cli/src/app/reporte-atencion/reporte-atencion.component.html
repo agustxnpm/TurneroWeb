@@ -53,7 +53,7 @@
                         <span class="material-symbols-outlined">local_hospital</span>
                         Centro de Atención
                     </label>
-                    <select id="centroAtencionId" formControlName="centroAtencionId" class="form-control">
+                    <select id="centroAtencionId" formControlName="centroAtencionId" class="form-control" [disabled]="centroDeshabilitado">
                         <option value="">-- Seleccionar Centro --</option>
                         <option *ngFor="let centro of centrosAtencion" [value]="centro.id">
                             {{ centro.nombre }}

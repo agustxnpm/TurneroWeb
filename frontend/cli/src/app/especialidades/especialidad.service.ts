@@ -17,7 +17,10 @@ export class EspecialidadService {
 
   constructor(private http: HttpClient) { }
 
-  /** Obtiene todas las especialidades */
+  /** 
+   * Obtiene todas las especialidades
+   * NOTA: El backend filtra automáticamente por centro si el usuario es ADMIN/OPERADOR (multi-tenancy)
+   */
   all(): Observable<DataPackage<Especialidad[]>> {
     return this.http.get<DataPackage<Especialidad[]>>(this.url);
   }

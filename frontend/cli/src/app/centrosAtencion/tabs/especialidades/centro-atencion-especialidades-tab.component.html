@@ -38,12 +38,22 @@
   <div class="row g-3">
     <div class="col-md-8">
       <label class="form-label fw-semibold">Seleccionar Especialidad:</label>
-      <select [(ngModel)]="especialidadSeleccionada" (ngModelChange)="onEspecialidadSeleccionadaChange()" class="modern-select form-control">
-        <option [ngValue]="null">Seleccione una especialidad...</option>
-        <option *ngFor="let esp of especialidadesDisponibles" [ngValue]="esp">
-          {{ esp.nombre }}
-        </option>
-      </select>
+      <div class="input-group">
+        <select [(ngModel)]="especialidadSeleccionada" (ngModelChange)="onEspecialidadSeleccionadaChange()" class="modern-select form-control">
+          <option [ngValue]="null">Seleccione una especialidad...</option>
+          <option *ngFor="let esp of especialidadesDisponibles" [ngValue]="esp">
+            {{ esp.nombre }}
+          </option>
+        </select>
+        <button type="button" class="btn btn-outline-primary" (click)="onCrearNuevaEspecialidad()" 
+                title="Crear nueva especialidad">
+          <i class="fa fa-plus"></i> Nueva
+        </button>
+      </div>
+      <small class="text-muted mt-1 d-block">
+        <i class="fa fa-info-circle me-1"></i>
+        Si la especialidad que necesita no existe, puede crear una nueva.
+      </small>
     </div>
   </div>
   <div class="d-flex gap-2 mt-3">

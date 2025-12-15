@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,6 +37,24 @@ public class MedicoPresenter {
         return Response.ok(medicos, "Médicos recuperados correctamente");
     }
 
+    /**
+     * Obtiene lista básica de todos los médicos disponibles en el sistema.
+     * Retorna solo información no sensible (nombre, apellido, matricula, especialidades).
+     * Útil para selectores al crear StaffMedico.
+     * 
+     * TODO: Implementar flujo de aprobación bidireccional donde el médico
+     * debe aceptar la solicitud del centro antes de ser asociado.
+     */
+    @GetMapping("/disponibles")
+    public ResponseEntity<Object> getMedicosDisponibles() {
+        try {
+            List<Map<String, Object>> medicos = service.findAllMedicosBasicInfo();
+            return Response.ok(medicos, "Médicos disponibles recuperados correctamente");
+        } catch (Exception e) {
+            return Response.error(null, "Error al recuperar médicos disponibles: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Object> getById(@PathVariable Integer id) {
         return service.findById(id)
@@ -43,19 +62,30 @@ public class MedicoPresenter {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Crea un nuevo médico y lo vincula automáticamente al centro del administrador.
+     * Si el médico ya existe (por DNI), lo reutiliza y solo crea la vinculación.
+     * Solo accesible para ADMINISTRADOR.
+     */
     @PostMapping
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Object> create(@RequestBody MedicoDTO medicoDTO) {
         try {
             if (medicoDTO.getId() != null && medicoDTO.getId() != 0) {
                 return Response.error(medicoDTO, "El médico no puede tener un ID definido al crearse.");
             }
+            
             String performedBy = AuditContext.getCurrentUser();
-            MedicoDTO saved = service.saveOrUpdate(medicoDTO, performedBy);
-            return Response.ok(saved, "Médico creado correctamente");
-        } catch (IllegalArgumentException e) {           
-            return Response.dbError(e.getMessage());
-        } catch (Exception e) {
+            if (performedBy == null || performedBy.trim().isEmpty()) {
+                return Response.error(null, "No se pudo determinar el usuario que realiza la acción");
+            }
+            
+            MedicoDTO created = service.createMedico(medicoDTO, performedBy);
+            return Response.ok(created, "Médico creado/vinculado exitosamente. Se ha enviado un email con las credenciales.");
+        } catch (IllegalArgumentException e) {
             return Response.error(null, e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al crear médico: " + e.getMessage());
         }
     }
 

@@ -76,7 +76,7 @@
           [value]="disp.id"
         >
           👨‍⚕️ {{ disp.staffMedico?.medico?.nombre }}
-          {{ disp.staffMedico?.medico?.apellido }} - 🕐
+          {{ disp.staffMedico?.medico?.apellido }} ({{ disp.staffMedico?.centro?.nombre || 'Sin centro' }}) - 🕐
           {{ formatearHorarios(disp.horarios) }}
         </option>
       </select>

@@ -16,6 +16,7 @@ import { CentroAtencion } from "../centrosAtencion/centroAtencion";
 import { ConsultorioService } from "./consultorio.service";
 import { CentroAtencionService } from "../centrosAtencion/centroAtencion.service";
 import { ModalService } from "../modal/modal.service";
+import { UserContextService } from "../services/user-context.service";
 
 @Component({
   selector: "app-consultorio-detail",
@@ -52,7 +53,8 @@ export class ConsultorioDetailComponent implements OnInit {
     private router: Router,
     private consultorioService: ConsultorioService,
     private centroAtencionService: CentroAtencionService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    public userContextService: UserContextService
   ) { }
 
   ngOnInit(): void {
@@ -78,6 +80,9 @@ export class ConsultorioDetailComponent implements OnInit {
       };
       this.initializeWeeklySchedule();
       this.selectedCentroAtencion = undefined!;
+      
+      // Auto-asignar centro de atención si el usuario es ADMINISTRADOR
+      this.autoAssignCentroForAdmin();
     } else {
       // Edición o vista
       this.esNuevo = false;
@@ -434,6 +439,54 @@ export class ConsultorioDetailComponent implements OnInit {
   private getCentrosAtencion(): void {
     this.centroAtencionService.getAll().subscribe((res) => {
       this.centrosAtencion = res.data;
+    });
+  }
+
+  /**
+   * Auto-asigna el centro de atención basándose en:
+   * 1. Si es ADMINISTRADOR: usa su centro asignado (obligatorio)
+   * 2. Si viene desde detalle de centro (fromCentro): pre-llena ese centro (para SUPERADMIN)
+   */
+  private autoAssignCentroForAdmin(): void {
+    let centroIdToLoad: number | null = null;
+
+    // Prioridad 1: Si es ADMINISTRADOR, usar su centro asignado (obligatorio)
+    if (this.userContextService.isAdmin) {
+      centroIdToLoad = this.userContextService.tenantId;
+      if (!centroIdToLoad) {
+        console.warn('⚠️ Administrador sin centro asignado');
+        return;
+      }
+    } 
+    // Prioridad 2: Si viene desde detalle de centro (para SUPERADMIN)
+    else if (this.fromCentro) {
+      centroIdToLoad = Number(this.fromCentro);
+    }
+
+    // Si no hay centro para asignar, salir
+    if (!centroIdToLoad) {
+      return;
+    }
+
+    // Cargar el centro
+    this.centroAtencionService.get(centroIdToLoad).subscribe({
+      next: (response) => {
+        const centro = response.data;
+        this.consultorio.centroAtencion = centro;
+        this.consultorio.centroId = centro.id;
+        this.consultorio.nombreCentro = centro.nombre;
+        this.selectedCentroAtencion = centro;
+        this.centroSearch = centro.nombre;
+        
+        const tipoAsignacion = this.userContextService.isAdmin 
+          ? 'administrador (obligatorio)' 
+          : 'navegación desde centro';
+        console.log(`✅ Centro auto-asignado por ${tipoAsignacion}:`, centro.nombre);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar centro:', err);
+        this.modalService.alert('Error', 'No se pudo cargar el centro de atención.');
+      }
     });
   }
 

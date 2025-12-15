@@ -18,6 +18,7 @@ import unpsjb.labprog.backend.dto.OperadorDTO;
 import unpsjb.labprog.backend.model.Operador;
 import unpsjb.labprog.backend.model.User;
 import unpsjb.labprog.backend.model.AuditLog;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class OperadorService {
@@ -39,14 +40,36 @@ public class OperadorService {
 
     private static final Logger logger = LoggerFactory.getLogger(OperadorService.class);
 
+    /**
+     * Obtiene todos los operadores con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los operadores globalmente
+     * - ADMINISTRADOR/OPERADOR: Solo operadores de su centro
+     * - MEDICO: Solo operadores de su centro
+     * - PACIENTE: Ve todos los operadores (acceso global)
+     */
     public List<OperadorDTO> findAll() {
-        return repository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por operadores del centro
+            return repository.findByCentroAtencion_Id(centroId).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return repository.findAll().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
     }
 
     /**
      * Método para búsqueda paginada con filtros opcionales y ordenamiento dinámico.
+     * Incluye filtrado automático multi-tenencia:
+     * - SUPERADMIN: Ve todos los operadores globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo operadores de su centro
+     * - PACIENTE: Ve todos los operadores (acceso global)
+     * 
      * @param page Número de página (0-based)
      * @param size Tamaño de página
      * @param nombre Filtro por nombre (opcional, búsqueda parcial)
@@ -57,12 +80,16 @@ public class OperadorService {
      * @return Page de OperadorDTO con resultados paginados
      */
     public Page<OperadorDTO> findByPage(int page, int size, String nombre, String email, String estado, String sortBy, String sortDir) {
-        // Convertir estado string a boolean
-        Boolean estadoBoolean = null;
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        // Convertir estado string a boolean (final para usar en lambdas)
+        final Boolean estadoBoolean;
         if ("activo".equalsIgnoreCase(estado)) {
             estadoBoolean = true;
         } else if ("inactivo".equalsIgnoreCase(estado)) {
             estadoBoolean = false;
+        } else {
+            estadoBoolean = null;
         }
 
         // Crear Pageable con ordenamiento
@@ -74,8 +101,35 @@ public class OperadorService {
             pageRequest = PageRequest.of(page, size);
         }
 
-        // Llamar al repository
-        Page<Operador> operadoresPage = repository.findByFiltros(nombre, email, estadoBoolean, pageRequest);
+        Page<Operador> operadoresPage;
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - aplicar filtros + filtro de centro
+            // Nota: El repository no tiene un método que combine filtros + centroId
+            // Opción 1: Filtrar primero por centro y luego aplicar filtros en memoria
+            List<Operador> operadoresCentro = repository.findByCentroAtencion_Id(centroId);
+            
+            // Aplicar filtros manualmente
+            List<Operador> filtrados = operadoresCentro.stream()
+                .filter(op -> nombre == null || nombre.trim().isEmpty() || 
+                        op.getNombre().toLowerCase().contains(nombre.toLowerCase()))
+                .filter(op -> email == null || email.trim().isEmpty() || 
+                        op.getEmail().toLowerCase().contains(email.toLowerCase()))
+                .filter(op -> estadoBoolean == null || op.isActivo() == estadoBoolean)
+                .collect(Collectors.toList());
+            
+            // Aplicar paginación manual
+            int start = (int) pageRequest.getOffset();
+            int end = Math.min((start + pageRequest.getPageSize()), filtrados.size());
+            List<Operador> pageContent = filtrados.subList(start, end);
+            
+            operadoresPage = new org.springframework.data.domain.PageImpl<>(
+                pageContent, pageRequest, filtrados.size()
+            );
+        } else {
+            // SUPERADMIN o PACIENTE - usar filtros del repository sin restricción de centro
+            operadoresPage = repository.findByFiltros(nombre, email, estadoBoolean, pageRequest);
+        }
 
         // Mapear a DTOs
         return operadoresPage.map(this::toDTO);
@@ -259,6 +313,10 @@ public class OperadorService {
         dto.setEmail(operador.getEmail());
         dto.setActivo(operador.isActivo());
         dto.setTelefono(operador.getTelefono());
+        if (operador.getCentroAtencion() != null) {
+            dto.setCentroAtencionId(operador.getCentroAtencion().getId());
+            dto.setCentroAtencionNombre(operador.getCentroAtencion().getNombre());
+        }
         return dto;
     }
 

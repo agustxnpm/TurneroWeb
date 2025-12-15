@@ -33,6 +33,16 @@ export interface PageNotificacion {
   last: boolean;
 }
 
+/**
+ * Servicio para gestión de notificaciones de pacientes.
+ * 
+ * MULTI-TENANCY:
+ * Las notificaciones NO requieren filtrado por centro porque están asociadas
+ * directamente a pacientes (por pacienteId). Un paciente puede tener turnos
+ * en múltiples centros, por lo que las notificaciones son independientes del centro.
+ * 
+ * El backend NO usa TenantContext para notificaciones - acceso directo por pacienteId.
+ */
 @Injectable({
   providedIn: 'root'
 })

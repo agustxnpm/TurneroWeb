@@ -22,6 +22,7 @@ import unpsjb.labprog.backend.business.repository.EsquemaTurnoRepository;
 import unpsjb.labprog.backend.dto.EsquemaTurnoDTO;
 import unpsjb.labprog.backend.model.DisponibilidadMedico;
 import unpsjb.labprog.backend.model.EsquemaTurno;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class EsquemaTurnoService {
@@ -41,10 +42,26 @@ public class EsquemaTurnoService {
     @Autowired
     private ConsultorioDistribucionService consultorioDistribucionService;
 
+    /**
+     * Obtiene todos los esquemas de turno con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los esquemas globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo esquemas de su centro
+     * - PACIENTE: Ve todos los esquemas (acceso global)
+     */
     public List<EsquemaTurnoDTO> findAll() {
-        return esquemaTurnoRepository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por esquemas del centro
+            return esquemaTurnoRepository.findByCentroAtencionId(centroId).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            return esquemaTurnoRepository.findAll().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
     }
 
     public Optional<EsquemaTurnoDTO> findById(Integer id) {
@@ -92,10 +109,36 @@ public class EsquemaTurnoService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene página de esquemas con filtrado automático multi-tenencia.
+     * - SUPERADMIN: Ve todos los esquemas globalmente
+     * - ADMINISTRADOR/OPERADOR/MEDICO: Solo esquemas de su centro
+     * - PACIENTE: Ve todos los esquemas (acceso global)
+     */
     public Page<EsquemaTurnoDTO> findByPage(int page, int size) {
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
         PageRequest pageRequest = PageRequest.of(page, size);
-        Page<EsquemaTurno> esquemaPage = esquemaTurnoRepository.findAll(pageRequest);
-        return esquemaPage.map(this::toDTO);
+        
+        if (centroId != null) {
+            // Usuario limitado por centro - filtrar por esquemas del centro
+            // Nota: EsquemaTurnoRepository tiene findByCentroAtencionId pero retorna List, no Page
+            List<EsquemaTurno> esquemas = esquemaTurnoRepository.findByCentroAtencionId(centroId);
+            // Convertir a Page manualmente
+            int start = (int) pageRequest.getOffset();
+            int end = Math.min((start + pageRequest.getPageSize()), esquemas.size());
+            return new org.springframework.data.domain.PageImpl<>(
+                esquemas.subList(start, end).stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList()),
+                pageRequest,
+                esquemas.size()
+            );
+        } else {
+            // SUPERADMIN o PACIENTE - acceso global
+            Page<EsquemaTurno> esquemaPage = esquemaTurnoRepository.findAll(pageRequest);
+            return esquemaPage.map(this::toDTO);
+        }
     }
 
     /**
@@ -123,7 +166,29 @@ public class EsquemaTurnoService {
         String consultorioFilter = (consultorio != null && !consultorio.trim().isEmpty()) ? consultorio.trim() : null;
         String centroFilter = (centro != null && !centro.trim().isEmpty()) ? centro.trim() : null;
         
-        // Ejecutar búsqueda con filtros
+        // Aplicar filtro multi-tenencia automáticamente
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        // Si el usuario tiene centro asignado (ADMIN/OPERADOR), buscar y filtrar por nombre del centro
+        if (centroId != null) {
+            // Buscar todos los esquemas y filtrar manualmente por centro
+            Page<EsquemaTurno> result = esquemaTurnoRepository.findByFiltros(staffMedicoFilter, consultorioFilter, centroFilter, pageRequest);
+            
+            // Filtrar por centro del usuario
+            List<EsquemaTurno> esquemasDelCentro = result.getContent().stream()
+                .filter(esquema -> esquema.getConsultorio() != null && 
+                                  esquema.getConsultorio().getCentroAtencion() != null &&
+                                  esquema.getConsultorio().getCentroAtencion().getId().equals(centroId))
+                .collect(java.util.stream.Collectors.toList());
+            
+            return new org.springframework.data.domain.PageImpl<>(
+                esquemasDelCentro.stream().map(this::toDTO).collect(java.util.stream.Collectors.toList()),
+                pageRequest,
+                esquemasDelCentro.size()
+            );
+        }
+        
+        // SUPERADMIN: acceso global sin filtro de centro
         return esquemaTurnoRepository.findByFiltros(staffMedicoFilter, consultorioFilter, centroFilter, pageRequest)
                 .map(this::toDTO);
     }
@@ -172,7 +237,7 @@ public class EsquemaTurnoService {
             for (EsquemaTurnoDTO.DiaHorarioDTO horario : dto.getHorarios()) {
                 boolean disponible = disponibilidades.stream().anyMatch(disponibilidad -> 
                     disponibilidad.getHorarios().stream().anyMatch(diaHorario -> 
-                        diaHorario.getDia().equalsIgnoreCase(horario.getDia()) &&
+                        normalizarDia(diaHorario.getDia()).equalsIgnoreCase(normalizarDia(horario.getDia())) &&
                         (horario.getHoraInicio().equals(diaHorario.getHoraInicio()) || !horario.getHoraInicio().isBefore(diaHorario.getHoraInicio())) &&
                         (horario.getHoraFin().equals(diaHorario.getHoraFin()) || !horario.getHoraFin().isAfter(diaHorario.getHoraFin()))
                     )
@@ -276,7 +341,7 @@ public class EsquemaTurnoService {
 
             boolean disponible = disponibilidades.stream().anyMatch(disponibilidad -> 
                 disponibilidad.getHorarios().stream().anyMatch(diaHorario -> 
-                    diaHorario.getDia().equalsIgnoreCase(horario.getDia()) &&
+                    normalizarDia(diaHorario.getDia()).equalsIgnoreCase(normalizarDia(horario.getDia())) &&
                     (horario.getHoraInicio().equals(diaHorario.getHoraInicio()) || !horario.getHoraInicio().isBefore(diaHorario.getHoraInicio())) &&
                     (horario.getHoraFin().equals(diaHorario.getHoraFin()) || !horario.getHoraFin().isAfter(diaHorario.getHoraFin()))
                 )
@@ -315,6 +380,24 @@ public class EsquemaTurnoService {
                     hayConflictoDeHorarios(existente.getHorarios(), dto.getHorarios()));
             
             if (hayConflictoConsultorio) {
+                // Obtener detalles del esquema conflictivo para el mensaje de error
+                EsquemaTurno esquemaConflictivo = esquemasEnConsultorio.stream()
+                    .filter(existente -> !existente.getId().equals(esquemaTurno.getId()) &&
+                                        hayConflictoDeHorarios(existente.getHorarios(), dto.getHorarios()))
+                    .findFirst()
+                    .orElse(null);
+                
+                String nombreConsultorio = esquemaTurno.getConsultorio().getNombre();
+                String detalleConflicto = "";
+                
+                if (esquemaConflictivo != null && esquemaConflictivo.getStaffMedico() != null && 
+                    esquemaConflictivo.getStaffMedico().getMedico() != null) {
+                    String nombreMedicoConflictivo = esquemaConflictivo.getStaffMedico().getMedico().getNombre() + 
+                                                    " " + esquemaConflictivo.getStaffMedico().getMedico().getApellido();
+                    detalleConflicto = " Ya existe un esquema de turno para el Dr. " + nombreMedicoConflictivo + 
+                                      " en el mismo horario.";
+                }
+                
                 // Intentar resolver automáticamente usando el algoritmo de distribución
                 Integer consultorioAlternativo = resolverConflictoConsultorioAutomaticamente(esquemaTurno);
                 
@@ -328,7 +411,9 @@ public class EsquemaTurnoService {
                                      consultorioAlternativo + " al médico " + 
                                      esquemaTurno.getStaffMedico().getMedico().getNombre());
                 } else {
-                    throw new IllegalStateException("Conflicto: No se encontró consultorio disponible para resolver el conflicto de horarios.");
+                    throw new IllegalStateException("El consultorio '" + nombreConsultorio + 
+                        "' ya está ocupado en el horario seleccionado." + detalleConflicto + 
+                        " Por favor, seleccione otro consultorio o un horario diferente.");
                 }
             }
         }

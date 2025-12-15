@@ -69,12 +69,18 @@ export class MedicosComponent {
       this.sortConfig.direction
     ).subscribe({
       next: (dataPackage) => {
-        this.resultsPage = dataPackage.data;
+        if (dataPackage.status_code === 200) {
+          this.resultsPage = dataPackage.data;
+        } else {
+          console.error('Error en respuesta:', dataPackage.status_text);
+          this.modalService.alert('Error', dataPackage.status_text || 'Error al cargar la lista de médicos');
+        }
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error al cargar médicos:', error);
-        this.modalService.alert('Error', 'Error al cargar la lista de médicos');
+        const mensaje = error?.error?.status_text || error?.message || 'Error al cargar la lista de médicos';
+        this.modalService.alert('Error', mensaje);
         this.isLoading = false;
       }
     });

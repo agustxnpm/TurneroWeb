@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import unpsjb.labprog.backend.Response;
 import unpsjb.labprog.backend.business.service.EncuestaService;
+import unpsjb.labprog.backend.config.TenantContext;
 import unpsjb.labprog.backend.model.EncuestaPlantilla;
 import unpsjb.labprog.backend.model.Pregunta;
 
@@ -65,12 +66,30 @@ public class EncuestaAdminPresenter {
     // === Plantillas ===
     @GetMapping("/plantillas")
     public ResponseEntity<Object> listarPlantillas() {
-        List<EncuestaPlantilla> list = service.listarPlantillas();
+        Integer centroId = TenantContext.getFilteredCentroId();
+        List<EncuestaPlantilla> list;
+        
+        if (centroId != null) {
+            // ADMIN/OPERADOR: solo sus plantillas
+            var centro = centroRepo.findById(centroId).orElseThrow();
+            list = service.listarPlantillasPorCentro(centro);
+        } else {
+            // SUPERADMIN: todas las plantillas
+            list = service.listarPlantillas();
+        }
+        
         return Response.ok(list, "Plantillas recuperadas");
     }
 
     @PostMapping("/plantillas")
     public ResponseEntity<Object> crearPlantilla(@RequestBody EncuestaPlantilla p) {
+        // Auto-asignar centro si es ADMIN/OPERADOR
+        Integer centroId = TenantContext.getFilteredCentroId();
+        if (centroId != null) {
+            var centro = centroRepo.findById(centroId).orElseThrow();
+            p.setCentroAtencion(centro);
+        }
+        
         EncuestaPlantilla saved = service.crearPlantilla(p);
         return Response.ok(saved, "Plantilla creada");
     }
@@ -104,6 +123,12 @@ public class EncuestaAdminPresenter {
 
     @PostMapping("/plantillas/{id}/asignar-centro/{centroId}")
     public ResponseEntity<Object> asignarPlantillaACentro(@PathVariable Integer id, @PathVariable Integer centroId) {
+        // Validar que ADMIN/OPERADOR solo asigne a su centro
+        Integer userCentroId = TenantContext.getFilteredCentroId();
+        if (userCentroId != null && !userCentroId.equals(centroId)) {
+            return Response.error(null, "No tiene permisos para asignar a este centro");
+        }
+        
         var centro = centroRepo.findById(centroId).orElseThrow();
         EncuestaPlantilla saved = service.asignarAConsultorio(id, centro);
         return Response.ok(saved, "Plantilla asignada al centro");

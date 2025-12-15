@@ -17,12 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import unpsjb.labprog.backend.business.repository.PacienteRepository;
 import unpsjb.labprog.backend.business.repository.PreferenciaHorariaRepository;
+import unpsjb.labprog.backend.business.repository.StaffMedicoRepository;
+import unpsjb.labprog.backend.config.TenantContext;
 import unpsjb.labprog.backend.dto.ObraSocialDTO;
 import unpsjb.labprog.backend.dto.PacienteDTO;
 import unpsjb.labprog.backend.model.AuditLog;
 import unpsjb.labprog.backend.model.ObraSocial;
 import unpsjb.labprog.backend.model.Paciente;
 import unpsjb.labprog.backend.model.PreferenciaHoraria;
+import unpsjb.labprog.backend.model.StaffMedico;
 import unpsjb.labprog.backend.model.User;
 
 @Service
@@ -50,7 +53,62 @@ public class PacienteService {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private StaffMedicoRepository staffMedicoRepository;
+
+    /**
+     * Obtiene todos los pacientes con filtrado basado en privacidad:
+     * - SUPERADMIN: Ve todos los pacientes (acceso global)
+     * - ADMIN/OPERADOR: Solo pacientes con turnos en su centro
+     * - MEDICO: Solo pacientes con turnos asignados a él
+     * - PACIENTE: No tiene acceso (verificado en capa de seguridad)
+     */
     public List<PacienteDTO> findAll() {
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        // SUPERADMIN/PACIENTE: acceso global
+        if (centroId == null) {
+            return repository.findAll().stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
+        
+        // MEDICO: solo pacientes con turnos asignados
+        if (TenantContext.isMedico()) {
+            User currentUser = TenantContext.getCurrentUser();
+            if (currentUser == null || currentUser.getDni() == null) {
+                return List.of();
+            }
+            
+            // Buscar StaffMedico del médico actual por DNI
+            List<StaffMedico> staffMedicoList = staffMedicoRepository.findByMedico_Dni(currentUser.getDni());
+            if (!staffMedicoList.isEmpty()) {
+                // Usar el primer StaffMedico encontrado
+                StaffMedico staffMedico = staffMedicoList.get(0);
+                return repository.findPacientesConTurnosDeStaffMedico(staffMedico.getId())
+                        .stream()
+                        .map(this::toDTO)
+                        .collect(Collectors.toList());
+            } else {
+                // Médico sin staff asignado: lista vacía
+                return List.of();
+            }
+        }
+        
+        // ADMIN/OPERADOR: pacientes con turnos en su centro
+        return repository.findPacientesConTurnosEnCentro(centroId).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene TODOS los pacientes sin filtros restrictivos.
+     * Útil para formularios de asignación donde se necesita ver todos los pacientes disponibles.
+     * - SUPERADMIN: Ve todos los pacientes
+     * - ADMIN/OPERADOR/MEDICO: Ve todos los pacientes (sin restricción por turnos existentes)
+     */
+    public List<PacienteDTO> findAllForAssignment() {
+        // Retornar todos los pacientes sin filtrar por centro o turnos
         return repository.findAll().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -204,13 +262,44 @@ public class PacienteService {
         }
     }
 
+    /**
+     * Obtiene pacientes de forma paginada con filtrado basado en privacidad:
+     * - SUPERADMIN: Ve todos los pacientes (acceso global)
+     * - ADMIN/OPERADOR: Solo pacientes con turnos en su centro
+     * - MEDICO: Solo pacientes con turnos asignados a él
+     * - PACIENTE: No tiene acceso (verificado en capa de seguridad)
+     */
     public Page<PacienteDTO> findByPage(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size))
-                .map(this::toDTO);
+        Integer centroId = TenantContext.getFilteredCentroId();
+        Pageable pageable = PageRequest.of(page, size);
+        
+        // SUPERADMIN/PACIENTE: acceso global
+        if (centroId == null) {
+            return repository.findAll(pageable).map(this::toDTO);
+        }
+        
+        // MEDICO: solo pacientes con turnos asignados
+        if (TenantContext.isMedico()) {
+            User currentUser = TenantContext.getCurrentUser();
+            if (currentUser == null || currentUser.getDni() == null) {
+                return Page.empty(pageable);
+            }
+            
+            List<StaffMedico> staffMedicoList = staffMedicoRepository.findByMedico_Dni(currentUser.getDni());
+            if (!staffMedicoList.isEmpty()) {
+                return repository.findPacientesConTurnosDeStaffMedico(staffMedicoList.get(0).getId(), pageable)
+                        .map(this::toDTO);
+            } else {
+                return Page.empty(pageable);
+            }
+        }
+        
+        // ADMIN/OPERADOR: pacientes con turnos en su centro
+        return repository.findPacientesConTurnosEnCentro(centroId, pageable).map(this::toDTO);
     }
 
     /**
-     * Búsqueda paginada avanzada con filtros y ordenamiento
+     * Búsqueda paginada avanzada con filtros y ordenamiento + filtrado de privacidad
      * @param page Número de página (0-based)
      * @param size Tamaño de página
      * @param nombreApellido Filtro unificado para nombre O apellido (opcional)
@@ -218,7 +307,7 @@ public class PacienteService {
      * @param email Filtro por email (opcional)
      * @param sortBy Campo para ordenar (opcional)
      * @param sortDir Dirección del ordenamiento (asc/desc, opcional)
-     * @return Page<PacienteDTO> con los resultados paginados
+     * @return Page<PacienteDTO> con los resultados paginados y filtrados
      */
     public Page<PacienteDTO> findByPage(
             int page,
@@ -237,12 +326,72 @@ public class PacienteService {
         }
 
         Pageable pageable = PageRequest.of(page, size, sort);
+        Integer centroId = TenantContext.getFilteredCentroId();
 
-        // Ejecutar consulta con filtros
-        Page<Paciente> result = repository.findByFiltros(
-            nombreApellido, documento, email, pageable);
+        // SUPERADMIN/PACIENTE: búsqueda global sin restricción de centro
+        if (centroId == null) {
+            Page<Paciente> result = repository.findByFiltros(
+                nombreApellido, documento, email, pageable);
+            return result.map(this::toDTO);
+        }
 
-        // Mapear a DTO
+        // MEDICO: búsqueda con filtros + restricción a pacientes con turnos asignados
+        if (TenantContext.isMedico()) {
+            User currentUser = TenantContext.getCurrentUser();
+            if (currentUser == null || currentUser.getDni() == null) {
+                return Page.empty(pageable);
+            }
+            
+            List<StaffMedico> staffMedicoList = staffMedicoRepository.findByMedico_Dni(currentUser.getDni());
+            if (!staffMedicoList.isEmpty()) {
+                // Para MEDICO, debemos aplicar filtros manualmente
+                // ya que no tenemos un método repository específico con filtros + staffMedico
+                // Alternativa: obtener todos los pacientes del médico y filtrar en memoria
+                Page<Paciente> pacientesDelMedico = repository.findPacientesConTurnosDeStaffMedico(
+                    staffMedicoList.get(0).getId(), pageable);
+                
+                // Aplicar filtros adicionales si se especifican
+                if (nombreApellido != null || documento != null || email != null) {
+                    List<Paciente> filtrados = pacientesDelMedico.getContent().stream()
+                        .filter(p -> {
+                            boolean cumpleFiltros = true;
+                            if (nombreApellido != null && !nombreApellido.trim().isEmpty()) {
+                                String nombreApellidoLower = nombreApellido.toLowerCase();
+                                cumpleFiltros = p.getNombre().toLowerCase().contains(nombreApellidoLower) ||
+                                              p.getApellido().toLowerCase().contains(nombreApellidoLower);
+                            }
+                            if (documento != null && !documento.trim().isEmpty() && cumpleFiltros) {
+                                cumpleFiltros = String.valueOf(p.getDni()).contains(documento);
+                            }
+                            if (email != null && !email.trim().isEmpty() && cumpleFiltros) {
+                                cumpleFiltros = p.getEmail().toLowerCase().contains(email.toLowerCase());
+                            }
+                            return cumpleFiltros;
+                        })
+                        .collect(Collectors.toList());
+                    
+                    // Crear nueva página con resultados filtrados
+                    int start = (int) pageable.getOffset();
+                    int end = Math.min((start + pageable.getPageSize()), filtrados.size());
+                    List<Paciente> paginados = filtrados.subList(start, end);
+                    
+                    return new org.springframework.data.domain.PageImpl<>(
+                        paginados.stream().map(this::toDTO).collect(Collectors.toList()),
+                        pageable,
+                        filtrados.size()
+                    );
+                }
+                
+                return pacientesDelMedico.map(this::toDTO);
+            } else {
+                return Page.empty(pageable);
+            }
+        }
+
+        // ADMIN/OPERADOR: búsqueda con filtros + restricción a pacientes con turnos en su centro
+        Page<Paciente> result = repository.findByFiltrosAndCentro(
+            nombreApellido, documento, email, centroId, pageable);
+        
         return result.map(this::toDTO);
     }
 

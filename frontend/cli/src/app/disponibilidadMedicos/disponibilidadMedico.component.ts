@@ -14,7 +14,7 @@ import { StaffMedico } from "../staffMedicos/staffMedico";
   selector: "app-disponibilidad-medico",
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, PaginationComponent],
-  templateUrl: "./disponibilidadMedico.component.html", 
+  templateUrl: "./disponibilidadMedico.component.html",
   styleUrl: "./disponibilidadMedico.component.css",
 })
 export class DisponibilidadMedicoComponent {
@@ -56,7 +56,7 @@ export class DisponibilidadMedicoComponent {
     private staffMedicoService: StaffMedicoService,
     public router: Router,
     private modalService: ModalService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.loadDisponibilidades();
@@ -76,6 +76,13 @@ export class DisponibilidadMedicoComponent {
       )
       .subscribe({
         next: (dataPackage) => {
+          // Verificar si hay un error en el status_code (backend devuelve siempre 200)
+          if (dataPackage.status_code !== 200) {
+            this.loading = false;
+            const mensaje = dataPackage.status_text || "Error al cargar las disponibilidades.";
+            this.modalService.alert("Error", mensaje);
+            return;
+          }
           const data = dataPackage.data;
           this.disponibilidades = data.content;
           this.totalPages = data.totalPages;
@@ -86,7 +93,8 @@ export class DisponibilidadMedicoComponent {
         error: (err) => {
           console.error("Error al cargar disponibilidades:", err);
           this.loading = false;
-          // TODO: Mostrar mensaje de error al usuario
+          const mensaje = err?.error?.status_text || err?.error?.message || "Error al cargar las disponibilidades.";
+          this.modalService.alert("Error", mensaje);
         },
       });
   }
@@ -179,11 +187,18 @@ export class DisponibilidadMedicoComponent {
       )
       .then(() => {
         this.disponibilidadService.remove(id).subscribe({
-          next: () => this.loadDisponibilidades(),
+          next: (response) => {
+            // Verificar si hay un error en el status_code (backend devuelve siempre 200)
+            if (response?.status_code && response.status_code !== 200) {
+              const msg = response?.status_text || "Error al eliminar la disponibilidad.";
+              this.modalService.alert("Error", msg);
+              return;
+            }
+            this.loadDisponibilidades();
+          },
           error: (err) => {
-            const msg =
-              err?.error?.message || "Error al eliminar la disponibilidad.";
-            alert(msg);
+            const msg = err?.error?.status_text || err?.error?.message || "Error al eliminar la disponibilidad.";
+            this.modalService.alert("Error", msg);
             console.error("Error al eliminar disponibilidad:", err);
           },
         });

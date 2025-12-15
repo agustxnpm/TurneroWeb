@@ -74,7 +74,7 @@
               </div>
               <div class="consultorio-details">
                 <h5 class="consultorio-nombre" *ngIf="editConsultorioIndex !== i">
-                  Consultorio #{{ consultorio.numero }}
+                  {{ consultorio.nombre || 'Consultorio #' + consultorio.numero }}
                 </h5>
                 <input *ngIf="editConsultorioIndex === i" 
                        [(ngModel)]="consultorio.nombre" 

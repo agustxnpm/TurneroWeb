@@ -14,6 +14,7 @@ import { MapModalComponent } from '../../../modal/map-modal.component';
 export class CentroAtencionDetalleTabComponent implements OnInit {
   @Input() centroAtencion!: CentroAtencion;
   @Input() modoEdicion: boolean = false;
+  @Input() canEdit: boolean = true; // Control de permisos (SUPERADMIN puede editar, ADMIN solo ver)
   @Input() showMap: boolean = false;
   @Input() coordenadas: string = '';
   @Input() searchQuery: string = '';

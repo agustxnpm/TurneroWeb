@@ -616,6 +616,7 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
           next: (response) => {
 
             // VERIFICAR SI LA RESPUESTA CONTIENE UN ERROR
+            // response es un DataPackage<any>, el status_code está en el body
             if (response.status_code && response.status_code >= 400) {
               // Es un error disfrazado de éxito
               console.error("Error detectado en respuesta exitosa:", response);
@@ -699,8 +700,17 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
       .updateEstado(this.selectedTurno.id, "CANCELADO", this.motivo.trim())
       .subscribe({
         next: (response) => {
+          // Verificar si la respuesta contiene un error en el body
+          if (response.status_code && response.status_code >= 400) {
+            console.error("Error detectado en respuesta:", response);
+            this.errorMessage = response.status_text || 'No se pudo cancelar el turno';
+            this.showErrorModal = true;
+            this.isSubmitting = false;
+            return;
+          }
+          
           console.log("Turno cancelado exitosamente:", response);
-          alert("Turno cancelado exitosamente.");
+          this.modalService.alert('Turno Cancelado', 'Turno cancelado exitosamente.');
           this.cargarTurnosPaciente();
           this.closeModal();
         },
@@ -708,9 +718,12 @@ export class PacienteDashboardComponent implements OnInit, OnDestroy {
           console.error("Error cancelando el turno:", error);
           let errorMessage = "No se pudo cancelar el turno.";
           if (error.error && error.error.status_text) {
-            errorMessage += " Motivo: " + error.error.status_text;
+            errorMessage = error.error.status_text;
+          } else if (error.message) {
+            errorMessage = error.message;
           }
-          alert(errorMessage);
+          this.errorMessage = errorMessage;
+          this.showErrorModal = true;
           this.isSubmitting = false;
         },
       });

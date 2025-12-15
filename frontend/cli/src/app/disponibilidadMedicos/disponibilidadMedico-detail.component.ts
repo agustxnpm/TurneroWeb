@@ -82,12 +82,17 @@ export class DisponibilidadMedicoDetailComponent {
       }
       this.disponibilidadService.get(id).subscribe({
         next: (dataPackage) => {
+          // Verificar si hay un error en el status_code (backend devuelve siempre 200)
+          if (dataPackage.status_code !== 200) {
+            this.modalService.alert('Error', dataPackage.status_text || 'No se pudo cargar la disponibilidad.');
+            return;
+          }
           this.disponibilidad = <DisponibilidadMedico>dataPackage.data;
           this.loadStaffMedicos();
         },
         error: (err) => {
           console.error('Error al obtener la disponibilidad:', err);
-          alert('No se pudo cargar la disponibilidad. Intente nuevamente.');
+          this.modalService.alert('Error', 'No se pudo cargar la disponibilidad. Intente nuevamente.');
         }
       });
     }
@@ -95,7 +100,7 @@ export class DisponibilidadMedicoDetailComponent {
 
   save(): void {
     if (!this.disponibilidad.horarios.length) {
-      alert('Debe agregar al menos un horario.');
+      this.modalService.alert('Error', 'Debe agregar al menos un horario.');
       return;
     }
 
@@ -108,24 +113,38 @@ export class DisponibilidadMedicoDetailComponent {
     if (this.esNuevo) {
       // Crear nueva disponibilidad
       this.disponibilidadService.create(payload).subscribe({
-        next: () => {
+        next: (response) => {
+          // Verificar si hay un error en el status_code (backend devuelve siempre 200)
+          if (response.status_code !== 200) {
+            this.modalService.alert('Error', response.status_text || 'Error al crear la disponibilidad.');
+            return;
+          }
           this.navigateBack();
         },
         error: (error) => {
           console.error('Error al crear la disponibilidad:', error);
-          alert('Error al crear la disponibilidad.');
+          // Extraer el mensaje de error del response del backend
+          const mensaje = error?.error?.status_text || error?.error?.message || 'Error al crear la disponibilidad.';
+          this.modalService.alert('Error', mensaje);
         }
       });
     } else {
       // Actualizar disponibilidad existente
       this.disponibilidadService.update(this.disponibilidad.id, payload).subscribe({
-        next: () => {
+        next: (response) => {
+          // Verificar si hay un error en el status_code (backend devuelve siempre 200)
+          if (response.status_code !== 200) {
+            this.modalService.alert('Error', response.status_text || 'Error al actualizar la disponibilidad.');
+            return;
+          }
           this.modoEdicion = false;
           this.navigateBack();
         },
         error: (error) => {
           console.error('Error al actualizar la disponibilidad:', error);
-          alert('Error al actualizar la disponibilidad.');
+          // Extraer el mensaje de error del response del backend
+          const mensaje = error?.error?.status_text || error?.error?.message || 'Error al actualizar la disponibilidad.';
+          this.modalService.alert('Error', mensaje);
         }
       });
     }
@@ -173,9 +192,17 @@ export class DisponibilidadMedicoDetailComponent {
       )
       .then(() => {
         this.disponibilidadService.remove(disponibilidad.id).subscribe({
-          next: () => this.router.navigate(['/disponibilidades-medico']),
+          next: (response) => {
+            // Verificar si hay un error en el status_code (backend devuelve siempre 200)
+            if (response?.status_code && response.status_code !== 200) {
+              const msg = response?.status_text || "Error al eliminar la disponibilidad.";
+              this.modalService.alert("Error", msg);
+              return;
+            }
+            this.router.navigate(['/disponibilidades-medico']);
+          },
           error: (err) => {
-            const msg = err?.error?.message || "Error al eliminar la disponibilidad.";
+            const msg = err?.error?.status_text || err?.error?.message || "Error al eliminar la disponibilidad.";
             this.modalService.alert("Error", msg);
             console.error("Error al eliminar disponibilidad:", err);
           }

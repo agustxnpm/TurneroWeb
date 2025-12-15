@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import unpsjb.labprog.backend.config.AuditContext;
+import unpsjb.labprog.backend.config.TenantContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -70,6 +72,7 @@ public class ConsultorioPresenter {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Object> create(@RequestBody ConsultorioDTO consultorioDTO) {
         try {
             String performedBy = AuditContext.getCurrentUser();
@@ -91,6 +94,15 @@ public class ConsultorioPresenter {
 
     @GetMapping("/centrosAtencion/{centroId}/consultorios")
     public ResponseEntity<Object> getConsultoriosByCentro(@PathVariable Integer centroId) {
+        // Validar acceso
+        Integer currentCentro = TenantContext.getCurrentCentroId();
+        if (currentCentro == null) {
+            if (!unpsjb.labprog.backend.config.AuditContext.hasGlobalAccess()) {
+                return Response.forbidden("Usuario sin centro asignado no puede acceder a este recurso");
+            }
+        } else if (!currentCentro.equals(centroId)) {
+            return Response.forbidden("No tiene permiso para ver consultorios de otro centro");
+        }
         List<ConsultorioDTO> consultorios = service.findByCentroAtencionId(centroId);
         return Response.ok(consultorios, "Consultorios recuperados correctamente");
     }
@@ -117,6 +129,7 @@ public class ConsultorioPresenter {
     }
 
     @PostMapping("/centro/{centroId}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Object> createInCentro(@PathVariable Integer centroId, @RequestBody ConsultorioDTO consultorioDTO) {
         try {
             String performedBy = AuditContext.getCurrentUser();
@@ -134,6 +147,7 @@ public class ConsultorioPresenter {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Object> delete(@PathVariable Integer id, 
                                         @RequestParam(required = false) String reason) {
         try {

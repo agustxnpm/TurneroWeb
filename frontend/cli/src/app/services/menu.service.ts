@@ -152,6 +152,9 @@ export class MenuService {
   getMenuSectionsWithBadges(): Observable<MenuSection[]> {
     return combineLatest([this.menuSections$, this.badges$, this.userContextService.userContext$]).pipe(
       map(([sections, badges, userContext]) => {
+        const isSuperAdmin = userContext.primaryRole?.toUpperCase() === 'SUPERADMIN';
+        const isAdmin = userContext.primaryRole?.toUpperCase() === 'ADMINISTRADOR';
+        
         return sections.map(section => ({
           ...section,
           items: section.items
@@ -170,8 +173,27 @@ export class MenuService {
             })
             .map(item => {
               const badgeCount = item.route ? badges.get(item.route) : undefined;
+              
+              // Personalizar label y route según rol para "Centros de Atención"
+              let label = item.label;
+              let route = item.route;
+              
+              if (item.route === '/centrosAtencion') {
+                if (isSuperAdmin) {
+                  label = 'Gestión de Centros';
+                  route = '/centrosAtencion'; // Lista de todos los centros
+                  console.log('🔧 MenuService: SUPERADMIN - Route:', route);
+                } else if (isAdmin) {
+                  label = 'Mi Centro';
+                  const tenantId = userContext.centroAtencionId;
+                  route = tenantId ? `/centrosAtencion/${tenantId}` : '/centrosAtencion';
+                }
+              }
+              
               return {
                 ...item,
+                label: label,
+                route: route,
                 badge: badgeCount && badgeCount > 0 ? {
                   value: badgeCount,
                   color: item.badge?.color || 'danger'

@@ -2,6 +2,8 @@ package unpsjb.labprog.backend.business.repository;
 
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import unpsjb.labprog.backend.model.User;
 
@@ -13,11 +15,13 @@ import unpsjb.labprog.backend.model.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     
     /**
-     * Busca un usuario por email
+     * Busca un usuario por email con fetch join de centroAtencion
+     * para garantizar que el centro esté cargado (necesario para multi-tenencia)
      * @param email email del usuario
-     * @return Optional<User> usuario encontrado o vacío
+     * @return Optional<User> usuario encontrado con centroAtencion cargado
      */
-    Optional<User> findByEmail(String email);
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.centroAtencion WHERE u.email = :email")
+    Optional<User> findByEmail(@Param("email") String email);
     
     /**
      * Busca un usuario por DNI
@@ -76,4 +80,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return número de usuarios que cumplen ambas condiciones
      */
     long countByRoleAndEnabled(unpsjb.labprog.backend.model.Role role, boolean enabled);
+
+    /**
+     * Busca usuarios pertenecientes a un centro de atención específico
+     * Usado para filtrado multi-tenant: ADMIN/OPERADOR solo ve usuarios de su centro
+     * @param centroId ID del centro de atención
+     * @return lista de usuarios del centro
+     */
+    java.util.List<User> findByCentroAtencion_Id(Integer centroId);
 }

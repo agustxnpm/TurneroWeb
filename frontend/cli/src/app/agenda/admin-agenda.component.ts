@@ -5,8 +5,10 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { PacienteService } from '../pacientes/paciente.service';
-import { HttpClient } from '@angular/common/http';
+import { Paciente } from '../pacientes/paciente';
 import { DiasExcepcionalesService } from './dias-excepcionales.service';
+import { ToastService } from '../services/toast.service';
+import { TurnoService } from '../turnos/turno.service';
 
 interface SlotDisponible {
   id: number;
@@ -48,7 +50,7 @@ interface SlotDisponible {
 
   styleUrl: './admin-agenda.component.css'
 })
-export class AdminAgendaComponent implements OnInit {
+export class AdminAgendaComponent implements OnInit, OnDestroy {
   // Estados de carga
   isLoading = false;
   isAssigning = false;
@@ -75,8 +77,11 @@ export class AdminAgendaComponent implements OnInit {
   filteredEvents: any[] = []; // Para mantener compatibilidad
 
   // Pacientes
-  pacientes: { id: number; nombre: string; apellido: string }[] = [];
+  pacientes: Paciente[] = [];
   pacienteId: number | null = null;
+  pacientesFiltrados: Paciente[] = [];
+  searchText: string = '';
+  showDropdown: boolean = false;
 
   // Variables para posicionamiento del modal contextual
   modalPosition = { top: 0, left: 0 };
@@ -85,15 +90,81 @@ export class AdminAgendaComponent implements OnInit {
   constructor(
     private agendaService: AgendaService,
     private pacienteService: PacienteService, // Inyecta el servicio de pacientes
-    private http: HttpClient, // Inyecta HttpClient
     private cdr: ChangeDetectorRef,
     private router: Router, // Inyecta el Router
-    private diasExcepcionalesService: DiasExcepcionalesService // Inyecta el servicio de días excepcionales
+    private diasExcepcionalesService: DiasExcepcionalesService, // Inyecta el servicio de días excepcionales
+    private toastService: ToastService, // Inyecta el servicio de toast
+    private turnoService: TurnoService // Inyecta el servicio de turnos
   ) { }
 
   ngOnInit() {
     this.cargarTodosLosEventos();
-    this.cargarPacientes();
+    
+    // Capturar pacienteId de query params si viene de crear paciente
+    this.router.routerState.root.queryParams.subscribe(params => {
+      if (params['pacienteId']) {
+        const pacienteIdRecibido = +params['pacienteId'];
+        
+        console.log('🔍 Detectado pacienteId en query params:', pacienteIdRecibido);
+        
+        // Recuperar slot seleccionado PRIMERO
+        const slotGuardado = sessionStorage.getItem('slotSeleccionado');
+        console.log('📦 Slot guardado en sessionStorage:', slotGuardado);
+        
+        if (slotGuardado) {
+          this.slotSeleccionado = JSON.parse(slotGuardado);
+          console.log('✅ Slot parseado:', this.slotSeleccionado);
+          
+          // Cargar pacientes y luego abrir el modal
+          this.pacienteService.allForAssignment().subscribe({
+            next: (dataPackage) => {
+              if (dataPackage.status_code === 200) {
+                this.pacientes = dataPackage.data;
+                this.pacientesFiltrados = [...this.pacientes];
+                console.log('✅ Pacientes cargados:', this.pacientes.length);
+                
+                // Preseleccionar el paciente
+                this.pacienteId = pacienteIdRecibido;
+                const paciente = this.pacientes.find(p => p.id === this.pacienteId);
+                if (paciente) {
+                  this.searchText = `${paciente.nombre} ${paciente.apellido}`;
+                  console.log('✅ Paciente preseleccionado:', this.searchText);
+                }
+                
+                // Abrir modal inmediatamente
+                console.log('🚀 Abriendo modal...');
+                this.showModal = true;
+                this.bloquearScrollBody();
+                this.cdr.detectChanges();
+                
+                // Limpiar sessionStorage y query params
+                sessionStorage.removeItem('slotSeleccionado');
+                this.router.navigate([], {
+                  queryParams: {},
+                  queryParamsHandling: 'merge'
+                });
+              }
+            },
+            error: (err) => {
+              console.error('❌ Error al cargar pacientes:', err);
+              // Cargar pacientes normalmente si falla
+              this.cargarPacientes();
+            }
+          });
+        } else {
+          console.warn('⚠️ No hay slot guardado en sessionStorage');
+          // Limpiar query param si no hay slot
+          this.router.navigate([], {
+            queryParams: {},
+            queryParamsHandling: 'merge'
+          });
+          this.cargarPacientes();
+        }
+      } else {
+        // Si no hay pacienteId, cargar pacientes normalmente
+        this.cargarPacientes();
+      }
+    });
     
     // Listener para reposicionar modal en resize
     this.resizeListener = () => {
@@ -112,6 +183,15 @@ export class AdminAgendaComponent implements OnInit {
       }
     };
     window.addEventListener('resize', this.resizeListener);
+  }
+
+  ngOnDestroy() {
+    // Limpiar listener de resize
+    if (this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener);
+    }
+    // Asegurar que el scroll esté habilitado al destruir el componente
+    this.habilitarScrollBody();
   }
 
   // Método para cargar eventos desde el backend y convertirlos a slots
@@ -334,6 +414,7 @@ export class AdminAgendaComponent implements OnInit {
     this.slotSeleccionado = slot;
     this.showModal = true;
     this.pacienteId = null; // Reset paciente selection
+    this.bloquearScrollBody(); // Bug 1: Bloquear scroll del body
   }
 
   // Calcular posición del modal contextual
@@ -376,14 +457,41 @@ export class AdminAgendaComponent implements OnInit {
     this.modalPosition = { top, left };
   }
 
+  /**
+   * Navega al formulario de creación de paciente con returnUrl
+   */
+  crearNuevoPaciente(): void {
+    // Guardar el slot seleccionado en sessionStorage para recuperarlo al volver
+    if (this.slotSeleccionado) {
+      sessionStorage.setItem('slotSeleccionado', JSON.stringify(this.slotSeleccionado));
+    }
+    
+    // IMPORTANTE: Desbloquear scroll antes de navegar
+    this.habilitarScrollBody();
+    
+    const returnUrl = '/agenda'; // Ruta correcta según app.routes.ts
+    this.router.navigate(['/pacientes/new'], {
+      queryParams: { returnUrl }
+    });
+  }
+
   cargarPacientes(): void {
-    this.pacienteService.all().subscribe({
+    // Usar el nuevo método que devuelve TODOS los pacientes sin filtros restrictivos
+    // Esto permite asignar turnos a pacientes que aún no tienen historial en el centro
+    this.pacienteService.allForAssignment().subscribe({
       next: (dataPackage) => {
-        this.pacientes = dataPackage.data; // Asigna los pacientes recibidos
+        if (dataPackage.status_code === 200) {
+          this.pacientes = dataPackage.data; // Asigna los pacientes recibidos
+          this.pacientesFiltrados = [...this.pacientes]; // Inicializar lista filtrada
+        } else {
+          console.error('Error en respuesta:', dataPackage.status_text);
+          alert('Error al cargar pacientes: ' + (dataPackage.status_text || 'Error desconocido'));
+        }
       },
       error: (err) => {
-        // console.error('Error al cargar pacientes:', err);
-        alert('No se pudieron cargar los pacientes. Intente nuevamente.');
+        console.error('Error al cargar pacientes:', err);
+        const mensaje = err?.error?.status_text || err?.message || 'No se pudieron cargar los pacientes';
+        alert(mensaje + '. Intente nuevamente.');
       },
     });
   }
@@ -421,6 +529,80 @@ export class AdminAgendaComponent implements OnInit {
     this.showModal = false;
     this.slotSeleccionado = null;
     this.pacienteId = null;
+    this.searchText = '';
+    this.showDropdown = false;
+    this.habilitarScrollBody();
+  }
+
+  /**
+   * Bloquea el scroll del body cuando el modal está abierto
+   */
+  private bloquearScrollBody(): void {
+    document.body.style.overflow = 'hidden';
+  }
+
+  /**
+   * Habilita el scroll del body cuando el modal se cierra
+   */
+  private habilitarScrollBody(): void {
+    document.body.style.overflow = '';
+  }
+
+  /**
+   * Filtra pacientes según el texto de búsqueda (nombre, apellido o DNI)
+   */
+  filtrarPacientes(): void {
+    const search = this.searchText.toLowerCase().trim();
+    
+    if (!search) {
+      this.pacientesFiltrados = [...this.pacientes];
+      this.showDropdown = this.pacientes.length > 0;
+      return;
+    }
+    
+    this.pacientesFiltrados = this.pacientes.filter(p => {
+      const nombreCompleto = `${p.nombre} ${p.apellido}`.toLowerCase();
+      const dni = p.dni ? p.dni.toString() : '';
+      return nombreCompleto.includes(search) || dni.includes(search);
+    });
+    
+    this.showDropdown = true;
+  }
+
+  /**
+   * Selecciona un paciente de la lista filtrada
+   */
+  seleccionarPaciente(paciente: Paciente): void {
+    this.pacienteId = paciente.id;
+    this.searchText = `${paciente.nombre} ${paciente.apellido}`;
+    this.showDropdown = false;
+  }
+
+  /**
+   * Obtiene el nombre del paciente seleccionado
+   */
+  getNombrePacienteSeleccionado(): string {
+    if (!this.pacienteId) return '';
+    const paciente = this.pacientes.find(p => p.id === this.pacienteId);
+    return paciente ? `${paciente.nombre} ${paciente.apellido}` : '';
+  }
+
+  /**
+   * Muestra el dropdown al hacer focus
+   */
+  onSearchFocus(): void {
+    this.pacientesFiltrados = [...this.pacientes];
+    this.showDropdown = this.pacientes.length > 0;
+  }
+
+  /**
+   * Limpia la selección de paciente
+   */
+  limpiarSeleccion(): void {
+    this.pacienteId = null;
+    this.searchText = '';
+    this.pacientesFiltrados = [...this.pacientes];
+    this.showDropdown = false;
   }
 
   // Métodos para manejo de días excepcionales - Delegamos al servicio centralizado
@@ -551,9 +733,9 @@ export class AdminAgendaComponent implements OnInit {
 
     // console.log('Enviando turno DTO (admin):', turnoDTO);
 
-    this.http.post(`/rest/turno/asignar`, turnoDTO).subscribe({
+    this.turnoService.asignarTurno(turnoDTO).subscribe({
       next: () => {
-        alert('Turno asignado correctamente.');
+        this.toastService.success('Turno asignado correctamente');
         
         // Actualizar inmediatamente el slot en el array local
         this.actualizarSlotAsignado(this.slotSeleccionado!.id);
@@ -568,7 +750,7 @@ export class AdminAgendaComponent implements OnInit {
       error: (err: any) => {
         // console.error('Error al asignar el turno:', err);
         const errorMessage = err?.error?.status_text || 'No se pudo asignar el turno. Intente nuevamente.';
-        alert(errorMessage);
+        this.toastService.error(errorMessage);
         this.isAssigning = false;
       },
     });

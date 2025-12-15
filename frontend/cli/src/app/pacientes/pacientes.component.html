@@ -5,13 +5,10 @@
       <span class="material-symbols-outlined header-icon">group</span>
       <div>
         <h2 class="mb-0">Pacientes</h2>
-        <p class="text-muted mb-0 mt-sm">Gestión de pacientes registrados</p>
+        <p class="text-muted mb-0 mt-sm">Gestión de pacientes registrados con turnos en el centro</p>
       </div>
     </div>
-    <button class="btn btn-primary" (click)="router.navigate(['/pacientes/new'])">
-      <span class="material-symbols-outlined">add_circle</span>
-      <span class="d-none d-sm-inline">Nuevo Paciente</span>
-    </button>
+    <!-- Botón removido: Los pacientes deben crearse desde la asignación de turnos -->
   </div>
 
   <!-- BARRA DE BÚSQUEDA Y FILTROS -->
@@ -360,7 +357,7 @@
                 {{
                   hasActiveFilters()
                     ? "No se encontraron pacientes con los filtros aplicados"
-                    : "Comience agregando un nuevo paciente al sistema"
+                    : "Los pacientes aparecerán aquí cuando tengan turnos asignados en este centro. Para crear un nuevo paciente, vaya a la Agenda y asigne un turno."
                 }}
               </p>
               <button

@@ -224,8 +224,6 @@ public class SecurityConfig {
                                 .requestMatchers("/admin-perfil/**").hasRole("ADMINISTRADOR")
                                 // Gestión de administradores (solo admin puede gestionar otros admins)
                                 .requestMatchers("/api/admins/**").hasRole("ADMINISTRADOR")
-                                // Creación de operadores (solo admin puede crear otros operadores)
-                                .requestMatchers("/operadores/create-by-admin").hasRole("ADMINISTRADOR")
 
                                 // ========== ENDPOINTS SOLO PACIENTE ==========
                                 // Rutas que requieren PatientGuard en el frontend

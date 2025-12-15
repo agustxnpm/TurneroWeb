@@ -47,6 +47,7 @@ import unpsjb.labprog.backend.model.Turno;
 import unpsjb.labprog.backend.model.User;
 import unpsjb.labprog.backend.business.repository.OperadorRepository;
 import unpsjb.labprog.backend.business.repository.UserRepository;
+import unpsjb.labprog.backend.config.TenantContext;
 
 @Service
 public class TurnoService {
@@ -121,11 +122,32 @@ public class TurnoService {
         VALID_TRANSITIONS.put(EstadoTurno.COMPLETO, Arrays.asList());
     }
 
-    // Obtener todos los turnos como DTOs
+    // ===== MÉTODOS DE CONSULTA CON MULTI-TENENCIA =====
+    
+    /**
+     * Obtiene todos los turnos aplicando filtrado automático según el rol del usuario.
+     * - SUPERADMIN: Ve todos los turnos de todos los centros
+     * - ADMINISTRADOR/MEDICO/OPERADOR: Solo ve turnos de su centro
+     * - PACIENTE: Ve todos los turnos (acceso global para búsqueda)
+     * 
+     * @return Lista de DTOs de turnos según permisos del usuario
+     */
     public List<TurnoDTO> findAll() {
-        return repository.findAll().stream()
+        Integer centroId = TenantContext.getFilteredCentroId();
+        
+        if (centroId != null) {
+            // Usuario restringido a un centro (ADMIN/MEDICO/OPERADOR)
+            return repository.findByCentroAtencion_Id(centroId, Sort.by(Sort.Direction.DESC, "fecha", "horaInicio"))
+                .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+        } else {
+            // Usuario con acceso global (SUPERADMIN o PACIENTE)
+            return repository.findAll(Sort.by(Sort.Direction.DESC, "fecha", "horaInicio"))
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+        }
     }
 
     // Obtener un turno por ID como DTO
@@ -251,14 +273,25 @@ public class TurnoService {
         }
     }
 
-    // Obtener turnos paginados como DTOs
+    // Obtener turnos paginados como DTOs con filtrado automático de multi-tenencia
     public Page<TurnoDTO> findByPage(int page, int size) {
-        return repository.findAll(PageRequest.of(page, size))
+        Integer centroId = TenantContext.getFilteredCentroId();
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "fecha", "horaInicio"));
+        
+        if (centroId != null) {
+            // Usuario restringido a un centro
+            return repository.findByCentroAtencion_Id(centroId, pageable)
                 .map(this::toDTO);
+        } else {
+            // Usuario con acceso global
+            return repository.findAll(pageable)
+                .map(this::toDTO);
+        }
     }
 
     /**
-     * Búsqueda paginada avanzada con filtros y ordenamiento
+     * Búsqueda paginada avanzada con filtros y ordenamiento (MULTI-TENENCIA)
+     * Aplica filtrado automático por centro según el rol del usuario.
      * 
      * @param page        Número de página (0-based)
      * @param size        Tamaño de página
@@ -270,7 +303,7 @@ public class TurnoService {
      * @param fechaHasta  Filtro por fecha hasta (formato: yyyy-MM-dd, opcional)
      * @param sortBy      Campo para ordenar (opcional)
      * @param sortDir     Dirección del ordenamiento (asc/desc, opcional)
-     * @return Page<TurnoDTO> con los resultados paginados
+     * @return Page<TurnoDTO> con los resultados paginados y filtrados por tenant
      */
     public Page<TurnoDTO> findByPage(
             int page,
@@ -323,8 +356,12 @@ public class TurnoService {
             }
         }
 
-        // Ejecutar consulta con filtros
-        Page<Turno> result = repository.findByFiltros(
+        // MULTI-TENENCIA: Obtener centro del usuario actual
+        Integer centroId = TenantContext.getFilteredCentroId();
+
+        // Ejecutar consulta con filtros incluyendo tenant
+        Page<Turno> result = repository.findByFiltrosWithCentro(
+                centroId, // null para usuarios con acceso global
                 paciente, medico, consultorio, estadoEnum,
                 fechaDesdeParsed, fechaHastaParsed, pageable);
 
@@ -556,7 +593,7 @@ public class TurnoService {
         configuracionService.validarConfiguracionesRecordatorios();
 
         ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = LocalDate.now(zoneId);  // ✅ CORREGIDO: usar zona horaria de Argentina
         LocalTime horaActual = LocalTime.now(zoneId);
         long diasRestantes = ChronoUnit.DAYS.between(hoy, turno.getFecha());
 
@@ -624,7 +661,7 @@ public class TurnoService {
 
     // Cancelación automática actualizada
 
-    @Scheduled(cron = "0 0 0 * * ?") // Diariamente a las 00:00
+    @Scheduled(cron = "0 0 0 * * ?", zone = "America/Argentina/Buenos_Aires") // ✅ CORREGIDO: especificar zona
     @Transactional
     public void cancelarTurnosNoConfirmadosAutomaticamente() {
         if (!configuracionService.isHabilitadaCancelacionAutomatica()) {
@@ -632,7 +669,8 @@ public class TurnoService {
             return;
         }
 
-        LocalDate hoy = LocalDate.now();
+        ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
+        LocalDate hoy = LocalDate.now(zoneId);  // ✅ CORREGIDO: usar zona horaria de Argentina
         int diasMin = configuracionService.getDiasMinConfirmacion();
         LocalDate fechaLimite = hoy.plusDays(diasMin);
 
@@ -969,9 +1007,12 @@ public class TurnoService {
         }
 
         // No se pueden cancelar turnos el mismo día de la cita sin justificación válida
-        LocalDate hoy = LocalDate.now();
-        if (turno.getFecha().equals(hoy)) {
-            throw new IllegalStateException("No se pueden cancelar turnos el mismo día de la cita");
+        // La validación permite cancelar hasta el día anterior (antes de las 00:00 del día de la cita)
+        // Usar zona horaria de Argentina para comparación correcta
+        LocalDate hoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
+        if (!turno.getFecha().isAfter(hoy)) {
+            // El turno es hoy o ya pasó
+            throw new IllegalStateException("No se pueden cancelar turnos el mismo día de la cita o turnos pasados");
         }
     }
 
@@ -1088,10 +1129,23 @@ public class TurnoService {
                             "Médico no encontrado con ID: " + dto.getStaffMedicoId()));
             turno.setStaffMedico(staffMedico);
 
+            // ===== MULTI-TENENCIA: ASIGNACIÓN AUTOMÁTICA DE CENTRO =====
             // Campos de auditoría: preservar información histórica
             turno.setMedico(staffMedico.getMedico());
             turno.setEspecialidad(staffMedico.getEspecialidad());
+            
+            // CRÍTICO: Heredar el centro del médico (LÓGICA HÍBRIDA)
+            // El turno SIEMPRE pertenece al centro donde atiende el médico
+            // Esto permite que pacientes (acceso global) creen turnos en cualquier centro
+            // pero el turno queda asociado al centro correcto para filtrado posterior
             turno.setCentroAtencion(staffMedico.getCentroAtencion());
+            
+            // Validación de seguridad de multi-tenencia
+            if (staffMedico.getCentroAtencion() == null) {
+                throw new IllegalStateException(
+                    "El staff médico debe tener un centro de atención asignado"
+                );
+            }
         }
 
         if (dto.getConsultorioId() != null) {
@@ -1128,6 +1182,14 @@ public class TurnoService {
         }
         if (turno.getEstado() == null) {
             throw new IllegalArgumentException("El estado del turno es obligatorio");
+        }
+        
+        // VALIDACIÓN MULTI-TENENCIA: Todo turno DEBE tener un centro asignado
+        if (turno.getCentroAtencion() == null || turno.getCentroAtencion().getId() == null) {
+            throw new IllegalArgumentException(
+                "El turno debe tener un centro de atención asignado. " +
+                "Esto se hereda automáticamente del médico seleccionado."
+            );
         }
 
         // Validar que el médico atiende en la fecha del turno
