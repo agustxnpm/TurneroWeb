@@ -108,17 +108,14 @@ public class EmailService {
      */
     @Async
     public CompletableFuture<Void> sendTextEmailAsync(String to, String subject, String body) {
-        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+        try {
             sendTextEmail(to, subject, body);
-        });
-        future.whenComplete((result, ex) -> {
-            if (ex != null) {
-                logger.error("[Async] Error al enviar correo de texto a {}: {}", to, ex.getMessage());
-            } else {
-                logger.info("[Async] Correo de texto enviado exitosamente a: {}", to);
-            }
-        });
-        return future;
+            logger.info("[Async] Correo de texto enviado exitosamente a: {}", to);
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception ex) {
+            logger.error("[Async] Error al enviar correo de texto a {}: {}", to, ex.getMessage());
+            return CompletableFuture.failedFuture(ex);
+        }
     }
 
     /**
@@ -131,17 +128,14 @@ public class EmailService {
      */
     @Async
     public CompletableFuture<Void> sendHtmlEmailAsync(String to, String subject, String htmlBody) {
-        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+        try {
             sendHtmlEmail(to, subject, htmlBody);
-        });
-        future.whenComplete((result, ex) -> {
-            if (ex != null) {
-                logger.error("[Async] Error al enviar correo HTML a {}: {}", to, ex.getMessage());
-            } else {
-                logger.info("[Async] Correo HTML enviado exitosamente a: {}", to);
-            }
-        });
-        return future;
+            logger.info("[Async] Correo HTML enviado exitosamente a: {}", to);
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception ex) {
+            logger.error("[Async] Error al enviar correo HTML a {}: {}", to, ex.getMessage());
+            return CompletableFuture.failedFuture(ex);
+        }
     }
 
     /**
@@ -154,8 +148,8 @@ public class EmailService {
     public CompletableFuture<Void> sendPasswordResetEmail(String to, String resetLink) {
         String subject = appName + " - Restablecer contraseña";
         String htmlBody = buildPasswordResetEmailBody(resetLink);
-
-        return sendHtmlEmailAsync(to, subject, htmlBody);
+        sendHtmlEmail(to, subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -169,8 +163,8 @@ public class EmailService {
     public CompletableFuture<Void> sendAccountActivationEmail(String to, String activationLink, String userName) {
         String subject = appName + " - Activar tu cuenta";
         String htmlBody = buildAccountActivationEmailBody(activationLink, userName);
-
-        return sendHtmlEmailAsync(to, subject, htmlBody);
+        sendHtmlEmail(to, subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -184,8 +178,8 @@ public class EmailService {
     public CompletableFuture<Void> sendInitialCredentialsEmail(String to, String userName, String temporaryPassword) {
         String subject = appName + " - Credenciales de acceso";
         String htmlBody = buildInitialCredentialsEmailBody(userName, temporaryPassword);
-
-        return sendHtmlEmailAsync(to, subject, htmlBody);
+        sendHtmlEmail(to, subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -200,8 +194,8 @@ public class EmailService {
             String appointmentDetails) {
         String subject = appName + " - Confirmación de turno";
         String htmlBody = buildAppointmentConfirmationEmailBody(patientName, appointmentDetails);
-
-        return sendHtmlEmailAsync(to, subject, htmlBody);
+        sendHtmlEmail(to, subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -223,8 +217,8 @@ public class EmailService {
 
         String subject = appName + " - Turno cancelado";
         String htmlBody = buildAppointmentCancellationEmailBody(patientName, cancellationDetails, rescheduleUrl);
-
-        return sendHtmlEmailAsync(to, subject, htmlBody);
+        sendHtmlEmail(to, subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -236,12 +230,13 @@ public class EmailService {
      * @param rescheduleUrl      URL para reagendar
      * @return CompletableFuture que se completa cuando el email es enviado
      */
+    @Async
     public CompletableFuture<Void> sendAutomaticCancellationEmail(String to, String patientName,
             String appointmentDetails, String rescheduleUrl) {
         String subject = appName + " - Turno cancelado automáticamente";
         String htmlBody = buildAutomaticCancellationEmailBody(patientName, appointmentDetails, rescheduleUrl);
-
-        return sendHtmlEmailAsync(to, subject, htmlBody);
+        sendHtmlEmail(to, subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -255,8 +250,8 @@ public class EmailService {
             String temporaryPassword) {
         String subject = appName + " - Cuenta de Administrador Creada";
         String htmlBody = buildAdminWelcomeEmailBody(adminUser.getNombre(), temporaryPassword);
-
-        return sendHtmlEmailAsync(adminUser.getEmail(), subject, htmlBody);
+        sendHtmlEmail(adminUser.getEmail(), subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     private String buildAdminWelcomeEmailBody(String adminName, String temporaryPassword) {
@@ -317,8 +312,8 @@ public class EmailService {
             String temporaryPassword) {
         String subject = appName + " - Bienvenido Dr./Dra. " + medicoUser.getApellido();
         String htmlBody = buildMedicoWelcomeEmailBody(medicoUser.getNombre(), medicoUser.getApellido(), temporaryPassword);
-
-        return sendHtmlEmailAsync(medicoUser.getEmail(), subject, htmlBody);
+        sendHtmlEmail(medicoUser.getEmail(), subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     private String buildMedicoWelcomeEmailBody(String nombre, String apellido, String temporaryPassword) {
@@ -558,8 +553,8 @@ public class EmailService {
         String confirmUrl = appUrl + "/link-verificacion?token=" + deepLinkToken;
 
         String htmlBody = buildAppointmentReminderEmailBody(patientName, reminderDetails, confirmUrl);
-
-        return sendHtmlEmailAsync(to, subject, htmlBody);
+        sendHtmlEmail(to, subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
@@ -581,8 +576,8 @@ public class EmailService {
         String surveyUrl = appUrl + "/link-verificacion?token=" + deepLinkToken;
         
         String htmlBody = buildSurveyInvitationEmailBody(patientName, turnoDetails, surveyUrl);
-
-        return sendHtmlEmailAsync(to, subject, htmlBody);
+        sendHtmlEmail(to, subject, htmlBody);
+        return CompletableFuture.completedFuture(null);
     }
 
     /**
