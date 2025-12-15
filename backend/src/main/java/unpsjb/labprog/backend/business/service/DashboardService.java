@@ -342,11 +342,17 @@ public class DashboardService {
             dto.setSatisfaccionPromedio(avgSatisf != null ? avgSatisf : 0.0);
             System.out.println("   ✅ Satisfacción promedio: " + avgSatisf);
 
-            // B) Conteo Comentarios Texto
+            // B) Conteo de Encuestas Respondidas (Turnos únicos con respuestas)
+            List<Integer> turnosConEncuestas = encuestaRespuestaRepository.findTurnosConEncuestas(centroId, desde, hasta);
+            long numeroEncuestas = turnosConEncuestas != null ? turnosConEncuestas.size() : 0;
+            System.out.println("   ✅ Número de encuestas respondidas: " + numeroEncuestas);
+            dto.setNumeroComentarios(numeroEncuestas);
+
+            // C) Conteo Comentarios con Texto
             Long countTexto = encuestaRespuestaRepository.contarComentarios(centroId, desde, hasta);
             System.out.println("   ✅ Comentarios de texto: " + countTexto);
 
-            // C) Conteo Puntuaciones Bajas (Quejas)
+            // D) Conteo Puntuaciones Bajas (Quejas)
             // MEJORA: Usamos todos los tipos numéricos para capturar quejas de trato o
             // espera
             Long countLow = encuestaRespuestaRepository.contarAlertas(centroId, tiposNumericos, 2, desde, hasta);
@@ -360,6 +366,7 @@ public class DashboardService {
             ex.printStackTrace();
             dto.setSatisfaccionPromedio(0.0);
             dto.setConteoQuejas(0L);
+            dto.setNumeroComentarios(0L);
         }
 
         return dto;

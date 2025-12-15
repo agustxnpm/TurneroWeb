@@ -40,4 +40,7 @@ public class MetricasDashboardDTO {
     // Conteo de quejas/reclamos detectados (texto libre no vacío o puntuaciones bajas)
     private Long conteoQuejas;
 
+    // Número total de comentarios (respuestas con texto libre)
+    private Long numeroComentarios;
+
 }

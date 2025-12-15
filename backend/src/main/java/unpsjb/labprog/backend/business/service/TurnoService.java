@@ -608,7 +608,6 @@ public class TurnoService {
             System.out.println("Cancelación automática deshabilitada por configuración");
             return;
         }
-
         ZoneId zoneId = ZoneId.of("America/Argentina/Buenos_Aires");
         LocalDate hoy = LocalDate.now(zoneId);  // ✅ CORREGIDO: usar zona horaria de Argentina
         int diasMin = configuracionService.getDiasMinConfirmacion();
