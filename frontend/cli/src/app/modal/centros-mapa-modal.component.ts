@@ -7,11 +7,12 @@ import {
   Input,
   OnInit,
   OnDestroy,
-  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  AfterViewInit,
 } from "@angular/core";
-import { CommonModule } from "@angular/common";
+import { CommonModule, Location } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { RouterModule } from "@angular/router";
+import { Router, RouterModule } from "@angular/router";
 import * as L from "leaflet";
 import { HttpClient } from "@angular/common/http";
 import { CentroAtencion } from "../centrosAtencion/centroAtencion";
@@ -36,16 +37,15 @@ interface CentroMapaInfo extends CentroAtencion {
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: "./centros-mapa-modal.component.html",
   styleUrl: "./centros-mapa-modal.component.css",
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CentrosMapaModalComponent implements OnInit, OnDestroy {
+export class CentrosMapaModalComponent implements OnInit, OnDestroy, AfterViewInit {
   @Input() centros: CentroAtencion[] = [];
   @Input() especialidades: Especialidad[] = [];
   @Input() slotsDisponibles: any[] = []; // Slots/turnos disponibles del componente padre
   @Input() especialidadSeleccionadaInicial: string = "";
   @Output() centroSeleccionado = new EventEmitter<CentroAtencion>();
   @Output() modalCerrado = new EventEmitter<void>();
-  @ViewChild("mapContainer", { static: true })
+  @ViewChild("mapContainer", { static: false })
   mapContainer!: ElementRef<HTMLDivElement>;
 
   // Mapa
@@ -95,18 +95,23 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
   mostrarModalInfoCentro = false;
   centroInfoModal: CentroMapaInfo | null = null;
 
+  // Referencia para restaurar el scroll del body
+  private originalBodyOverflow: string = '';
+
   constructor(
     private http: HttpClient,
     private geolocationService: GeolocationService,
     private centroEspecialidadService: CentroEspecialidadService,
-    private userContextService: UserContextService
+    private userContextService: UserContextService,
+    private router: Router,
+    private location: Location,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
-    // console.log('🗺️ Inicializando modal de centros...');
-    // console.log('- Centros recibidos:', this.centros?.length || 0);
-    // console.log('- Especialidades recibidas:', this.especialidades?.length || 0);
-    // console.log('- Especialidad inicial:', this.especialidadSeleccionadaInicial);
+    // Bloquear el scroll del body cuando el modal está abierto
+    this.originalBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
 
     // Establecer referencia global para los botones del popup
     (window as any).centrosModalComponent = this;
@@ -116,11 +121,14 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
       this.especialidadFiltro = this.especialidadSeleccionadaInicial;
     }
 
-    // Inicializar datos del modal (esto cargará las especialidades del padre)
+    // Inicializar datos del modal inmediatamente
     this.inicializarDatos();
   }
 
   ngOnDestroy() {
+    // Restaurar el scroll del body
+    document.body.style.overflow = this.originalBodyOverflow;
+
     // Limpiar referencia global
     if ((window as any).centrosModalComponent === this) {
       delete (window as any).centrosModalComponent;
@@ -138,24 +146,23 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    // No inicializar el mapa aquí, se inicializa en cargarCentroEspecialidades
-    // después de cargar todos los datos
+    // Inicializar el mapa después de que la vista esté lista
+    // Esto es crucial para que Leaflet encuentre el contenedor correctamente
+    setTimeout(() => {
+      if (!this.map && this.mapContainer?.nativeElement) {
+        this.inicializarMapa();
+        this.cdr.detectChanges();
+      }
+    }, 200);
   }
 
   inicializarDatos() {
-    // console.log('🔧 Inicializando datos del modal...');
-    // console.log('🏥 Centros recibidos:', this.centros?.length || 0);
-
     // Cargar las relaciones centro-especialidad
     this.cargarCentroEspecialidades();
   }
 
   cargarCentroEspecialidades() {
-    // console.log('📋 Procesando datos basados en slots disponibles...');
-    // console.log('- Slots recibidos:', this.slotsDisponibles?.length || 0);
-
     if (!this.slotsDisponibles || this.slotsDisponibles.length === 0) {
-      // console.log('⚠️ No hay slots disponibles, cargando desde relaciones centro-especialidad como fallback');
       this.cargarCentroEspecialidadesFromService();
       return;
     }
@@ -166,11 +173,19 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
     // Procesar centros con sus especialidades reales
     this.procesarCentros();
 
-    // Aplicar filtros después de procesar los datos
+    // Aplicar filtros después de procesar los datos - INICIALIZA centrosFiltrados
     this.aplicarFiltros();
 
-    // Inicializar mapa
-    setTimeout(() => this.inicializarMapa(), 100);
+    // Forzar detección de cambios para mostrar los centros inmediatamente
+    this.cdr.detectChanges();
+
+    // Inicializar mapa DESPUÉS de tener centros procesados
+    setTimeout(() => {
+      if (!this.map && this.mapContainer?.nativeElement) {
+        this.inicializarMapa();
+        this.cdr.detectChanges();
+      }
+    }, 150);
   }
   
     /**
@@ -185,7 +200,6 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
     this.centroEspecialidadService.all().subscribe({
       next: (dataPackage) => {
         this.centroEspecialidades = dataPackage.data || [];
-        // console.log('✅ Relaciones centro-especialidad cargadas (fallback):', this.centroEspecialidades.length);
 
         // Usar el método anterior como fallback
         this.extraerEspecialidadesDisponiblesFromService();
@@ -194,8 +208,16 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
         // Aplicar filtros
         this.aplicarFiltros();
 
+        // Forzar detección de cambios para mostrar los centros inmediatamente
+        this.cdr.detectChanges();
+
         // Inicializar mapa
-        setTimeout(() => this.inicializarMapa(), 100);
+        setTimeout(() => {
+          if (!this.map && this.mapContainer?.nativeElement) {
+            this.inicializarMapa();
+            this.cdr.detectChanges();
+          }
+        }, 150);
       },
       error: (error) => {
         console.error(
@@ -205,7 +227,13 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
         this.especialidadesDisponibles = this.especialidades || [];
         this.procesarCentros();
         this.aplicarFiltros();
-        setTimeout(() => this.inicializarMapa(), 100);
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          if (!this.map && this.mapContainer?.nativeElement) {
+            this.inicializarMapa();
+            this.cdr.detectChanges();
+          }
+        }, 150);
       },
     });
   }
@@ -354,9 +382,13 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
 
     this.resultadosBusqueda.forEach((centro, index) => {
       if (centro.latitud && centro.longitud) {
-        const marker = L.marker([centro.latitud, centro.longitud])
-          .bindPopup(this.crearPopupCentro(centro, index + 1))
-          .addTo(this.map);
+        // Crear marcador y añadir al mapa primero
+        const marker = L.marker([centro.latitud, centro.longitud]).addTo(this.map);
+
+        // Bindear popup con clase personalizada para poder sobreescribir estilos desde Angular
+        marker.bindPopup(this.crearPopupCentro(centro, index + 1), {
+          className: 'custom-leaflet-popup'
+        });
 
         // No agregar evento click aquí - el popup se abre automáticamente
         // El modal solo se abrirá desde el botón del popup
@@ -376,6 +408,7 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
   }
 
   crearPopupCentro(centro: CentroMapaInfo, numero: number): string {
+    // Preparar partes variables
     const distancia =
       centro.distanciaKm !== undefined
         ? `<div class="popup-distance"><i class="fas fa-route"></i> ${this.formatDistance(
@@ -383,42 +416,51 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
           )}</div>`
         : "";
 
-    // Obtener las especialidades reales del centro (mostrar solo 2 en el popup)
     const especialidadesCentro = centro.especialidadesDisponibles || [];
     const especialidadesPreview =
       especialidadesCentro.length > 0
         ? `<div class="popup-especialidades-preview">
-           <i class="fas fa-stethoscope"></i> 
-           ${especialidadesCentro.slice(0, 2).join(", ")}
-           ${especialidadesCentro.length > 2 ? ` (+${especialidadesCentro.length - 2} más)` : ""}
-         </div>`
+             <i class="fas fa-stethoscope"></i>
+             ${especialidadesCentro.slice(0, 2).join(", ")}
+             ${especialidadesCentro.length > 2 ? ` (+${especialidadesCentro.length - 2} más)` : ""}
+           </div>`
         : "";
 
-    return `
-      <div class="centro-popup-compact">
-        <div class="popup-header-compact">
-          <span class="popup-number">${numero}</span>
-          <div class="popup-title">
-            <strong>${centro.nombre}</strong>
+    // Intentar obtener la plantilla desde el DOM (definida en el HTML del componente)
+    let template = '';
+    const tplEl = document.getElementById('centro-popup-template');
+    if (tplEl && tplEl.innerHTML) {
+      template = tplEl.innerHTML;
+    } else {
+      // Fallback al HTML antiguo si no encuentra la plantilla
+      template = `
+        <div class="centro-popup-compact">
+          <div class="popup-header-compact">
+            <div class="popup-title"><strong>${centro.nombre}</strong></div>
+          </div>
+          <div class="popup-body-compact">
+            <div class="popup-row-compact"><i class="fas fa-map-marker-alt"></i> ${centro.direccion}</div>
+            ${distancia}
+            ${especialidadesPreview}
+            <div class="popup-actions-compact">
+              <button class="btn-popup-compact btn-popup-primary" onclick="window.centrosModalComponent.abrirModalInfoCentro(${centro.id})">
+                <i class="fas fa-info-circle"></i> Ver más información
+              </button>
+            </div>
           </div>
         </div>
-        <div class="popup-body-compact">
-          <div class="popup-row-compact">
-            <i class="fas fa-map-marker-alt"></i> 
-            ${centro.direccion}
-          </div>
-          ${distancia}
-          ${especialidadesPreview}
-          <div class="popup-actions-compact">
-            <button 
-              class="btn-popup-compact btn-popup-primary" 
-              onclick="window.centrosModalComponent.abrirModalInfoCentro(${centro.id})">
-              <i class="fas fa-info-circle"></i> Ver más información
-            </button>
-          </div>
-        </div>
-      </div>
-    `;
+      `;
+    }
+
+    // Rellenar placeholders
+    template = template
+      .replace(/__NOMBRE__/g, centro.nombre || '')
+      .replace(/__DIRECCION__/g, centro.direccion || '')
+      .replace(/__DISTANCIA__/g, distancia)
+      .replace(/__ESPECIALIDADES_PREVIEW__/g, especialidadesPreview)
+      .replace(/__CENTRO_ID__/g, String(centro.id));
+
+    return template;
   }
 
   obtenerUbicacionUsuario() {
@@ -718,6 +760,23 @@ export class CentrosMapaModalComponent implements OnInit, OnDestroy {
   }
 
   verTurnosCentro(centroId: number) {
+    // Guardar estado del modal para restaurar al volver
+    const modalState = {
+      showModal: true,
+      centros: this.centros,
+      especialidades: this.especialidades,
+      slotsDisponibles: this.slotsDisponibles,
+      especialidadInicial: this.especialidadSeleccionadaInicial,
+      userLocation: this.userLocation,
+      filtros: {
+        especialidadFiltro: this.especialidadFiltro,
+        radioMaximo: this.radioMaximo
+      }
+    };
+    
+    // Guardar en sessionStorage para recuperar después
+    sessionStorage.setItem('modalCentrosState', JSON.stringify(modalState));
+    
     // Este método será llamado desde el HTML con routerLink
     // Solo cerrar los modales
     this.cerrarModalInfoCentro();

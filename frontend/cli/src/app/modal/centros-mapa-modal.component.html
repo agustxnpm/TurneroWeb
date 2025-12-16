@@ -1,26 +1,36 @@
-<div class="centros-modal-backdrop" (click)="close()">
-  <div class="centros-modal-content" (click)="$event.stopPropagation()">
+<div class="modal-backdrop" (click)="close()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
     <!-- HEADER -->
-    <div class="centros-modal-header">
-      <div class="header-info">
-        <h3><i class="fas fa-map-marked-alt"></i> Centros de Atención</h3>
-        <p>Encuentra el centro más cercano a tu ubicación</p>
+    <header class="modal-header">
+      <div class="header-content">
+        <div class="header-title-group">
+          <span class="material-symbols-outlined header-icon">location_on</span>
+          <div>
+            <h2>Centros de Atención</h2>
+            <p>Encuentra el centro más cercano a tu ubicación</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="close()" aria-label="Cerrar modal">
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
-      <button type="button" class="btn-close" (click)="close()">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
+    </header>
 
-    <!-- FILTROS Y CONTROLES -->
-    <div class="centros-modal-filters">
+    <!-- CONTENEDOR PRINCIPAL CON DOS COLUMNAS -->
+    <div class="modal-content">
+      <!-- PANEL IZQUIERDO: FILTROS + RESULTADOS -->
+      <div class="results-panel">
+        <!-- FILTROS Y CONTROLES -->
+        <div class="filters-section">
+          <div class="filters-container">
       <!-- BÚSQUEDA POR NOMBRE -->
-      <div class="filter-group search-group">
-        <label><i class="fas fa-search"></i> Buscar Centro:</label>
-        <div class="search-input-container">
+      <div class="filter-item filter-search">
+        <label><span class="material-symbols-outlined">search</span> Buscar Centro:</label>
+        <div class="search-wrapper">
           <input
             type="text"
             name="busquedaTexto"
-            class="form-control search-input"
+            class="input-field"
             [(ngModel)]="busquedaTexto"
             (input)="buscarCentros()"
             placeholder="Nombre del centro o dirección..."
@@ -28,11 +38,11 @@
           />
           <button
             type="button"
-            class="btn-clear-search"
+            class="btn-clear"
             *ngIf="busquedaTexto"
             (click)="limpiarBusqueda()"
           >
-            <i class="fas fa-times"></i>
+            <span class="material-symbols-outlined">close</span>
           </button>
         </div>
         <div
@@ -41,7 +51,7 @@
         >
           <div
             *ngFor="let centro of resultadosBusqueda"
-            class="search-result-item"
+            class="search-result"
             (click)="seleccionarCentroEnMapa(centro)"
           >
             <div class="result-name">{{ centro.nombre }}</div>
@@ -59,12 +69,12 @@
       </div>
 
       <!-- FILTRO POR ESPECIALIDAD -->
-      <div class="filter-group" *ngIf="esOperador">
+      <div class="filter-item" *ngIf="esOperador">
         <label
-          ><i class="fas fa-stethoscope"></i> Filtrar por Especialidad:</label
+          ><span class="material-symbols-outlined">medical_services</span> Filtrar por Especialidad:</label
         >
         <select
-          class="form-control"
+          class="input-field"
           name="especialidadFiltro"
           [(ngModel)]="especialidadFiltro"
           (change)="aplicarFiltros()"
@@ -82,10 +92,11 @@
       </div>
 
       <!-- CONTROLES DE UBICACIÓN -->
-      <div class="location-controls">
-        <div class="location-group">
+      <div class="filter-item filter-location">
+        <label><span class="material-symbols-outlined">location_on</span> Ubicación:</label>
+        <div class="location-actions">
           <button
-            class="btn btn-location"
+            class="btn btn-primary"
             [class.active]="userLocation"
             (click)="obtenerUbicacionUsuario()"
             [disabled]="isLoadingLocation"
@@ -95,7 +106,7 @@
                 : 'Obtener mi ubicación'
             "
           >
-            <i class="fas fa-map-marker-alt"></i>
+            <span class="material-symbols-outlined">location_on</span>
             {{
               isLoadingLocation
                 ? "Ubicando..."
@@ -103,53 +114,53 @@
                 ? "Ubicado (Refrescar)"
                 : "Mi Ubicación"
             }}
-            <i class="fas fa-spinner fa-spin" *ngIf="isLoadingLocation"></i>
+            <span class="material-symbols-outlined spinner" *ngIf="isLoadingLocation">progress_activity</span>
           </button>
 
           <button
-            class="btn btn-location-manual"
+            class="btn btn-secondary"
             (click)="showManualLocationForm = !showManualLocationForm"
           >
-            <i class="fas fa-edit"></i>
+            <span class="material-symbols-outlined">edit_location</span>
             Ubicación Manual
           </button>
 
           <button
-            class="btn btn-drag-location"
+            class="btn btn-secondary"
             [class.active]="modoArrastre"
             (click)="toggleModoArrastre()"
             title="Arrastra el mapa para ajustar tu ubicación"
           >
-            <i class="fas fa-arrows-alt"></i>
+            <span class="material-symbols-outlined">open_with</span>
             {{ modoArrastre ? "✓ Modo Arrastre" : "Ubicación por Arrastre" }}
           </button>
         </div>
 
         <!-- FORMULARIO DE UBICACIÓN MANUAL -->
-        <div class="manual-location-form" *ngIf="showManualLocationForm">
+        <div class="manual-form" *ngIf="showManualLocationForm">
           <div class="input-group">
             <input
               type="text"
               name="direccionBusqueda"
-              class="form-control"
+              class="input-field"
               [(ngModel)]="direccionBusqueda"
               placeholder="Ingresa tu dirección o ciudad"
               (keyup.enter)="buscarDireccion()"
             />
             <button
-              class="btn btn-search"
+              class="btn btn-secondary btn-icon"
               (click)="buscarDireccion()"
               [disabled]="!direccionBusqueda"
             >
-              <i class="fas fa-search"></i>
+              <span class="material-symbols-outlined">search</span>
             </button>
           </div>
 
-          <div class="coord-inputs">
+          <div class="coord-group">
             <input
               type="number"
               name="latitudManual"
-              class="form-control"
+              class="input-field"
               [(ngModel)]="latitudManual"
               placeholder="Latitud"
               step="any"
@@ -157,30 +168,30 @@
             <input
               type="number"
               name="longitudManual"
-              class="form-control"
+              class="input-field"
               [(ngModel)]="longitudManual"
               placeholder="Longitud"
               step="any"
             />
             <button
-              class="btn btn-set-coords"
+              class="btn btn-secondary btn-icon"
               (click)="establecerCoordenadas()"
               [disabled]="!latitudManual || !longitudManual"
             >
-              <i class="fas fa-map-pin"></i>
+              <span class="material-symbols-outlined">push_pin</span>
             </button>
           </div>
         </div>
 
         <!-- STATUS DE UBICACIÓN -->
         <div class="location-status" *ngIf="userLocation">
-          <small class="location-info">
-            <i class="fas fa-check-circle"></i>
+          <span class="material-symbols-outlined status-icon success">check_circle</span>
+          <span class="status-text">
             Ubicación establecida
-            <span *ngIf="userLocation.source === 'geolocation'">(GPS)</span>
-            <span *ngIf="userLocation.source === 'ip'">(aproximada)</span>
-            <span *ngIf="userLocation.source === 'manual'">(manual)</span>
-          </small>
+            <small *ngIf="userLocation.source === 'geolocation'">(GPS)</small>
+            <small *ngIf="userLocation.source === 'ip'">(aproximada)</small>
+            <small *ngIf="userLocation.source === 'manual'">(manual)</small>
+          </span>
         </div>
 
         <!-- MENSAJE MODO ARRASTRE 
@@ -191,19 +202,17 @@
               </small>
             </div>-->
 
-        <div class="location-error" *ngIf="locationError">
-          <small class="error-text">
-            <i class="fas fa-exclamation-triangle"></i>
-            {{ locationError }}
-          </small>
+        <div class="location-status error" *ngIf="locationError">
+          <span class="material-symbols-outlined status-icon">warning</span>
+          <span class="status-text">{{ locationError }}</span>
         </div>
       </div>
 
       <!-- RADIO DE BÚSQUEDA -->
-      <div class="filter-group" *ngIf="userLocation">
-        <label><i class="fas fa-circle"></i> Radio de búsqueda:</label>
+      <div class="filter-item" *ngIf="userLocation">
+        <label><span class="material-symbols-outlined">radio_button_unchecked</span> Radio de búsqueda:</label>
         <select
-          class="form-control"
+          class="input-field"
           name="radioMaximo"
           [(ngModel)]="radioMaximo"
           (change)="aplicarFiltros()"
@@ -215,62 +224,23 @@
           <option [value]="0">Sin límite</option>
         </select>
       </div>
-    </div>
-
-    <!-- MAPA -->
-    <div
-      class="centros-modal-body"
-      [class.modo-exploracion]="modoExploracion"
-      [class.modo-compacto]="!modoExploracion"
-    >
-      <div #mapContainer class="map-container">
-        <!-- Ícono verde fijo en el centro para modo arrastre -->
-        <div
-          class="center-crosshair"
-          *ngIf="modoArrastre"
-          [style.display]="modoArrastre ? 'block' : 'none'"
-        >
-          <i class="fas fa-map-marker-alt"></i>
+          </div>
         </div>
-      </div>
 
-      <!-- Botón para confirmar ubicación (solo en modo exploración) -->
-      <div
-        class="confirm-location-section"
-        *ngIf="modoExploracion && userLocation && !ubicacionConfirmada"
-      >
-        <button class="btn btn-confirm-location" (click)="confirmarUbicacion()">
-          <i class="fas fa-check-circle"></i>
-          Confirmar mi ubicación y ver centros cercanos
-        </button>
-      </div>
-    </div>
+        <!-- RESULTADOS -->
+        <div class="results-header">
+        <h3>
+          <span class="material-symbols-outlined">local_hospital</span>
+          Centros Encontrados <span class="results-count">({{ centrosFiltrados.length }})</span>
+        </h3>
 
-    <!-- LISTA DE CENTROS -->
-    <div class="centros-modal-footer">
-      <div class="centros-list-header">
-        <h4>
-          <i class="fas fa-hospital"></i>
-          Centros Encontrados ({{ centrosFiltrados.length }})
-        </h4>
-
-        <!-- Botón para volver a modo exploración (solo visible en modo compacto) -->
-        <button
-          class="btn btn-expand-map"
-          *ngIf="!modoExploracion"
-          (click)="volverModoExploracion()"
-          title="Expandir mapa"
-        >
-          <i class="fas fa-expand"></i>
-          Ver mapa completo
-        </button>
-        <div class="sort-controls" *ngIf="userLocation">
+        <div class="results-header-actions" *ngIf="userLocation">
           <button
             class="btn btn-sort"
             [class.active]="ordenadoPorDistancia"
             (click)="toggleOrdenarPorDistancia()"
           >
-            <i class="fas fa-sort-amount-down"></i>
+            <span class="material-symbols-outlined">sort</span>
             {{
               ordenadoPorDistancia ? "Por distancia" : "Ordenar por distancia"
             }}
@@ -279,10 +249,9 @@
       </div>
 
       <!-- MENSAJE SI NO HAY CENTROS -->
-      <div class="no-centros-message" *ngIf="centrosFiltrados.length === 0">
-        <div class="no-centros-content">
-          <i class="fas fa-map-marker-alt"></i>
-          <h5>No se encontraron centros</h5>
+      <div class="empty-state" *ngIf="centrosFiltrados.length === 0">
+          <span class="material-symbols-outlined empty-icon">location_off</span>
+          <h4>No se encontraron centros</h4>
           <p *ngIf="radioMaximo > 0 && userLocation">
             No hay centros dentro de {{ radioMaximo }}km de tu ubicación.
           </p>
@@ -290,179 +259,216 @@
             No hay centros con la especialidad "{{ especialidadFiltro }}"
             disponible.
           </p>
-          <div class="suggestions">
+          <div class="empty-actions">
             <button
-              class="btn btn-suggestion"
+              class="btn btn-secondary"
               *ngIf="radioMaximo < 100"
               (click)="ampliarRadio()"
             >
-              <i class="fas fa-expand-arrows-alt"></i>
+              <span class="material-symbols-outlined">zoom_out_map</span>
               Ampliar radio de búsqueda
             </button>
             <button
-              class="btn btn-suggestion"
+              class="btn btn-secondary"
               *ngIf="especialidadFiltro"
               (click)="limpiarFiltros()"
             >
-              <i class="fas fa-filter"></i>
+              <span class="material-symbols-outlined">filter_alt_off</span>
               Quitar filtros
             </button>
           </div>
-        </div>
       </div>
 
       <!-- LISTA DE CENTROS -->
-      <div class="centros-list" *ngIf="centrosFiltrados.length > 0">
+      <div class="results-list" *ngIf="centrosFiltrados.length > 0">
         <div
-          class="centro-item"
+          class="centro-card"
           *ngFor="let centro of centrosFiltrados; let i = index"
-          [class.highlighted]="centroActualSeleccionado?.id === centro.id"
+          [class.selected]="centroActualSeleccionado?.id === centro.id"
           (click)="seleccionarCentro(centro)"
         >
-          <div class="centro-info">
-            <div class="centro-header">
-              <h5>{{ centro.nombre }}</h5>
-              <div class="centro-badges">
-                <span
-                  class="distance-badge"
-                  *ngIf="centro.distanciaKm !== undefined"
-                >
-                  <i class="fas fa-route"></i>
-                  {{ formatDistance(centro.distanciaKm) }}
-                </span>
-                <span class="index-badge">{{ i + 1 }}</span>
+            <div class="card-header">
+              <div class="card-title-group">
+                <span class="card-index">{{ i + 1 }}</span>
+                <h4>{{ centro.nombre }}</h4>
               </div>
+              <span
+                class="distance-badge"
+                *ngIf="centro.distanciaKm !== undefined"
+              >
+                <span class="material-symbols-outlined">route</span>
+                {{ formatDistance(centro.distanciaKm) }}
+              </span>
             </div>
 
-            <div class="centro-details">
-              <div class="detail-row">
-                <i class="fas fa-map-marker-alt"></i>
+            <div class="card-details">
+              <div class="detail-item">
+                <span class="material-symbols-outlined">location_on</span>
                 <span>{{ centro.direccion }}</span>
               </div>
-              <div class="detail-row" *ngIf="centro.localidad">
-                <i class="fas fa-city"></i>
+              <div class="detail-item" *ngIf="centro.localidad">
+                <span class="material-symbols-outlined">location_city</span>
                 <span>{{ centro.localidad }}, {{ centro.provincia }}</span>
               </div>
-              <div class="detail-row" *ngIf="centro.telefono">
-                <i class="fas fa-phone"></i>
+              <div class="detail-item" *ngIf="centro.telefono">
+                <span class="material-symbols-outlined">phone</span>
                 <span>{{ centro.telefono }}</span>
               </div>
             </div>
 
             <!-- ESPECIALIDADES DISPONIBLES -->
-            <!-- El operador/etc... puede ver las especialidades disponibles para eso es el  *ngIf="
-                    esOperador  -->
             <div
-              class="especialidades-centro"
+              class="card-specialties"
               *ngIf="
                 esOperador &&
                 centro.especialidadesDisponibles &&
                 centro.especialidadesDisponibles.length > 0
               "
             >
-              <div class="especialidades-header">
-                <i class="fas fa-stethoscope"></i>
+              <div class="specialties-label">
+                <span class="material-symbols-outlined">medical_services</span>
                 <span>Especialidades disponibles:</span>
               </div>
-              <div class="especialidades-tags">
+              <div class="specialty-tags">
                 <span
-                  class="especialidad-tag"
+                  class="tag"
                   *ngFor="let esp of centro.especialidadesDisponibles"
-                  [class.highlighted]="esp === especialidadFiltro"
+                  [class.accent]="esp === especialidadFiltro"
                 >
                   {{ esp }}
                 </span>
               </div>
             </div>
-          </div>
 
-          <div class="centro-actions">
+          <div class="card-actions">
             <button
-              class="btn btn-info btn-sm"
+              class="btn btn-primary"
               [routerLink]="['/paciente-agenda']"
               [queryParams]="{ centroId: centro.id }"
               (click)="close(); $event.stopPropagation()"
               title="Ver turnos disponibles en este centro"
             >
-              <i class="fas fa-calendar-check"></i>
+              <span class="material-symbols-outlined">event_available</span>
               Ver Turnos
             </button>
             <button
-              class="btn btn-center-on-map"
+              class="btn btn-secondary btn-icon"
               (click)="centrarEnMapa(centro, $event)"
               title="Ver en mapa"
             >
-              <i class="fas fa-crosshairs"></i>
+              <span class="material-symbols-outlined">my_location</span>
             </button>
           </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- PANEL DEL MAPA (DERECHA) -->
+      <div class="map-panel">
+        <div class="map-wrapper">
+          <div #mapContainer class="map-container">
+            <!-- Ícono verde fijo en el centro para modo arrastre -->
+            <div class="drag-indicator" *ngIf="modoArrastre">
+              <span class="material-symbols-outlined pulse">location_on</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botón para confirmar ubicación -->
+        <div class="map-actions" *ngIf="modoExploracion && userLocation && !ubicacionConfirmada">
+          <button class="btn btn-primary btn-large" (click)="confirmarUbicacion()">
+            <span class="material-symbols-outlined">check_circle</span>
+            Confirmar mi ubicación y ver centros cercanos
+          </button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Plantilla del popup (usada por Leaflet, editable desde HTML) -->
+<script type="text/template" id="centro-popup-template">
+  <div class="centro-popup-compact">
+    <div class="popup-header-compact">
+      <div class="popup-title"><strong>__NOMBRE__</strong></div>
+    </div>
+    <div class="popup-body-compact">
+      <div class="popup-row-compact">
+        <i class="fas fa-map-marker-alt"></i> __DIRECCION__
+      </div>
+      __DISTANCIA__
+      __ESPECIALIDADES_PREVIEW__
+      <div class="popup-actions-compact">
+        <button class="btn-popup-compact btn-popup-primary" onclick="window.centrosModalComponent.abrirModalInfoCentro(__CENTRO_ID__)">
+          <i class="fas fa-info-circle"></i> Ver más información
+        </button>
+      </div>
+    </div>
+  </div>
+</script>
+
 <!-- MODAL PEQUEÑO DE INFORMACIÓN DEL CENTRO -->
 <div 
-  class="centro-info-modal-backdrop" 
+  class="info-modal-backdrop" 
   *ngIf="mostrarModalInfoCentro && centroInfoModal"
   (click)="cerrarModalInfoCentro()"
 >
-  <div class="centro-info-modal-content" (click)="$event.stopPropagation()">
+  <div class="info-modal-container" (click)="$event.stopPropagation()">
     <!-- Header -->
-    <div class="centro-info-modal-header">
-      <h4>
-        <i class="fas fa-hospital"></i>
+    <div class="info-modal-header">
+      <h3>
+        <span class="material-symbols-outlined">local_hospital</span>
         {{ centroInfoModal.nombre }}
-      </h4>
+      </h3>
       <button 
         type="button" 
-        class="btn-close-small" 
+        class="btn-close" 
         (click)="cerrarModalInfoCentro()"
       >
-        <i class="fas fa-times"></i>
+        <span class="material-symbols-outlined">close</span>
       </button>
     </div>
 
     <!-- Body -->
-    <div class="centro-info-modal-body">
-      <div class="info-row" *ngIf="centroInfoModal.direccion">
-        <i class="fas fa-map-marker-alt"></i>
+    <div class="info-modal-body">
+      <div class="info-item" *ngIf="centroInfoModal.direccion">
+        <span class="material-symbols-outlined">location_on</span>
         <span>{{ centroInfoModal.direccion }}</span>
       </div>
       
-      <div class="info-row" *ngIf="centroInfoModal.localidad">
-        <i class="fas fa-city"></i>
+      <div class="info-item" *ngIf="centroInfoModal.localidad">
+        <span class="material-symbols-outlined">location_city</span>
         <span>{{ centroInfoModal.localidad }}, {{ centroInfoModal.provincia }}</span>
       </div>
       
-      <div class="info-row" *ngIf="centroInfoModal.telefono">
-        <i class="fas fa-phone"></i>
+      <div class="info-item" *ngIf="centroInfoModal.telefono">
+        <span class="material-symbols-outlined">phone</span>
         <span>{{ centroInfoModal.telefono }}</span>
       </div>
       
-      <div class="info-row" *ngIf="centroInfoModal.distanciaKm !== undefined">
-        <i class="fas fa-route"></i>
+      <div class="info-item" *ngIf="centroInfoModal.distanciaKm !== undefined">
+        <span class="material-symbols-outlined">route</span>
         <span>{{ formatDistance(centroInfoModal.distanciaKm) }}</span>
       </div>
 
       <!-- Especialidades -->
       <div 
-        class="info-especialidades" 
+        class="info-specialties" 
         *ngIf="centroInfoModal.especialidadesDisponibles && centroInfoModal.especialidadesDisponibles.length > 0"
       >
-        <div class="info-especialidades-header">
-          <i class="fas fa-stethoscope"></i>
+        <div class="specialties-label">
+          <span class="material-symbols-outlined">medical_services</span>
           <strong>Especialidades disponibles:</strong>
         </div>
-        <div class="info-especialidades-tags">
+        <div class="specialty-tags">
           <span 
-            class="especialidad-tag-small" 
+            class="tag" 
             *ngFor="let esp of centroInfoModal.especialidadesDisponibles.slice(0, 5)"
           >
             {{ esp }}
           </span>
           <span 
-            class="especialidad-tag-small more-tag" 
+            class="tag" 
             *ngIf="centroInfoModal.especialidadesDisponibles.length > 5"
           >
             +{{ centroInfoModal.especialidadesDisponibles.length - 5 }} más
@@ -472,14 +478,14 @@
     </div>
 
     <!-- Footer con botón -->
-    <div class="centro-info-modal-footer">
+    <div class="info-modal-footer">
       <button
         class="btn btn-primary btn-block"
         [routerLink]="['/paciente-agenda']"
         [queryParams]="{ centroId: centroInfoModal.id }"
         (click)="verTurnosCentro(centroInfoModal.id!)"
       >
-        <i class="fas fa-calendar-check"></i>
+        <span class="material-symbols-outlined">event_available</span>
         Ver Turnos Disponibles
       </button>
     </div>
