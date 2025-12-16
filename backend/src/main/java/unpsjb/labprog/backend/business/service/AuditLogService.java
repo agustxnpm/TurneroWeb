@@ -68,8 +68,6 @@ public class AuditLogService {
             String previousStatus, String newStatus,
             Object oldValues, Object newValues, String reason) {
 
-        System.out.println("🔍 DEBUG logTurnoAction: Turno ID: " + turno.getId() + ", Acción: " + action + ", Usuario: "
-                + performedBy);
 
         try {
             String oldValuesJson = oldValues != null ? objectMapper.writeValueAsString(oldValues) : null;
@@ -79,11 +77,8 @@ public class AuditLogService {
                     turno, action, performedBy, previousStatus, newStatus,
                     oldValuesJson, newValuesJson, reason);
 
-            System.out.println("🔍 DEBUG: Guardando en base de datos...");
             // Guardar de forma inmutable
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println(
-                    "✅ DEBUG: AuditLog guardado con ID: " + saved.getId() + ", Fecha: " + saved.getPerformedAt());
             return saved;
 
         } catch (JsonProcessingException e) {
@@ -101,8 +96,6 @@ public class AuditLogService {
     @Transactional
     public AuditLog logTurnoCreated(Turno turno, String performedBy) {
 
-        System.out.println("🔍 DEBUG AuditLogService: Iniciando logTurnoCreated para turno ID: " + turno.getId()
-                + ", Usuario: " + performedBy);
 
         // Crear un mapa con datos serializables del turno
         Map<String, Object> turnoData = new HashMap<>();
@@ -123,7 +116,6 @@ public class AuditLogService {
         AuditLog result = logTurnoAction(turno, "CREATE", performedBy,
                 null, turno.getEstado().name(),
                 null, turnoData, null); // Pasar el mapa en lugar del objeto
-        System.out.println("✅ DEBUG AuditLogService: Log creado con ID: " + result.getId());
         return result;
 
     }
@@ -233,7 +225,6 @@ public class AuditLogService {
      * Obtiene el historial de auditoría de un turno específico
      */
     public List<AuditLog> getTurnoAuditHistory(Integer turnoId) {
-        System.out.println("🔍 DEBUG: Obteniendo historial de auditoría para turno ID: " + turnoId);
         try {
             // Si el contexto es tenant-restringido, verificar que el turno pertenezca al centro
             if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
@@ -249,8 +240,7 @@ public class AuditLogService {
             }
             // Primero contar cuántos registros hay
             Long count = auditLogRepository.countByTurnoId(turnoId);
-            System.out.println("🔍 DEBUG: Contando registros de auditoría para turno " + turnoId + "...");
-            System.out.println("✅ DEBUG: Se encontraron " + count + " registros para el turno " + turnoId);
+            // count retrieved
 
             if (count == 0) {
                 return new java.util.ArrayList<>();
@@ -279,23 +269,19 @@ public class AuditLogService {
      * Obtiene registros de auditoría uno por uno para identificar el problemático
      */
     private List<AuditLog> getAuditRecordsIndividually(Integer turnoId) {
-        System.out.println("🔍 DEBUG: Obteniendo registros individualmente para turno " + turnoId);
 
         List<AuditLog> validRecords = new java.util.ArrayList<>();
 
         try {
             // Primero obtener solo los IDs de los registros
             List<Integer> auditIds = auditLogRepository.findAuditIdsByTurnoId(turnoId);
-            System.out.println("🔍 DEBUG: Encontrados " + auditIds.size() + " IDs de auditoría: " + auditIds);
 
             // Ahora obtener cada registro individualmente
             for (Integer auditId : auditIds) {
                 try {
-                    System.out.println("🔍 DEBUG: Obteniendo registro de auditoría ID: " + auditId);
                     AuditLog record = auditLogRepository.findById(auditId).orElse(null);
                     if (record != null) {
                         validRecords.add(record);
-                        System.out.println("✅ DEBUG: Registro " + auditId + " obtenido exitosamente");
                     } else {
                         System.err.println("⚠️ WARN: Registro " + auditId + " no encontrado");
                     }
@@ -305,15 +291,7 @@ public class AuditLogService {
                     try {
                         Object[] basicData = auditLogRepository.findBasicAuditData(auditId);
                         if (basicData != null && basicData.length >= 6) {
-                            System.out.println("🔍 DEBUG: Datos básicos del registro " + auditId + ":");
-                            System.out.println("  - ID: " + basicData[0]);
-                            System.out.println("  - Acción: " + basicData[1]);
-                            System.out.println("  - Usuario: " + basicData[2]);
-                            System.out.println("  - Estado anterior: " + basicData[3]);
-                            System.out.println("  - Estado nuevo: " + basicData[4]);
-                            System.out.println("  - Fecha: " + basicData[5]);
-                            System.err.println("⚠️ WARN: Registro " + auditId
-                                    + " tiene datos corruptos en old_values o new_values");
+                            System.err.println("⚠️ WARN: Registro " + auditId + " tiene datos corruptos en old_values o new_values");
                         }
                     } catch (Exception e2) {
                         System.err.println("❌ ERROR: No se pudieron obtener ni los datos básicos del registro "
@@ -329,7 +307,6 @@ public class AuditLogService {
         // Ordenar por fecha descendente
         validRecords.sort((a, b) -> b.getPerformedAt().compareTo(a.getPerformedAt()));
 
-        System.out.println("✅ DEBUG: Se obtuvieron " + validRecords.size() + " registros válidos de auditoría");
         return validRecords;
     }
 
@@ -344,11 +321,9 @@ public class AuditLogService {
      * Obtiene logs de auditoría por acción
      */
     public List<AuditLog> getLogsByAction(String action) {
-        System.out.println("🔍 DEBUG: Obteniendo logs por acción: " + action);
 
         try {
             List<AuditLog> results = auditLogRepository.findByActionOrderByPerformedAtDesc(action);
-            System.out.println("✅ DEBUG: Encontrados " + results.size() + " logs para la acción: " + action);
             return results;
 
         } catch (Exception e) {
@@ -362,11 +337,9 @@ public class AuditLogService {
      * Obtiene logs de auditoría por usuario
      */
     public List<AuditLog> getLogsByUser(String performedBy) {
-        System.out.println("🔍 DEBUG: Obteniendo logs por usuario: " + performedBy);
 
         try {
             List<AuditLog> results = auditLogRepository.findByPerformedByOrderByPerformedAtDesc(performedBy);
-            System.out.println("✅ DEBUG: Encontrados " + results.size() + " logs para el usuario: " + performedBy);
             return results;
 
         } catch (Exception e) {
@@ -380,11 +353,9 @@ public class AuditLogService {
      * Obtiene logs de auditoría en un rango de fechas
      */
     public List<AuditLog> getLogsByDateRange(LocalDateTime start, LocalDateTime end) {
-        System.out.println("🔍 DEBUG: Obteniendo logs por rango de fechas: " + start + " - " + end);
 
         try {
             List<AuditLog> results = auditLogRepository.findByPerformedAtBetweenOrderByPerformedAtDesc(start, end);
-            System.out.println("✅ DEBUG: Encontrados " + results.size() + " logs en el rango de fechas");
             return results;
 
         } catch (Exception e) {
@@ -398,12 +369,9 @@ public class AuditLogService {
      * Obtiene logs de auditoría por turno y acción específica
      */
     public List<AuditLog> getLogsByTurnoAndAction(Integer turnoId, String action) {
-        System.out.println("🔍 DEBUG: Obteniendo logs por turno " + turnoId + " y acción: " + action);
 
         try {
             List<AuditLog> results = auditLogRepository.findByTurnoIdAndActionOrderByPerformedAtDesc(turnoId, action);
-            System.out.println(
-                    "✅ DEBUG: Encontrados " + results.size() + " logs para turno " + turnoId + " y acción " + action);
             return results;
 
         } catch (Exception e) {
@@ -424,26 +392,67 @@ public class AuditLogService {
      * Obtiene estadísticas de acciones
      */
     public List<Object[]> getActionStatistics() {
-        System.out.println("🔍 DEBUG: Obteniendo estadísticas de acciones...");
         // Si el contexto está restringido a un centro, computar solo con logs visibles
         if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
-            List<AuditLog> all = auditLogRepository.findAll();
-            Map<String, Long> map = all.stream()
-                    .filter(this::isVisibleForCurrentCentro)
-                    .collect(Collectors.groupingBy(AuditLog::getAction, Collectors.counting()));
+            // Consulta segura: iterar IDs y usar datos básicos para evitar cargar LOBs
+            List<Integer> ids = auditLogRepository.findRecentLogIds(LocalDateTime.now().minusYears(1000));
+            Map<String, Long> map = new HashMap<>();
+            for (Integer id : ids) {
+                try {
+                    // Try to get a portable basic row (JPQL) and fallback to native
+                    Object[] basic = auditLogRepository.findBasicRowByIdJPQL(id);
+                    if (basic == null || basic.length == 0) {
+                        basic = auditLogRepository.findBasicRowById(id);
+                    }
+
+                    // If we still get a single-column result, attempt to rebuild from entity
+                    if (basic != null && basic.length == 1) {
+                        try {
+                            Optional<AuditLog> full = auditLogRepository.findById(id);
+                            if (full.isPresent()) {
+                                AuditLog a = full.get();
+                                basic = new Object[] {
+                                    a.getId(),
+                                    a.getTurno() != null ? a.getTurno().getId() : null,
+                                    a.getEntityType(),
+                                    a.getEntityId(),
+                                    a.getAction(),
+                                    a.getPerformedAt(),
+                                    a.getPerformedBy(),
+                                    a.getEstadoAnterior(),
+                                    a.getEstadoNuevo(),
+                                    a.getReason()
+                                };
+                            } else {
+                                continue;
+                            }
+                        } catch (Exception ex) {
+                            // If loading full entity fails (LOB issues), skip this row
+                            continue;
+                        }
+                    }
+
+                    if (basic == null || basic.length < 5) continue;
+                    String action = basic[4] != null ? basic[4].toString() : "UNKNOWN";
+
+                    // Use basic-row visibility check to avoid loading LOB fields per-row
+                    if (!isAuditRowVisibleForCurrentCentro(basic)) continue;
+
+                    map.put(action, map.getOrDefault(action, 0L) + 1L);
+                } catch (Exception e) {
+                    System.err.println("⚠️ WARN: Error obteniendo datos básicos para id " + id + ": " + e.getMessage());
+                }
+            }
 
             List<Object[]> results = map.entrySet().stream()
                     .map(e -> new Object[] { e.getKey(), e.getValue() })
                     .sorted((a, b) -> Long.compare((Long) b[1], (Long) a[1]))
                     .collect(Collectors.toList());
 
-            System.out.println("✅ DEBUG: Estadísticas tenant-scoped obtenidas: " + results.size() + " resultados");
             return results;
         }
 
         List<Object[]> stats = auditLogRepository.findActionStatistics();
-        System.out.println("✅ DEBUG: Estadísticas obtenidas: " + stats.size() + " resultados");
-        stats.forEach(stat -> System.out.println("  - " + stat[0] + ": " + stat[1]));
         return stats;
     }
 
@@ -459,18 +468,14 @@ public class AuditLogService {
      */
     public List<AuditLog> getRecentLogs() {
         LocalDateTime since = LocalDateTime.now().minusHours(24);
-        System.out.println("🔍 DEBUG: Obteniendo logs recientes desde: " + since);
 
         try {
             // Intentar primero la consulta normal
             List<AuditLog> recentLogs = auditLogRepository.findRecentLogs(since);
-            System.out
-                    .println("✅ DEBUG: Se obtuvieron " + recentLogs.size() + " logs recientes usando consulta normal");
             return recentLogs;
 
         } catch (Exception e) {
             System.err.println("❌ ERROR: Fallo en consulta normal de logs recientes: " + e.getMessage());
-            System.err.println("🔍 DEBUG: Intentando consulta segura alternativa...");
 
             try {
                 // Usar consulta segura alternativa
@@ -488,23 +493,19 @@ public class AuditLogService {
      * Obtiene logs recientes individualmente para evitar problemas con campos LOB
      */
     private List<AuditLog> getRecentLogsIndividually(LocalDateTime since) {
-        System.out.println("🔍 DEBUG: Obteniendo logs recientes individualmente desde: " + since);
 
         List<AuditLog> validRecords = new java.util.ArrayList<>();
 
         try {
             // Primero obtener solo los IDs de los logs recientes
             List<Integer> recentIds = auditLogRepository.findRecentLogIds(since);
-            System.out.println("🔍 DEBUG: Encontrados " + recentIds.size() + " IDs de logs recientes: " + recentIds);
 
             // Ahora obtener cada registro individualmente
             for (Integer logId : recentIds) {
                 try {
-                    System.out.println("🔍 DEBUG: Obteniendo log reciente ID: " + logId);
                     AuditLog record = auditLogRepository.findById(logId).orElse(null);
                     if (record != null) {
                         validRecords.add(record);
-                        System.out.println("✅ DEBUG: Log reciente " + logId + " obtenido exitosamente");
                     } else {
                         System.err.println("⚠️ WARN: Log reciente " + logId + " no encontrado");
                     }
@@ -514,15 +515,7 @@ public class AuditLogService {
                     try {
                         Object[] basicData = auditLogRepository.findBasicAuditData(logId);
                         if (basicData != null && basicData.length >= 6) {
-                            System.out.println("🔍 DEBUG: Datos básicos del log reciente " + logId + ":");
-                            System.out.println("  - ID: " + basicData[0]);
-                            System.out.println("  - Acción: " + basicData[1]);
-                            System.out.println("  - Usuario: " + basicData[2]);
-                            System.out.println("  - Estado anterior: " + basicData[3]);
-                            System.out.println("  - Estado nuevo: " + basicData[4]);
-                            System.out.println("  - Fecha: " + basicData[5]);
-                            System.err.println("⚠️ WARN: Log reciente " + logId
-                                    + " tiene datos corruptos en old_values o new_values");
+                            System.err.println("⚠️ WARN: Log reciente " + logId + " tiene datos corruptos en old_values o new_values");
                         }
                     } catch (Exception e2) {
                         System.err.println("❌ ERROR: No se pudieron obtener ni los datos básicos del log reciente "
@@ -533,18 +526,14 @@ public class AuditLogService {
 
         } catch (Exception e) {
             System.err.println("❌ ERROR: Fallo al obtener IDs de logs recientes: " + e.getMessage());
-            System.err.println("🔍 DEBUG: Intentando consulta de datos básicos directamente...");
 
             try {
                 // Como último recurso, usar la consulta de datos básicos
                 List<AuditLog> basicLogs = auditLogRepository.findSafeRecentLogs(since);
-                System.out.println("🔍 DEBUG: Obtenidos " + basicLogs.size() + " registros básicos de logs recientes");
 
-                // Por ahora retornar lista vacía, pero imprimir los datos para debug
+                // Por ahora retornar lista vacía; se omitió la impresión de debug
                 basicLogs.forEach(log -> {
-                    System.out.println("📋 DEBUG: Log básico - ID: " + log.getId() + ", Acción: " + log.getAction()
-                            + ", Usuario: " + log.getPerformedBy() + ", Fecha: " + log.getPerformedAt() + ", Motivo: "
-                            + log.getReason());
+                    // debug output removed
                 });
 
             } catch (Exception e3) {
@@ -555,7 +544,6 @@ public class AuditLogService {
         // Ordenar por fecha descendente
         validRecords.sort((a, b) -> b.getPerformedAt().compareTo(a.getPerformedAt()));
 
-        System.out.println("✅ DEBUG: Se obtuvieron " + validRecords.size() + " logs recientes válidos");
         return validRecords;
     }
 
@@ -563,12 +551,10 @@ public class AuditLogService {
      * Busca logs que contengan un término específico
      */
     public List<AuditLog> searchLogs(String searchTerm) {
-        System.out.println("🔍 DEBUG: Buscando logs que contengan: " + searchTerm);
 
         try {
             // Intentar la búsqueda normal
             List<AuditLog> results = auditLogRepository.findLogsContaining(searchTerm);
-            System.out.println("✅ DEBUG: Búsqueda normal exitosa, encontrados " + results.size() + " logs");
             return results;
 
         } catch (Exception e) {
@@ -639,7 +625,6 @@ public class AuditLogService {
      * Obtiene estadísticas detalladas de turnos por estado y acción
      */
     public Map<String, Object> getDetailedTurnoStatistics() {
-        System.out.println("🔍 DEBUG: Obteniendo estadísticas detalladas de turnos...");
 
         Map<String, Object> stats = new HashMap<>();
 
@@ -650,24 +635,27 @@ public class AuditLogService {
         long statusChangedCount = 0L;
         long createdCount = 0L;
 
-        List<AuditLog> confirms = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "CONFIRM");
-        List<AuditLog> cancels = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "CANCEL");
-        List<AuditLog> reschedules = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "RESCHEDULE");
-        List<AuditLog> statusChanges = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "UPDATE_STATUS");
-        List<AuditLog> creates = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "CREATE");
-
+        // Usar consultas seguras para evitar cargar campos LOB que pueden estar corruptos
         if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
-            confirmedCount = confirms.stream().filter(this::isVisibleForCurrentCentro).count();
-            canceledCount = cancels.stream().filter(this::isVisibleForCurrentCentro).count();
-            rescheduledCount = reschedules.stream().filter(this::isVisibleForCurrentCentro).count();
-            statusChangedCount = statusChanges.stream().filter(this::isVisibleForCurrentCentro).count();
-            createdCount = creates.stream().filter(this::isVisibleForCurrentCentro).count();
+            // Para tenant-restricted, obtener solo campos básicos y filtrar por visibilidad
+            List<Object[]> confirms = auditLogRepository.findBasicByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "CONFIRM");
+            List<Object[]> cancels = auditLogRepository.findBasicByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "CANCEL");
+            List<Object[]> reschedules = auditLogRepository.findBasicByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "RESCHEDULE");
+            List<Object[]> statusChanges = auditLogRepository.findBasicByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "UPDATE_STATUS");
+            List<Object[]> creates = auditLogRepository.findBasicByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "CREATE");
+
+            confirmedCount = confirms.stream().filter(row -> isAuditRowVisibleForCurrentCentro(row)).count();
+            canceledCount = cancels.stream().filter(row -> isAuditRowVisibleForCurrentCentro(row)).count();
+            rescheduledCount = reschedules.stream().filter(row -> isAuditRowVisibleForCurrentCentro(row)).count();
+            statusChangedCount = statusChanges.stream().filter(row -> isAuditRowVisibleForCurrentCentro(row)).count();
+            createdCount = creates.stream().filter(row -> isAuditRowVisibleForCurrentCentro(row)).count();
         } else {
-            confirmedCount = confirms.size();
-            canceledCount = cancels.size();
-            rescheduledCount = reschedules.size();
-            statusChangedCount = statusChanges.size();
-            createdCount = creates.size();
+            // No tenant restriction: usar conteos directos para mejor performance y evitar LOBs
+            confirmedCount = auditLogRepository.countByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "CONFIRM");
+            canceledCount = auditLogRepository.countByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "CANCEL");
+            rescheduledCount = auditLogRepository.countByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "RESCHEDULE");
+            statusChangedCount = auditLogRepository.countByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "UPDATE_STATUS");
+            createdCount = auditLogRepository.countByEntityTypeAndAction(AuditLog.EntityTypes.TURNO, "CREATE");
         }
 
         stats.put("turnosConfirmados", confirmedCount);
@@ -684,34 +672,147 @@ public class AuditLogService {
                         (Long) stats.get("turnosModificados") +
                         (Long) stats.get("turnosCreados"));
 
-        System.out.println("✅ DEBUG: Estadísticas detalladas calculadas: " + stats);
         return stats;
+    }
+
+    /**
+     * Verifica la visibilidad de una fila 'básica' de auditoría (Object[] devuelto por consultas sin LOBs)
+     * Formato esperado de la fila: [id, turnoId, entityType, entityId, action, performedAt, performedBy, estadoAnterior, estadoNuevo, reason]
+     */
+    private boolean isAuditRowVisibleForCurrentCentro(Object[] row) {
+        try {
+            if (!unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) return true;
+            Integer centroId = unpsjb.labprog.backend.config.TenantContext.getCurrentCentroId();
+            if (centroId == null) return true;
+
+            if (row == null || row.length < 4) {
+                System.err.println("⚠️ WARN: Fila básica inesperada (longitud=" + (row == null ? 0 : row.length) + "). Se ignorará.");
+                return false;
+            }
+
+            String type = row[2] != null ? row[2].toString() : null;
+            Number entityIdNum = (Number) row[3];
+            Long entityId = entityIdNum != null ? entityIdNum.longValue() : null;
+
+            if (type == null) return false;
+
+            switch (type) {
+                case AuditLog.EntityTypes.TURNO:
+                    Integer turnoId = row.length > 1 && row[1] instanceof Integer ? (Integer) row[1] : null;
+                    if (turnoId == null) return false;
+                    var turnoOpt = turnoRepository.findById(turnoId);
+                    if (turnoOpt.isEmpty()) return false;
+                    var turno = turnoOpt.get();
+                    if (turno.getConsultorio() != null && turno.getConsultorio().getCentroAtencion() != null) {
+                        return centroId.equals(turno.getConsultorio().getCentroAtencion().getId());
+                    }
+                    return false;
+
+                case AuditLog.EntityTypes.CONSULTORIO:
+                    if (entityId == null) return false;
+                    return consultorioRepository.findById(entityId.intValue())
+                            .map(c -> c.getCentroAtencion() != null && centroId.equals(c.getCentroAtencion().getId()))
+                            .orElse(false);
+
+                case AuditLog.EntityTypes.CENTRO_ATENCION:
+                    return entityId != null && entityId.intValue() == centroId;
+
+                case AuditLog.EntityTypes.STAFF_MEDICO:
+                    if (entityId == null) return false;
+                    return staffMedicoRepository.findById(entityId.intValue())
+                            .map(sm -> sm.getCentroAtencion() != null && centroId.equals(sm.getCentroAtencion().getId()))
+                            .orElse(false);
+
+                default:
+                    return unpsjb.labprog.backend.config.TenantContext.isSuperAdmin();
+            }
+        } catch (Exception e) {
+            System.err.println("❌ ERROR comprobando visibilidad desde fila básica: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
      * Obtiene estadísticas de actividad por usuario
      */
     public List<Object[]> getUserActivityStatistics() {
-        System.out.println("🔍 DEBUG: Obteniendo estadísticas de actividad por usuario...");
         if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
-            List<AuditLog> all = auditLogRepository.findAll();
-            Map<String, Long> map = all.stream()
-                    .filter(this::isVisibleForCurrentCentro)
-                    .collect(Collectors.groupingBy(AuditLog::getPerformedBy, Collectors.counting()));
+            // Consulta segura: obtener solo campos básicos sin LOBs
+
+            // En tenant-restricted preferimos obtener todos los IDs básicos y contar manualmente
+            List<Object[]> basicRows = auditLogRepository.findRecentLogIds(LocalDateTime.now().minusYears(1000))
+                    .stream()
+                    .map(id -> {
+                        try {
+                            Object[] basic = auditLogRepository.findBasicRowByIdJPQL((Integer) id);
+                            if (basic == null || basic.length == 0) basic = auditLogRepository.findBasicRowById((Integer) id);
+                            // If returned as single column, try to reconstruct
+                            if (basic != null && basic.length == 1) {
+                                try {
+                                    Optional<AuditLog> full = auditLogRepository.findById((Integer) id);
+                                    if (full.isPresent()) {
+                                        AuditLog a = full.get();
+                                        basic = new Object[] {
+                                            a.getId(),
+                                            a.getTurno() != null ? a.getTurno().getId() : null,
+                                            a.getEntityType(),
+                                            a.getEntityId(),
+                                            a.getAction(),
+                                            a.getPerformedAt(),
+                                            a.getPerformedBy(),
+                                            a.getEstadoAnterior(),
+                                            a.getEstadoNuevo(),
+                                            a.getReason()
+                                        };
+                                    } else {
+                                        return null;
+                                    }
+                                } catch (Exception ex) {
+                                    return null;
+                                }
+                            }
+                            return basic; // may be null
+                        } catch (Exception e) {
+                            return null;
+                        }
+                    })
+                    .filter(r -> r != null)
+                    .collect(Collectors.toList());
+
+            Map<String, Long> map = new java.util.HashMap<>();
+            for (Object[] row : basicRows) {
+                if (row == null || row.length < 3) {
+                    System.err.println("⚠️ WARN: Fila básica inválida (longitud=" + (row == null ? 0 : row.length) + "). Se omite.");
+                    continue;
+                }
+                // In our basic-row format, performedBy is at index 6
+                String performedBy = row.length > 6 && row[6] != null ? row[6].toString() : "UNKNOWN";
+                Integer auditId = row[0] instanceof Integer ? (Integer) row[0] : null;
+                if (auditId == null) {
+                    System.err.println("⚠️ WARN: ID de auditoría inválido en fila básica. Se omite.");
+                    continue;
+                }
+                // Reuse existing isVisibleForCurrentCentro by loading minimal AuditLog if necessary
+                try {
+                    // Use basic-row visibility check to avoid loading LOBs per row
+                    if (!isAuditRowVisibleForCurrentCentro(row)) continue;
+                } catch (Exception e) {
+                    System.err.println("⚠️ WARN: Error verificando visibilidad para auditId " + auditId + ": " + e.getMessage());
+                    continue; // skip problematic rows
+                }
+
+                map.put(performedBy, map.getOrDefault(performedBy, 0L) + 1L);
+            }
 
             List<Object[]> results = map.entrySet().stream()
                     .map(e -> new Object[] { e.getKey(), e.getValue() })
                     .sorted((a, b) -> Long.compare((Long) b[1], (Long) a[1]))
                     .collect(Collectors.toList());
 
-            System.out.println("✅ DEBUG: Estadísticas de usuario tenant-scoped: " + results.size() + " resultados");
-            results.forEach(stat -> System.out.println("  - " + stat[0] + ": " + stat[1] + " acciones"));
             return results;
         }
 
         List<Object[]> userStats = auditLogRepository.findUserActivityStatistics();
-        System.out.println("✅ DEBUG: Estadísticas de usuario obtenidas: " + userStats.size() + " resultados");
-        userStats.forEach(stat -> System.out.println("  - " + stat[0] + ": " + stat[1] + " acciones"));
         return userStats;
     }
 
@@ -719,7 +820,6 @@ public class AuditLogService {
      * Obtiene estadísticas combinadas para el dashboard
      */
     public Map<String, Object> getDashboardStatistics() {
-        System.out.println("🔍 DEBUG: Obteniendo estadísticas del dashboard...");
 
         Map<String, Object> dashboardStats = new HashMap<>();
 
@@ -735,21 +835,16 @@ public class AuditLogService {
         List<Object[]> userStats = getUserActivityStatistics();
         dashboardStats.put("userStatistics", userStats);
 
-        System.out.println("✅ DEBUG: Estadísticas del dashboard completadas");
         return dashboardStats;
     }
+
 
     /**
      * Método de debugging para verificar la estructura de la tabla de auditoría
      */
     public void debugAuditTableStructure() {
         try {
-            System.out.println("🔍 DEBUG: Verificando estructura de la tabla audit_log...");
-            List<Object[]> tableStructure = auditLogRepository.describeAuditLogTable();
-            System.out.println("✅ DEBUG: Estructura de la tabla audit_log:");
-            for (Object[] row : tableStructure) {
-                System.out.println("  - " + java.util.Arrays.toString(row));
-            }
+                auditLogRepository.describeAuditLogTable();
         } catch (Exception e) {
             System.err.println("❌ ERROR: No se pudo obtener la estructura de la tabla: " + e.getMessage());
         }
@@ -760,9 +855,8 @@ public class AuditLogService {
      */
     public void debugAuditCount(Integer turnoId) {
         try {
-            System.out.println("🔍 DEBUG: Contando registros de auditoría para turno " + turnoId + "...");
-            Integer count = auditLogRepository.countAuditRecordsByTurno(turnoId);
-            System.out.println("✅ DEBUG: Se encontraron " + count + " registros para el turno " + turnoId);
+            // count obtained for debugging (value intentionally unused after cleanup)
+            auditLogRepository.countAuditRecordsByTurno(turnoId);
         } catch (Exception e) {
             System.err.println("❌ ERROR: No se pudo contar registros: " + e.getMessage());
         }
@@ -778,8 +872,6 @@ public class AuditLogService {
     @Transactional
     public AuditLog logRoleChange(Long userId, String performedBy, String previousRole,
             String newRole, String reason) {
-        System.out.println("🔍 DEBUG logRoleChange: Usuario ID: " + userId + ", Rol anterior: " +
-                previousRole + ", Nuevo rol: " + newRole + ", Ejecutado por: " + performedBy);
 
         try {
             // Crear datos del cambio
@@ -799,7 +891,6 @@ public class AuditLogService {
                     performedBy, previousRole, newRole, oldValuesJson, newValuesJson, reason);
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Cambio de rol auditado con ID: " + saved.getId());
             return saved;
 
         } catch (JsonProcessingException e) {
@@ -814,8 +905,6 @@ public class AuditLogService {
     @Transactional
     public AuditLog logUserCreated(Long userId, String userEmail, String userRole, String userNombre,
             String userApellido, String performedBy) {
-        System.out.println("🔍 DEBUG logUserCreated: Usuario ID: " + userId + ", Email: " +
-                userEmail + ", Rol: " + userRole + ", Creado por: " + performedBy);
 
         try {
             Map<String, Object> userData = new HashMap<>();
@@ -834,7 +923,6 @@ public class AuditLogService {
                     "Usuario '" + userNombre + " " + userApellido + "' (" + userEmail + ") creado con rol " + userRole);
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Creación de usuario auditada con ID: " + saved.getId());
             return saved;
 
         } catch (JsonProcessingException e) {
@@ -849,7 +937,6 @@ public class AuditLogService {
     @Transactional
     public AuditLog logUserUpdated(Long userId, String performedBy, Object oldData, Object newData, String userNombre,
             String userApellido) {
-        System.out.println("🔍 DEBUG logUserUpdated: Usuario ID: " + userId + ", Ejecutado por: " + performedBy);
 
         try {
             String oldDataJson = oldData != null ? objectMapper.writeValueAsString(oldData) : null;
@@ -862,7 +949,6 @@ public class AuditLogService {
                     performedBy, null, null, oldDataJson, newDataJson, reason);
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Actualización de usuario auditada con ID: " + saved.getId());
             return saved;
 
         } catch (JsonProcessingException e) {
@@ -881,8 +967,6 @@ public class AuditLogService {
         String previousStatus = wasEnabled ? "ENABLED" : "DISABLED";
         String newStatus = isEnabled ? "ENABLED" : "DISABLED";
 
-        System.out.println("🔍 DEBUG logUserStatusChange: Usuario ID: " + userId + ", Estado: " +
-                previousStatus + " -> " + newStatus + ", Ejecutado por: " + performedBy);
 
         try {
             Map<String, Object> statusChange = new HashMap<>();
@@ -899,7 +983,6 @@ public class AuditLogService {
                     performedBy, previousStatus, newStatus, null, statusJson, reason);
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Cambio de estado de usuario auditado con ID: " + saved.getId());
             return saved;
 
         } catch (JsonProcessingException e) {
@@ -912,7 +995,6 @@ public class AuditLogService {
      * Obtiene el historial de auditoría de un usuario específico
      */
     public List<AuditLog> getUserAuditHistory(Long userId) {
-        System.out.println("🔍 DEBUG: Obteniendo historial de auditoría para usuario ID: " + userId);
         try {
             return auditLogRepository.findByEntityTypeAndEntityIdOrderByPerformedAtDesc(
                     AuditLog.EntityTypes.USUARIO, userId);
@@ -926,7 +1008,6 @@ public class AuditLogService {
      * Obtiene todos los cambios de rol del sistema
      */
     public List<AuditLog> getAllRoleChanges() {
-        System.out.println("🔍 DEBUG: Obteniendo todos los cambios de rol del sistema");
         try {
             return auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(
                     AuditLog.EntityTypes.USUARIO, AuditLog.Actions.ROLE_CHANGE);
@@ -940,7 +1021,6 @@ public class AuditLogService {
      * Obtiene cambios de rol por usuario específico
      */
     public List<AuditLog> getRoleChangesByUser(Long userId) {
-        System.out.println("🔍 DEBUG: Obteniendo cambios de rol para usuario ID: " + userId);
         try {
             return auditLogRepository.findByEntityTypeAndEntityIdAndActionOrderByPerformedAtDesc(
                     AuditLog.EntityTypes.USUARIO, userId, AuditLog.Actions.ROLE_CHANGE);
@@ -954,7 +1034,6 @@ public class AuditLogService {
      * Obtiene estadísticas de cambios de rol
      */
     public Map<String, Object> getRoleChangeStatistics() {
-        System.out.println("🔍 DEBUG: Obteniendo estadísticas de cambios de rol");
         try {
             List<Object[]> roleStats = auditLogRepository.findRoleChangeStatistics();
             Map<String, Object> statistics = new HashMap<>();
@@ -990,7 +1069,6 @@ public class AuditLogService {
      * Obtiene cambios de rol recientes
      */
     public List<AuditLog> getRecentRoleChanges(LocalDateTime since) {
-        System.out.println("🔍 DEBUG: Obteniendo cambios de rol desde: " + since);
         try {
             return auditLogRepository.findRecentRoleChanges(since);
         } catch (Exception e) {
@@ -1003,7 +1081,6 @@ public class AuditLogService {
      * Obtiene logs de creación de usuarios
      */
     public List<AuditLog> getUserCreationLogs() {
-        System.out.println("🔍 DEBUG: Obteniendo logs de creación de usuarios");
         try {
             return auditLogRepository.findUserCreationLogs();
         } catch (Exception e) {
@@ -1016,7 +1093,6 @@ public class AuditLogService {
      * Obtiene resumen de actividad de usuarios
      */
     public Map<String, Object> getUserActivitySummary() {
-        System.out.println("🔍 DEBUG: Obteniendo resumen de actividad de usuarios");
         try {
             List<Object[]> activitySummary = auditLogRepository.findUserActivitySummary();
             Map<String, Object> summary = new HashMap<>();
@@ -1038,7 +1114,6 @@ public class AuditLogService {
      * Busca logs por tipo de entidad y acción
      */
     public List<AuditLog> getLogsByEntityTypeAndAction(String entityType, String action) {
-        System.out.println("🔍 DEBUG: Obteniendo logs para entidad: " + entityType + ", acción: " + action);
         try {
             return auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(entityType, action);
         } catch (Exception e) {
@@ -1052,8 +1127,6 @@ public class AuditLogService {
      */
     @Transactional
     public AuditLog logAccountActivation(Long userId, String userEmail, String activationType, String reason) {
-        System.out.println("🔍 DEBUG logAccountActivation: Usuario ID: " + userId + ", Email: " + userEmail +
-                ", Tipo: " + activationType + ", Ejecutado por: " + userEmail);
 
         try {
             Map<String, Object> activationData = new HashMap<>();
@@ -1068,7 +1141,6 @@ public class AuditLogService {
                     userEmail, "No verificado", "Cuenta activada", null, activationJson, reason);
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Activación de cuenta auditada con ID: " + saved.getId());
             return saved;
 
         } catch (Exception e) {
@@ -1082,8 +1154,6 @@ public class AuditLogService {
      */
     @Transactional
     public AuditLog logPasswordChange(Long userId, String userEmail, String changeType, String reason) {
-        System.out.println("🔍 DEBUG logPasswordChange: Usuario ID: " + userId + ", Email: " + userEmail +
-                ", Tipo: " + changeType + ", Ejecutado por: " + userEmail);
 
         try {
             Map<String, Object> passwordChange = new HashMap<>();
@@ -1098,7 +1168,6 @@ public class AuditLogService {
                     userEmail, null, "PASSWORD_UPDATED", null, changeJson, reason);
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Cambio de contraseña auditado con ID: " + saved.getId());
             return saved;
 
         } catch (Exception e) {
@@ -1114,7 +1183,6 @@ public class AuditLogService {
      */
     @Transactional
     public AuditLog logAdminInitialCreation(Long userId, String adminEmail, Long adminDni) {
-        System.out.println("🔍 DEBUG logAdminInitialCreation: Admin ID: " + userId + ", Email: " + adminEmail);
 
         try {
             Map<String, Object> adminData = new HashMap<>();
@@ -1134,7 +1202,6 @@ public class AuditLogService {
                     null, adminDataJson, "Creación automática del administrador inicial del sistema");
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Administrador inicial auditado con ID: " + saved.getId());
             return saved;
 
         } catch (Exception e) {
@@ -1154,7 +1221,6 @@ public class AuditLogService {
     @Transactional
     public AuditLog logTurnoCancelledAutomatically(Long turnoId, Long pacienteId, String motivo) {
         try {
-            System.out.println("🔍 AUDIT: Registrando cancelación automática de turno ID: " + turnoId);
 
             // Usar el constructor genérico de AuditLog que existe en la entidad
             AuditLog auditLog = new AuditLog(
@@ -1246,8 +1312,6 @@ public class AuditLogService {
      */
     @Transactional
     public AuditLog logConfigChange(String clave, Object oldValue, Object nuevoValor, String performedBy) {
-        System.out.println("🔍 DEBUG logConfigChange: Clave: " + clave + ", OldValue: " + oldValue +
-                ", NuevoValor: " + nuevoValor + ", Usuario: " + performedBy);
 
         try {
             // Serializar valores
@@ -1275,7 +1339,6 @@ public class AuditLogService {
                     "Cambio de configuración: " + clave);
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Cambio de config auditado con ID: " + saved.getId());
             return saved;
 
         } catch (JsonProcessingException e) {
@@ -1329,7 +1392,6 @@ public class AuditLogService {
      */
 
     public AuditLog logConfigResetToDefaults(String performedBy) {
-        System.out.println("🔍 DEBUG logConfigResetToDefaults: Usuario: " + performedBy);
 
         try {
             Map<String, Object> resetData = new HashMap<>();
@@ -1349,7 +1411,6 @@ public class AuditLogService {
                     "Restauración de configuraciones a valores por defecto");
 
             AuditLog saved = auditLogRepository.save(auditLog);
-            System.out.println("✅ DEBUG: Reset de configs auditado con ID: " + saved.getId());
             return saved;
 
         } catch (JsonProcessingException e) {
@@ -1661,8 +1722,25 @@ public class AuditLogService {
         auditLog.setEntityType((String) data[2]);
         auditLog.setEntityId(data[3] != null ? ((Number) data[3]).longValue() : null);
         auditLog.setAction((String) data[4]);
-        auditLog.setPerformedAt((LocalDateTime) data[5]);
-        auditLog.setPerformedBy((String) data[6]);
+        // Manejar distintos tipos devueltos por JDBC (Timestamp o LocalDateTime)
+        if (data.length > 5) {
+            Object performedAtObj = data[5];
+            if (performedAtObj instanceof LocalDateTime) {
+                auditLog.setPerformedAt((LocalDateTime) performedAtObj);
+            } else if (performedAtObj instanceof java.sql.Timestamp) {
+                auditLog.setPerformedAt(((java.sql.Timestamp) performedAtObj).toLocalDateTime());
+            } else if (performedAtObj != null) {
+                // Intentar parsear como String si llega así
+                try {
+                    auditLog.setPerformedAt(LocalDateTime.parse(performedAtObj.toString()));
+                } catch (Exception ex) {
+                    System.err.println("⚠️ WARN: no se pudo parsear performedAt: " + performedAtObj + " -> " + ex.getMessage());
+                }
+            }
+        } else {
+            System.err.println("⚠️ WARN: datos insuficientes al convertir fila a AuditLog (length=" + data.length + ")");
+        }
+        auditLog.setPerformedBy(data.length > 6 ? (String) data[6] : null);
         auditLog.setEstadoAnterior((String) data[7]);
         auditLog.setEstadoNuevo((String) data[8]);
         auditLog.setReason((String) data[9]);
@@ -1697,7 +1775,6 @@ public class AuditLogService {
      */
     public void diagnosticTurnoAuditLogs(Integer turnoId) {
         try {
-            System.out.println("🔍 DIAGNÓSTICO: Verificando logs de auditoría para turno ID: " + turnoId);
 
             // Obtener todos los logs del turno usando el método existente
             List<AuditLog> turnoLogs = auditLogRepository
@@ -1738,7 +1815,6 @@ public class AuditLogService {
      * clave específica (paginado)
      */
     public List<AuditLog> getConfigChangeHistory(String clave, int page, int size) {
-        System.out.println("🔍 DEBUG getConfigChangeHistory: Clave: " + clave + ", Page: " + page + ", Size: " + size);
         Pageable pageable = PageRequest.of(page, size);
         Page<AuditLog> history = auditLogRepository.findByEntityTypeAndEntityIdOrderByPerformedAtDesc(
                 AuditLog.EntityTypes.CONFIGURACION, (long) clave.hashCode(), pageable);
@@ -1750,14 +1826,11 @@ public class AuditLogService {
      */
     @Transactional(readOnly = true)
     public AuditLog getUltimaModificacionConfig() {
-        System.out.println("🔍 DEBUG getUltimaModificacionConfig");
         Optional<AuditLog> lastLog = auditLogRepository.findTopByEntityTypeOrderByPerformedAtDesc(
                 AuditLog.EntityTypes.CONFIGURACION);
         if (lastLog.isPresent()) {
-            System.out.println("✅ DEBUG: Última mod encontrada, ID: " + lastLog.get().getId());
             return lastLog.get();
         }
-        System.out.println("⚠️ DEBUG: No hay modificaciones de config registradas");
         return null;
     }
 

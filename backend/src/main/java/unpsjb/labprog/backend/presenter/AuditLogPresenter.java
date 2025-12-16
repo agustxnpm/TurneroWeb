@@ -131,9 +131,7 @@ public class AuditLogPresenter {
     @GetMapping("/statistics")
     public ResponseEntity<Object> getAuditStatistics() {
         try {
-            System.out.println("🔍 DEBUG AuditLogPresenter: Llamada a /audit/statistics");
             List<Object[]> statistics = auditLogService.getActionStatistics();
-            System.out.println("✅ DEBUG AuditLogPresenter: Estadísticas obtenidas: " + statistics.size() + " elementos");
             return Response.ok(statistics, "Estadísticas de auditoría recuperadas correctamente");
         } catch (Exception e) {
             System.err.println("❌ ERROR AuditLogPresenter: " + e.getMessage());
@@ -235,9 +233,7 @@ public class AuditLogPresenter {
     @GetMapping("/dashboard")
     public ResponseEntity<Object> getDashboardStatistics() {
         try {
-            System.out.println("🔍 DEBUG AuditLogPresenter: Llamada a /audit/dashboard");
             Map<String, Object> dashboardStats = auditLogService.getDashboardStatistics();
-            System.out.println("✅ DEBUG AuditLogPresenter: Estadísticas del dashboard obtenidas: " + dashboardStats.keySet());
             return Response.ok(dashboardStats, "Estadísticas del dashboard recuperadas correctamente");
         } catch (Exception e) {
             System.err.println("❌ ERROR AuditLogPresenter: Error en dashboard - " + e.getMessage());
@@ -246,15 +242,14 @@ public class AuditLogPresenter {
         }
     }
 
+
     /**
      * Obtiene estadísticas de actividad por usuario
      */
     @GetMapping("/users/activity")
     public ResponseEntity<Object> getUserActivityStatistics() {
         try {
-            System.out.println("🔍 DEBUG AuditLogPresenter: Llamada a /audit/users/activity");
             List<Object[]> userStats = auditLogService.getUserActivityStatistics();
-            System.out.println("✅ DEBUG AuditLogPresenter: Estadísticas de usuarios obtenidas: " + userStats.size() + " usuarios");
             return Response.ok(userStats, "Estadísticas de actividad por usuario recuperadas correctamente");
         } catch (Exception e) {
             System.err.println("❌ ERROR AuditLogPresenter: Error en actividad de usuarios - " + e.getMessage());

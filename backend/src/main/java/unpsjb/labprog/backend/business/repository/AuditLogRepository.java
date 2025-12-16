@@ -120,6 +120,14 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Integer> {
        @Query(value = "SELECT id, action, performed_by, estado_anterior, estado_nuevo, performed_at FROM audit_log WHERE id = :auditId", nativeQuery = true)
        Object[] findBasicAuditData(@Param("auditId") Integer auditId);
 
+       // Obtener fila básica por id (incluye entity_type y entity_id) sin leer LOBs
+       @Query(value = "SELECT id, turno_id, entity_type, entity_id, action, performed_at, performed_by, estado_anterior, estado_nuevo, reason FROM audit_log WHERE id = :auditId", nativeQuery = true)
+       Object[] findBasicRowById(@Param("auditId") Integer auditId);
+
+       // Preferir una versión JPQL (más portable) que también devuelve un Object[] con los campos esperados
+       @Query("SELECT a.id, a.turno.id, a.entityType, a.entityId, a.action, a.performedAt, a.performedBy, a.estadoAnterior, a.estadoNuevo, a.reason FROM AuditLog a WHERE a.id = :auditId")
+       Object[] findBasicRowByIdJPQL(@Param("auditId") Integer auditId);
+
        // Consulta segura sin campos LOB problemáticos
        @Query("SELECT a FROM AuditLog a WHERE a.turno.id = :turnoId ORDER BY a.performedAt DESC")
        List<AuditLog> findSafeAuditHistory(@Param("turnoId") Integer turnoId);
@@ -141,6 +149,11 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Integer> {
 
        // Buscar logs por tipo de entidad y acción
        List<AuditLog> findByEntityTypeAndActionOrderByPerformedAtDesc(String entityType, String action);
+
+       // Consulta segura que obtiene solo campos básicos (sin campos LOB) para evitar problemas de extracción JDBC
+       @Query("SELECT a.id, a.turno.id, a.entityType, a.entityId, a.action, a.performedAt, a.performedBy, a.estadoAnterior, a.estadoNuevo, a.reason " +
+                     "FROM AuditLog a WHERE a.entityType = :entityType AND a.action = :action ORDER BY a.performedAt DESC")
+       List<Object[]> findBasicByEntityTypeAndAction(@Param("entityType") String entityType, @Param("action") String action);
 
        // Buscar logs por tipo de entidad, ID de entidad y acción
        List<AuditLog> findByEntityTypeAndEntityIdAndActionOrderByPerformedAtDesc(String entityType, Long entityId,
