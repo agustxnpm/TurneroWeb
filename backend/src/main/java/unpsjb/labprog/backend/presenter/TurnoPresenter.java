@@ -96,6 +96,10 @@ public class TurnoPresenter {
             String currentUserEmail = getCurrentUser(request);
             TurnoDTO saved = service.save(turnoDTO, currentUserEmail);
             return Response.ok(saved, "Turno creado correctamente");
+        } catch (unpsjb.labprog.backend.exception.OverlapException e) {
+            // Retornar CONFLICT con los detalles de los turnos en conflicto para que
+            // el frontend pueda mostrar un modal y reintentar con confirmación
+            return Response.response(HttpStatus.CONFLICT, e.getMessage(), e.getConflicts());
         } catch (IllegalArgumentException e) {
             return Response.dbError(e.getMessage());
         } catch (Exception e) {
@@ -106,10 +110,18 @@ public class TurnoPresenter {
     @PutMapping("/{id}")
     public ResponseEntity<Object> update(@PathVariable Integer id, @RequestBody TurnoDTO turnoDTO,
             HttpServletRequest request) {
-        turnoDTO.setId(id);
-        String currentUserEmail = getCurrentUser(request);
-        TurnoDTO updated = service.save(turnoDTO, currentUserEmail);
-        return Response.ok(updated, "Turno actualizado correctamente");
+        try {
+            turnoDTO.setId(id);
+            String currentUserEmail = getCurrentUser(request);
+            TurnoDTO updated = service.save(turnoDTO, currentUserEmail);
+            return Response.ok(updated, "Turno actualizado correctamente");
+        } catch (unpsjb.labprog.backend.exception.OverlapException e) {
+            return Response.response(HttpStatus.CONFLICT, e.getMessage(), e.getConflicts());
+        } catch (IllegalArgumentException e) {
+            return Response.dbError(e.getMessage());
+        } catch (Exception e) {
+            return Response.error(null, "Error al actualizar el turno: " + e.getMessage());
+        }
     }
 
     /**

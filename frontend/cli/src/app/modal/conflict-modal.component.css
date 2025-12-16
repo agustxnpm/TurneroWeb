@@ -1,0 +1,114 @@
+.conflict-modal-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: var(--space-md);
+  background-color: var(--color-surface);
+  color: var(--text-main);
+}
+
+.modal-title {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-main);
+  margin: 0; 
+}
+
+/* Botón de cierre posicionado en esquina superior derecha con icono Material */
+.modal-header {
+  position: relative;
+  padding-top: var(--space-sm);
+  padding-bottom: var(--space-sm);
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.modal-close-btn:hover {
+  background-color: rgba(13,110,253,0.06);
+  color: var(--color-accent);
+}
+
+.modal-close-btn:focus {
+  outline: 2px solid rgba(13,110,253,0.12);
+}
+
+.modal-message {
+  margin-bottom: var(--space-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.table-modal-conflicts {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-sm);
+  background: transparent;
+  box-shadow: none;
+}
+
+.table-modal-conflicts thead th {
+  background: linear-gradient(90deg, rgba(13,110,253,0.03), rgba(0,0,0,0.01));
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  border-bottom: 1px solid var(--border-color);
+  padding: 10px;
+  text-align: left;
+}
+
+.table-modal-conflicts tbody td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: var(--font-size-sm);
+}
+
+.table-modal-conflicts tbody tr:hover {
+  background-color: rgba(13,110,253,0.04);
+}
+
+/* Primer columna (índice) */
+.table-modal-conflicts td:first-child {
+  width: 40px;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+/* Footer del modal: separar botones y usar placeholders de variables */
+.modal-footer {
+  border-top: 1px solid var(--border-color);
+  padding: var(--space-sm) var(--space-md);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+/* Asegurar que el botón primario del modal siga el estilo global */
+.btn-primary {
+  padding: 10px 18px;
+  border-radius: var(--border-radius-md);
+}
+
+/* Responsive tweaks */
+@media (max-width: 576px) {
+  .conflict-modal-body {
+    padding: var(--space-sm);
+  }
+
+  .table-modal-conflicts thead th,
+  .table-modal-conflicts tbody td {
+    padding: 8px;
+    font-size: var(--font-size-sm);
+  }
+}

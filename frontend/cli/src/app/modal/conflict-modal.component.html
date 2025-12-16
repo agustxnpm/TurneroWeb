@@ -1,0 +1,34 @@
+<div class="modal-header">
+  <h3 class="modal-title">{{ title }}</h3>
+  <button type="button" class="modal-close-btn" aria-label="Cerrar" (click)="dismiss()">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+</div>
+<div class="modal-body conflict-modal-body">
+  <p class="modal-message" *ngIf="headerMessage">{{ headerMessage }}</p>
+
+  <div *ngIf="conflicts && conflicts.length > 0" class="table-responsive">
+    <table class="table table-sm table-striped table-modal-conflicts">
+      <thead>
+        <tr>
+          <th style="width:40px;">#</th>
+          <th>Horario</th>
+          <th>Paciente</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of conflicts; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ c.horaInicio }} - {{ c.horaFin }}</td>
+          <td>{{ c.paciente }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p *ngIf="!conflicts || conflicts.length === 0">No hay detalles adicionales.</p>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="dismiss()">Cancelar</button>
+  <button type="button" class="btn btn-primary" (click)="close()">{{ confirmLabel }}</button>
+</div>

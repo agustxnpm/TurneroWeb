@@ -51,4 +51,8 @@ public class TurnoDTO {
 
     private Boolean asistio;
 
+    // Si es true, permite crear/actualizar el turno aun cuando exista solapamiento con otros turnos
+    // (usado por la funcionalidad de "sobreturno" con confirmación previa desde el frontend)
+    private Boolean permitirSolapamiento;
+
 }

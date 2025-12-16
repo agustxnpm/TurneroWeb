@@ -213,6 +213,12 @@ public class TurnoService {
             Turno turno = toEntity(dto); // Convertir DTO a entidad
             validarTurno(turno); // Validar el turno
 
+            // Validar solapamiento: si el DTO indica permitirSolapamiento==true, entonces
+            // se permitirá crear el turno aun cuando exista conflicto (sobreturno confirmado
+            // por el usuario). En caso contrario, se retornará un CONFLICT con detalles.
+            boolean permitir = dto.getPermitirSolapamiento() != null && dto.getPermitirSolapamiento();
+            validarSolapamiento(turno, permitir);
+
             boolean isNewTurno = dto.getId() == null || dto.getId() == 0;
             EstadoTurno previousStatus = null;
 
@@ -1134,8 +1140,12 @@ public class TurnoService {
         // Validar que el médico atiende en la fecha del turno
         validarDisponibilidadMedico(turno);
 
-        // Validar que no haya solapamiento con otros turnos del mismo médico
-        validarSolapamiento(turno);
+        // NOTA: la validación de solapamiento se ejecuta desde el flujo de guardado
+        // (save) porque en caso de "sobreturno" necesitamos permitir la creación
+        // previa confirmación del usuario. Esto permite que el frontend solicite
+        // confirmación y luego reintente con el flag `permitirSolapamiento=true`.
+        // validarSolapamiento(turno);  // movido al flujo de guardado
+
     }
 
     private void validarDisponibilidadMedico(Turno turno) {
@@ -1160,7 +1170,7 @@ public class TurnoService {
         }
     }
 
-    private void validarSolapamiento(Turno turno) {
+    private void validarSolapamiento(Turno turno, boolean permitirSolapamiento) {
         // Buscar turnos existentes del mismo médico en la misma fecha
         List<Turno> turnosExistentes = repository.findByFechaAndStaffMedico_Id(
                 turno.getFecha(),
@@ -1171,28 +1181,44 @@ public class TurnoService {
                 .filter(t -> t.getEstado() != EstadoTurno.CANCELADO)
                 .collect(Collectors.toList());
 
-        // Verificar si hay solapamiento de horarios
-        for (Turno turnoExistente : turnosExistentes) {
-            // Excluir el turno actual si es una edición (tiene ID)
-            if (turno.getId() != null && turno.getId().equals(turnoExistente.getId())) {
-                continue;
+        // Buscar solapamientos
+        List<Turno> conflictos = turnosExistentes.stream()
+                .filter(turnoExistente -> {
+                    // Excluir el turno actual si es una edición (tiene ID)
+                    if (turno.getId() != null && turno.getId().equals(turnoExistente.getId())) {
+                        return false;
+                    }
+                    // Verificar solapamiento: dos intervalos se solapan si el inicio de uno
+                    // está antes del fin del otro Y el fin de uno está después del inicio del otro
+                    return turno.getHoraInicio().isBefore(turnoExistente.getHoraFin()) &&
+                            turno.getHoraFin().isAfter(turnoExistente.getHoraInicio());
+                })
+                .collect(Collectors.toList());
+
+        if (!conflictos.isEmpty()) {
+            if (permitirSolapamiento) {
+                // Loggear advertencia y permitir la creación (sobreturno confirmado)
+                System.out.println("⚠️ WARNING: Creando turno con solapamiento manual (sobreturno): " +
+                        "Turno fecha=" + turno.getFecha() + " hora=" + turno.getHoraInicio() + "-" + turno.getHoraFin());
+                return;
             }
 
-            // Verificar solapamiento: dos intervalos se solapan si el inicio de uno
-            // está antes del fin del otro Y el fin de uno está después del inicio del otro
-            boolean haySolapamiento = turno.getHoraInicio().isBefore(turnoExistente.getHoraFin()) &&
-                    turno.getHoraFin().isAfter(turnoExistente.getHoraInicio());
+            // Preparar información resumida de conflictos para enviar al frontend
+            List<Object> infoConflictos = conflictos.stream().map(t -> {
+                return Map.of(
+                        "id", t.getId(),
+                        "horaInicio", t.getHoraInicio().toString(),
+                        "horaFin", t.getHoraFin().toString(),
+                        "paciente", t.getPaciente().getNombre() + " " + t.getPaciente().getApellido());
+            }).collect(Collectors.toList());
 
-            if (haySolapamiento) {
-                throw new IllegalArgumentException(
-                        String.format(
-                                "Ya existe un turno programado para el médico %s %s en el horario %s - %s del día %s",
-                                turno.getStaffMedico().getMedico().getNombre(),
-                                turno.getStaffMedico().getMedico().getApellido(),
-                                turnoExistente.getHoraInicio().toString(),
-                                turnoExistente.getHoraFin().toString(),
-                                turno.getFecha().toString()));
-            }
+            throw new unpsjb.labprog.backend.exception.OverlapException(
+                    String.format("Ya existe(n) %d turno(s) en conflicto para el médico %s %s en la fecha %s",
+                            infoConflictos.size(),
+                            turno.getStaffMedico().getMedico().getNombre(),
+                            turno.getStaffMedico().getMedico().getApellido(),
+                            turno.getFecha().toString()),
+                    infoConflictos);
         }
     }
 

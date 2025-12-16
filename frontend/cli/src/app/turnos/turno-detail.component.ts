@@ -59,6 +59,13 @@ export class TurnoDetailComponent {
     private modalService: ModalService
   ) { }
 
+  // Importar lazymente el componente de modal con tabla (evita problemas de bundling)
+  // Nota: La importación real se hace dinámicamente en tiempo de ejecución
+  private async getConflictModalComponent() {
+    const mod = await import('../modal/conflict-modal.component');
+    return mod.ConflictModalComponent;
+  }
+
   ngOnInit(): void {
     this.loadDropdownData();
     this.get();
@@ -158,19 +165,35 @@ export class TurnoDetailComponent {
       return;
     }
 
-    // Si es sobreturno, verificar solapamiento y mostrar advertencia
+    // Si es sobreturno, verificar solapamiento y mostrar advertencia (con tabla en modal)
     if (this.esSobreturno && !this.turno.id) {
-      this.verificarSolapamiento().then(haySolapamiento => {
+      this.verificarSolapamiento().then(async haySolapamiento => {
         if (haySolapamiento) {
-          this.modalService.confirm(
-            "⚠️ Advertencia de Solapamiento",
-            this.mensajeAdvertencia,
-            "¿Desea continuar y crear el sobreturno de todas formas?"
-          ).then(() => {
-            this.guardarSobreturno();
-          }).catch(() => {
-            console.log("Creación de sobreturno cancelada por el usuario");
-          });
+          try {
+            const comp = await this.getConflictModalComponent();
+            const modalRef = this.modalService.open(comp, { size: 'lg' });
+            modalRef.componentInstance.title = '⚠️ Advertencia de Solapamiento';
+            modalRef.componentInstance.headerMessage = this.mensajeAdvertencia;
+            modalRef.componentInstance.conflicts = this.lastConflicts || [];
+            modalRef.componentInstance.confirmLabel = 'Crear sobreturno';
+
+            modalRef.result.then(() => {
+              this.guardarSobreturno();
+            }).catch(() => {
+              console.log('Creación de sobreturno cancelada por el usuario');
+            });
+          } catch (e) {
+            // Fallback al modal simple si algo falla
+            this.modalService.confirm(
+              '⚠️ Advertencia de Solapamiento',
+              this.mensajeAdvertencia,
+              '¿Desea continuar y crear el sobreturno de todas formas?'
+            ).then(() => {
+              this.guardarSobreturno();
+            }).catch(() => {
+              console.log('Creación de sobreturno cancelada por el usuario');
+            });
+          }
         } else {
           this.guardarSobreturno();
         }
@@ -183,18 +206,59 @@ export class TurnoDetailComponent {
 
   private guardarSobreturno(): void {
     // Agregar metadata de sobreturno
-    console.log("🔶 Creando SOBRETURNO manual (fuera de agenda)");
-    this.guardarTurno();
+    console.log('🔶 Creando SOBRETURNO manual (fuera de agenda)');
+    // No esperaremos la promesa aquí para mantener comportamiento síncrono desde la UI
+    void this.guardarTurno();
   }
 
-  private guardarTurno(): void {
+  private async guardarTurno(): Promise<void> {
     const op = this.turno.id
       ? this.turnoService.update(this.turno.id, this.turno)
       : this.turnoService.create(this.turno);
 
     op.subscribe({
-      next: (response: DataPackage<Turno>) => {
-        // Verificar si la respuesta contiene un error de negocio (status_code 409)
+      next: async (response: DataPackage<Turno>) => {
+        // El backend usa siempre HTTP 200 para respuestas, y coloca el código real
+        // en `status_code`. Aquí manejamos respuestas de negocio como CONFLICT (409).
+        if (response.status_code === 409 && response.data) {
+          const conflicts = response.data as unknown as any[];
+
+
+          const formattedMessage = `${response.status_text}\n\n. Si acepta, el sobreturno se creará igualmente y podría causar conflictos en la agenda del médico.`;
+
+          // Abrir modal de conflictos con tabla (uso import dinámico para evitar dependencias estáticas)
+          try {
+            const comp = await this.getConflictModalComponent();
+            const modalRef = this.modalService.open(comp, { size: 'lg' });
+            modalRef.componentInstance.title = " Conflicto de Solapamiento";
+            modalRef.componentInstance.headerMessage = formattedMessage;
+            modalRef.componentInstance.conflicts = conflicts;
+            modalRef.componentInstance.confirmLabel = "Crear sobreturno";
+
+            modalRef.result.then(() => {
+              // Setear flag para forzar la creación y reintentar
+              this.turno.permitirSolapamiento = true;
+              void this.guardarTurno();
+            }).catch(() => {
+              console.log("Creación cancelada por el usuario");
+            });
+          } catch (e) {
+            // Fallback a modal simple
+            this.modalService.confirm(
+              "⚠️ Conflicto de Solapamiento",
+              formattedMessage,
+              "Crear sobreturno"
+            ).then(() => {
+              this.turno.permitirSolapamiento = true;
+              void this.guardarTurno();
+            }).catch(() => {
+              console.log("Creación cancelada por el usuario");
+            });
+          }
+
+          return;
+        }
+
         if (response.status_code !== 200) {
           this.modalService.alert("Error", response.status_text || "No se pudo guardar el turno.");
           return;
@@ -209,15 +273,25 @@ export class TurnoDetailComponent {
         this.router.navigate(["/turnos"]);
       },
       error: (error) => {
+        // Fallback por si la petición falla a nivel de red o servidor
         console.error("Error al guardar el turno:", error);
-        // El backend retorna errores con DataPackage, acceder al mensaje correcto
         const mensaje = error?.error?.status_text || error?.error?.message || "No se pudo guardar el turno.";
         this.modalService.alert("Error", mensaje);
       },
     });
   }
 
+  private lastConflicts: any[] = [];
+
   private async verificarSolapamiento(): Promise<boolean> {
+    const timeToMinutes = (t: string | undefined | null): number => {
+      if (!t) return NaN;
+      const parts = t.split(':').map(p => Number(p));
+      const h = parts[0] || 0;
+      const m = parts[1] || 0;
+      return h * 60 + m;
+    };
+
     // Verificar solapamientos reales consultando turnos existentes
     return new Promise((resolve) => {
       // Obtener turnos del mismo médico en la misma fecha
@@ -231,25 +305,44 @@ export class TurnoDetailComponent {
           const turnosExistentes = response.data || [];
           const turnosMismoMedicoFecha = turnosExistentes.filter(turno =>
             turno.staffMedicoId === this.turno.staffMedicoId &&
-            turno.fecha === this.turno.fecha &&
+            // Normalizar formato de fecha (ISO yyyy-MM-dd)
+            (turno.fecha || '') === (this.turno.fecha || '') &&
             turno.id !== this.turno.id // Excluir el turno actual si es edición
           );
 
-          // Verificar si hay solapamiento de horarios
-          const haySolapamiento = turnosMismoMedicoFecha.some(turno => {
-            const inicioExistente = turno.horaInicio;
-            const finExistente = turno.horaFin;
-            const inicioNuevo = this.turno.horaInicio;
-            const finNuevo = this.turno.horaFin;
+          // Verificar si hay solapamiento de horarios (comparando minutos)
+          const inicioNuevo = timeToMinutes(this.turno.horaInicio);
+          const finNuevo = timeToMinutes(this.turno.horaFin);
 
-            // Hay solapamiento si los intervalos se superponen
-            return (inicioNuevo < finExistente && finNuevo > inicioExistente);
+          const haySolapamiento = turnosMismoMedicoFecha.some(turno => {
+            const inicioExistente = timeToMinutes(turno.horaInicio);
+            const finExistente = timeToMinutes(turno.horaFin);
+
+            if (isNaN(inicioExistente) || isNaN(finExistente) || isNaN(inicioNuevo) || isNaN(finNuevo)) {
+              return false; // no podemos comparar correctamente
+            }
+
+            return inicioNuevo < finExistente && finNuevo > inicioExistente;
           });
 
           if (haySolapamiento) {
             this.advertenciaSolapamiento = true;
-            this.mensajeAdvertencia = `Ya existe un turno programado para el mismo médico en este horario.
-            Este sobreturno se registrará de todas formas, pero puede causar conflictos de agenda.`;
+
+            // Construir listado de conflictos detallado para usar en el modal con tabla
+            this.lastConflicts = turnosMismoMedicoFecha.map(t => ({
+              horaInicio: t.horaInicio,
+              horaFin: t.horaFin,
+              paciente: t.nombrePaciente || `${t.nombrePaciente || ''} ${t.apellidoPaciente || ''}` || 'N/A'
+            }));
+
+            // Generar lista legible de conflictos (hasta 5) para mostrar en la advertencia
+            const conflictsPreview = turnosMismoMedicoFecha.slice(0, 5).map((t, i) =>
+              `${i + 1}. ${t.horaInicio} - ${t.horaFin}  (Paciente: ${t.nombrePaciente || t.pacienteId || 'N/A'})`
+            ).join('\n');
+
+            this.mensajeAdvertencia = `Se detectó(s) ${turnosMismoMedicoFecha.length} turno(s) que se solapan con el horario seleccionado:\n\n${conflictsPreview}\n\n¿Desea continuar y crear el sobreturno de todas formas?`;
+          } else {
+            this.lastConflicts = [];
           }
 
           resolve(haySolapamiento);

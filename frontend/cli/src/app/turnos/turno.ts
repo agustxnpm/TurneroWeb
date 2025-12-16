@@ -40,6 +40,9 @@ export interface Turno {
     fechaUltimaModificacion?: string;      // Fecha/hora de la última modificación como string
     motivoUltimaModificacion?: string;     // Motivo de la última modificación
     totalModificaciones?: number;          // Número total de modificaciones
+
+    // Permite forzar creación de turnos aunque existan solapamientos (sobreturno).
+    permitirSolapamiento?: boolean;
 }
 
 // Interfaz para los filtros de búsqueda avanzada
