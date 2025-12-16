@@ -1839,8 +1839,8 @@ public class TurnoService {
             // Construir detalles del turno para el email
             String appointmentDetails = construirDetallesTurnoEmail(turno, fechaTurno, especialidad, medico);
 
-            // Enviar email de forma asíncrona
-            emailService.sendAppointmentConfirmationEmail(patientEmail, patientName, appointmentDetails);
+            // Enviar email de forma asíncrona (incluyendo pacienteId y turnoId para deep-link)
+            emailService.sendAppointmentConfirmationEmail(patientEmail, patientName, appointmentDetails, turno.getPaciente().getId(), turno.getId());
 
             System.out.println("Email de confirmación enviado a: " + patientEmail + " para turno ID: " + turno.getId());
 

@@ -68,10 +68,10 @@ export class DeepLinkBridgeComponent implements OnInit {
               this.router.navigate(['/paciente/encuesta', context.turnoId]);
             }, 1500);
           } else {
-            // Para otros tipos, simplemente redirigir a la agenda
+            // Para otros tipos (p.ej. ACCESO), redirigir al dashboard del paciente
             this.showSuccess();
             setTimeout(() => {
-              this.router.navigate(['/paciente-agenda']);
+              this.router.navigate(['/paciente-dashboard']);
             }, 1500);
           }
         } else {
@@ -120,16 +120,27 @@ export class DeepLinkBridgeComponent implements OnInit {
       },
       error: (err) => {
         console.error('❌ Error al confirmar turno:', err);
-        
+
+        const statusText = (err && err.error && err.error.status_text) ? err.error.status_text : '';
+
+        // Si la respuesta indica una transición inválida (ya confirmado), tratar como éxito y redirigir al dashboard
+        if (statusText.includes('Transición de estado inválida') || statusText.includes('CONFIRMADO')) {
+          this.showSuccess();
+          setTimeout(() => {
+            this.router.navigate(['/paciente-dashboard']);
+          }, 1500);
+          return;
+        }
+
         let message = 'Ocurrió un error al confirmar el turno.';
-        if (err.error && err.error.status_text) {
-          message = err.error.status_text;
+        if (statusText) {
+          message = statusText;
         } else if (err.status === 400) {
           message = 'El turno no puede ser confirmado en este momento.';
         } else if (err.status === 404) {
           message = 'El turno no fue encontrado.';
         }
-        
+
         this.showError(message);
       }
     });

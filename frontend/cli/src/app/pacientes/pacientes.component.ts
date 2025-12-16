@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { DeepLinkService } from '../services/deep-link.service';
 import { PacienteService } from './paciente.service';
 import { Paciente } from './paciente';
 import { ModalService } from '../modal/modal.service';
@@ -24,7 +25,7 @@ interface SortConfig {
   standalone: true,
   imports: [CommonModule, RouterModule, PaginationComponent, FormsModule],
   templateUrl: './pacientes.component.html', 
-  styleUrl: './pacientes.component.css'
+  styleUrls: ['./pacientes.component.css']
 })
 export class PacientesComponent implements OnInit {
   resultsPage: ResultsPage = {
@@ -60,12 +61,36 @@ export class PacientesComponent implements OnInit {
   constructor(
     private pacienteService: PacienteService,
     private modalService: ModalService,
-    public router: Router
+    public router: Router,
+    private route: ActivatedRoute,
+    private deepLinkService: DeepLinkService
   ) {}
 
   ngOnInit(): void {
     this.loadTotalCount();
     this.getPacientes();
+
+    // Leer token de deep-link si existe en la URL y validarlo
+    this.route.queryParams.subscribe(params => {
+      const token = params['token'];
+      if (token) {
+        this.deepLinkService.validateDeepLink(token).subscribe({
+          next: (resp) => {
+            if (resp && resp.status_code === 200) {
+              // Sesión establecida por DeepLinkService. Limpiar token de URL y redirigir al dashboard del paciente.
+              this.router.navigate([], { relativeTo: this.route, queryParams: { token: null }, queryParamsHandling: 'merge' });
+              this.router.navigate(['/paciente-dashboard']);
+            } else {
+              this.modalService.alert('Error', 'Token de acceso inválido o expirado');
+            }
+          },
+          error: (err) => {
+            console.error('Error validando token deep-link:', err);
+            this.modalService.alert('Error', 'Token de acceso inválido o expirado');
+          }
+        });
+      }
+    });
   }
 
   /**

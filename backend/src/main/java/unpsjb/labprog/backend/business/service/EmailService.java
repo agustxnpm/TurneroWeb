@@ -191,9 +191,20 @@ public class EmailService {
      */
     @Async
     public CompletableFuture<Void> sendAppointmentConfirmationEmail(String to, String patientName,
-            String appointmentDetails) {
+            String appointmentDetails, Integer pacienteId, Integer turnoId) {
         String subject = appName + " - Confirmación de turno";
-        String htmlBody = buildAppointmentConfirmationEmailBody(patientName, appointmentDetails);
+
+        String dashboardUrl;
+        if (pacienteId != null && turnoId != null) {
+            // Generar deep-link de acceso (no activar confirmación automática)
+            String deepLinkToken = deepLinkService.generarDeepLinkToken(pacienteId, turnoId, "ACCESO");
+            dashboardUrl = appUrl + "/link-verificacion?token=" + deepLinkToken;
+        } else {
+            // Fallback: redirigir al dashboard sin token si no se proporcionan IDs
+            dashboardUrl = appUrl + "/paciente-dashboard";
+        }
+
+        String htmlBody = buildAppointmentConfirmationEmailBody(patientName, appointmentDetails, dashboardUrl);
         sendHtmlEmail(to, subject, htmlBody);
         return CompletableFuture.completedFuture(null);
     }
@@ -465,7 +476,7 @@ public class EmailService {
                 appName, userName, temporaryPassword, appUrl);
     }
 
-    private String buildAppointmentConfirmationEmailBody(String patientName, String appointmentDetails) {
+    private String buildAppointmentConfirmationEmailBody(String patientName, String appointmentDetails, String dashboardUrl) {
         return String.format(
                 """
                         <!DOCTYPE html>
@@ -492,7 +503,7 @@ public class EmailService {
                         </body>
                         </html>
                         """,
-                appName, patientName, appointmentDetails, appUrl);
+                appName, patientName, appointmentDetails, dashboardUrl);
     }
 
     private String buildAppointmentCancellationEmailBody(String patientName, String cancellationDetails,

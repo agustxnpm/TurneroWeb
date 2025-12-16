@@ -155,8 +155,10 @@ public class EmailController {
             String to = request.get("to");
             String patientName = request.get("patientName");
             String appointmentDetails = request.get("appointmentDetails");
+            Integer pacienteId = request.containsKey("pacienteId") ? Integer.valueOf(request.get("pacienteId")) : null;
+            Integer turnoId = request.containsKey("turnoId") ? Integer.valueOf(request.get("turnoId")) : null;
 
-            CompletableFuture<Void> future = emailService.sendAppointmentConfirmationEmail(to, patientName, appointmentDetails);
+            CompletableFuture<Void> future = emailService.sendAppointmentConfirmationEmail(to, patientName, appointmentDetails, pacienteId, turnoId);
             return Response.ok(future, "Correo programado para envío de confirmación de turno");
         } catch (Exception e) {
             return Response.error(null, "Error al enviar correo de confirmación de turno: " + e.getMessage());
