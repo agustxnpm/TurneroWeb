@@ -149,6 +149,20 @@ public class AdminPresenter {
     }
 
     /**
+     * Obtiene el conteo de usuarios activos (tenant-aware)
+     * GET /admins/active-count
+     */
+    @GetMapping("/active-count")
+    public ResponseEntity<Object> getActiveUsersCount() {
+        try {
+            long count = userService.countActiveUsers();
+            return Response.ok(Map.of("activeUsersCount", count), "Conteo de usuarios activos");
+        } catch (Exception e) {
+            return Response.error(null, "Error al obtener el conteo de usuarios activos: " + e.getMessage());
+        }
+    }
+
+    /**
      * Endpoint temporal para probar el envío de invitaciones a encuestas
      * Procesa TODAS las invitaciones pendientes FORZANDO el envío (ignora timing programado)
      */

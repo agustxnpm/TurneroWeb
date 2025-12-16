@@ -395,6 +395,9 @@ public class PacienteService {
         return result.map(this::toDTO);
     }
 
+    @Autowired
+    private unpsjb.labprog.backend.business.repository.TurnoRepository turnoRepository;
+
     @Transactional
     public void delete(Integer id, String performedBy) {
         Paciente paciente = repository.findById(id).orElse(null);
@@ -402,17 +405,25 @@ public class PacienteService {
             throw new IllegalStateException("No existe un paciente con el ID: " + id);
         }
 
+        // Verificar si el paciente tiene turnos asociados -> prevenir borrado por FK
+        if (turnoRepository.existsByPaciente_Id(id)) {
+            List<unpsjb.labprog.backend.model.Turno> turnos = turnoRepository.findByPaciente_Id(id);
+            String ids = turnos.stream().map(t -> t.getId().toString()).collect(Collectors.joining(", "));
+            throw new IllegalStateException("No se puede eliminar el paciente porque tiene " + turnos.size() + " turno(s) asociados (IDs: " + ids + "). Cancela o reasigna esos turnos antes de eliminar.");
+        }
+
         // Para testing: si no hay usuario autenticado, usar valor por defecto
         if (performedBy == null) {
             performedBy = "SYSTEM_TEST";
         }
 
-        // 🎯 AUDITORÍA
+        // Eliminar paciente
+        repository.deleteById(id);
+
+        // 🎯 AUDITORÍA (registrar la eliminación solo si el delete fue exitoso)
         auditLogService.logGenericAction(AuditLog.EntityTypes.PACIENTE, id.longValue(),
                                        AuditLog.Actions.DELETE, performedBy, "ACTIVO", "ELIMINADO",
                                        paciente, null, "Paciente eliminado");
-
-        repository.deleteById(id);
     }
 
     /**

@@ -201,9 +201,14 @@ export class PacientesComponent implements OnInit {
    */
   remove(id: number): void {
     this.pacienteService.remove(id).subscribe({
-      next: () => {
+      next: (response) => {
+        if (response.status_code == 200) {
         this.modalService.alert('Éxito', 'Paciente eliminado correctamente');
         this.getPacientes();
+        } else {
+          const msg = response.status_text || "Error al eliminar el paciente.";
+          this.modalService.alert("Error", msg);
+        }
       },
       error: (err) => {
         const msg = err?.error?.message || "Error al eliminar el paciente.";

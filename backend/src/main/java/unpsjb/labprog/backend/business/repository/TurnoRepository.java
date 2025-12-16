@@ -35,6 +35,9 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer>, JpaSpeci
     // Buscar turnos por paciente ID
     List<Turno> findByPaciente_Id(Integer pacienteId);
 
+    // Verificar si existe al menos un turno para un paciente (más eficiente que listar todos)
+    boolean existsByPaciente_Id(Integer pacienteId);
+
     // Verificar si existen turnos en una fecha específica para un staff médico
     boolean existsByFechaAndStaffMedico_Id(LocalDate fecha, Integer staffMedicoId);
 

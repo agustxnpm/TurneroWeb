@@ -15,6 +15,7 @@ import { ComentariosModalComponent } from "../modal/comentarios-modal.component"
 })
 export class AdminDashboardComponent implements OnInit {
   particles: { x: number; y: number }[] = [];
+  activeUsersCount: number = 0;
 
   constructor(
     private authService: AuthService,
@@ -24,8 +25,8 @@ export class AdminDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.generateParticles();
     this.loadMetricasCalidad();
+    this.loadActiveUsersCount();
   }
 
   // ==== Calidad =====
@@ -35,8 +36,13 @@ export class AdminDashboardComponent implements OnInit {
     const filtros = { fechaDesde: undefined, fechaHasta: undefined };
     this.dashboardService.getComentarios(filtros).subscribe({
       next: (resp) => {
+        if (resp.status_code == 200) {
         const comentarios = resp.data || [];
         this.modalService.open(ComentariosModalComponent, { size: 'lg' }).componentInstance.comentarios = comentarios;
+        } else {
+          alert('Error al obtener comentarios de encuestas');
+          return;
+        }
       },
       error: (err) => {
         console.error('Error cargando comentarios', err);
@@ -48,7 +54,12 @@ export class AdminDashboardComponent implements OnInit {
     const filtros = { fechaDesde: undefined, fechaHasta: undefined };
     this.dashboardService.getMetricasCalidad(filtros).subscribe({
       next: (resp) => {
-        this.calidad = resp.data;
+        if (resp.status_code == 200) {
+          this.calidad = resp.data;
+        } else {
+          alert('Error al obtener métricas de calidad');
+          return;
+        }
       },
       error: (err) => {
         console.error('Error cargando métricas de calidad', err);
@@ -56,12 +67,24 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  generateParticles() {
-    this.particles = Array.from({ length: 18 }, () => ({
-      x: Math.random() * (typeof window !== "undefined" ? window.innerWidth : 1200),
-      y: Math.random() * (typeof window !== "undefined" ? window.innerHeight : 800),
-    }));
+  loadActiveUsersCount() {
+    this.dashboardService.getActiveUsersCount().subscribe({
+      next: (resp) => {
+        if (resp.status_code == 200)
+        this.activeUsersCount = resp.data?.activeUsersCount ?? 0
+        else {
+          alert('Error al obtener conteo de usuarios activos');
+          this.activeUsersCount = 0;
+        }
+      },
+      error: (err) => {
+        console.error('Error cargando conteo de usuarios activos', err);
+        this.activeUsersCount = 0;
+      }
+    });
   }
+
+
 
   isAuthenticated(): boolean {
     return this.authService.isAuthenticated();
@@ -81,7 +104,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   goToAudit() {
-    this.router.navigate(["/audit-dashboard"]);
+    this.router.navigate(["/turnos/audit-dashboard"]);
   }
 
   goToUsers() {
@@ -99,7 +122,6 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   getActiveUsersCount(): number {
-    // Mock implementation - en producción conectar con servicio real
-    return Math.floor(Math.random() * 50) + 10;
+    return this.activeUsersCount;
   }
 }

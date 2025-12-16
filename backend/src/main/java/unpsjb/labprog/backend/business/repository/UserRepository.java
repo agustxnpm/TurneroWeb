@@ -88,4 +88,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return lista de usuarios del centro
      */
     java.util.List<User> findByCentroAtencion_Id(Integer centroId);
+
+    /**
+     * Cuenta usuarios habilitados por centro (usado para métricas en dashboard)
+     */
+    long countByCentroAtencion_IdAndEnabled(Integer centroId, boolean enabled);
+
+    /**
+     * Cuenta usuarios habilitados (global)
+     */
+    long countByEnabled(boolean enabled);
 }

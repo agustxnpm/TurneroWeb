@@ -194,6 +194,19 @@ public class UserService implements UserDetailsService {
     }
 
     /**
+     * Cuenta usuarios activos respetando la lógica multi-tenant.
+     * - Si el usuario actual tiene acceso global (SUPERADMIN o PACIENTE): cuenta todos los usuarios activos
+     * - Si el usuario está ligado a un centro (ADMIN/OPERADOR/MEDICO): cuenta solo los usuarios activos de su centro
+     */
+    public long countActiveUsers() {
+        Integer centroId = TenantContext.getFilteredCentroId();
+        if (centroId == null) {
+            return userRepository.countByEnabled(true);
+        }
+        return userRepository.countByCentroAtencion_IdAndEnabled(centroId, true);
+    }
+
+    /**
      * Deshabilita un usuario
      * 
      * @param userId ID del usuario

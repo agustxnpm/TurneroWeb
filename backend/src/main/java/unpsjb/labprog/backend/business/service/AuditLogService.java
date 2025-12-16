@@ -1628,8 +1628,13 @@ public class AuditLogService {
                             .orElse(false);
 
                 default:
-                    // Para otros tipos (USUARIO, PACIENTE, MEDICO, etc.) ocultamos registros
-                    // que no estén explícitamente ligados al centro para evitar fuga de datos
+                    // Para otros tipos (USUARIO, PACIENTE, MEDICO, etc.) solo son visibles
+                    // para SUPERADMIN (usuario global). Pacientes tienen centro=null pero no
+                    // deben ver datos de otros centros.
+                    boolean isSuperAdmin = unpsjb.labprog.backend.config.TenantContext.isSuperAdmin();
+                    if (isSuperAdmin) {
+                        return true;
+                    }
                     return false;
             }
         } catch (Exception e) {

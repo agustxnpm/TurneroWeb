@@ -13,6 +13,11 @@ export class DashboardService {
     ? `${environment.apiUrl}/admin-dashboard`
     : 'rest/admin-dashboard';
 
+  // Base para endpoints de Admin (presenter /admins)
+  private adminsBase = environment.production
+    ? `${environment.apiUrl}/admins`
+    : 'rest/admins';
+
   constructor(private http: HttpClient) { }
 
   getMetricasBasicas(params?: { fechaDesde?: string, fechaHasta?: string, centroId?: number, consultorioId?: number, staffMedicoId?: number, especialidadId?: number }): Observable<DataPackage<any>> {
@@ -93,5 +98,13 @@ export class DashboardService {
       });
     }
     return this.http.get<DataPackage<EncuestaDetalle[]>>(`${this.base}/detalle/encuestas`, { params: httpParams });
+  }
+
+  /**
+   * Obtiene el conteo de usuarios activos (tenant-aware) desde el backend
+   */
+  getActiveUsersCount(): Observable<DataPackage<{ activeUsersCount: number }>> {
+    // Endpoint tenant-aware en AdminPresenter -> /admins/active-count
+    return this.http.get<DataPackage<{ activeUsersCount: number }>>(`${this.adminsBase}/active-count`);
   }
 }
