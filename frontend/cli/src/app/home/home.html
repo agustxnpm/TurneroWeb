@@ -1,85 +1,248 @@
 <div class="landing-page">
-  <!-- SECCIÓN 1: BUSCADOR GEOGRÁFICO (PRINCIPAL) -->
-  <section class="landing-section buscador-section" id="buscador">
-    <div class="section-container">
-      <div class="section-header-centered">
-        <span class="material-symbols-outlined section-icon-large">location_on</span>
-        <h1>Encuentra tu Centro de Atención</h1>
-        <p class="section-subtitle">Busca el CAP más cercano a tu ubicación y solicita tu turno</p>
-      </div>
-
-      <div class="card buscador-card">
-        <form (ngSubmit)="buscarCAPS()" #capForm="ngForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">
-                <span class="material-symbols-outlined">medical_services</span>
-                Tipo de atención
-              </label>
-              <select 
-                id="tipoAtencion" 
-                name="tipoAtencion" 
-                [(ngModel)]="capSearchData.tipoAtencion" 
-                class="form-control"
-                required>
-                <option value="">Selecciona el tipo de atención</option>
-                <option value="MEDICO_CLINICO">Médico Clínico</option>
-                <option value="VACUNACION">Vacunación</option>
-                <option value="NINO_SANO">Niño Sano</option>
-                <option value="MADRE_SANA">Madre Sana</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">
-                <span class="material-symbols-outlined">description</span>
-                Síntomas u observaciones (opcional)
-              </label>
-              <input 
-                type="text" 
-                id="sintomas" 
-                name="sintomas" 
-                [(ngModel)]="capSearchData.sintomas" 
-                class="form-control"
-                placeholder="Describe tus síntomas o necesidades"
-                maxlength="200">
-            </div>
+  <!-- SECCIÓN 1: HERO CON BUSCADOR INTEGRADO -->
+  <section class="hero-section" id="hero">
+    <div class="hero-background">
+      <div class="hero-gradient"></div>
+      <div class="hero-pattern"></div>
+    </div>
+    
+    <div class="hero-container">
+      <div class="hero-content">
+        <div class="hero-badge animate-fade-in">
+          <span class="material-symbols-outlined">verified</span>
+          <span>Plataforma SaaS de Salud</span>
+        </div>
+        
+        <h1 class="hero-title animate-fade-in-up">
+          Tu salud,<br><span class="highlight">sin esperas</span>
+        </h1>
+        
+        <p class="hero-subtitle animate-fade-in-up delay-1">
+          Plataforma integral de gestión de turnos médicos para pacientes y centros de atención. 
+          Reserva online, sin llamadas, desde cualquier dispositivo.
+        </p>
+        
+        <div class="hero-stats animate-fade-in-up delay-2">
+          <div class="stat-item">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Online</span>
           </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">24/7</span>
+            <span class="stat-label">Disponible</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-number">0</span>
+            <span class="stat-label">Colas</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- BUSCADOR INTEGRADO EN HERO (GLASSMORPHISM) -->
+      <div class="buscador-glass animate-fade-in-up delay-2" id="buscador">
+        <div class="buscador-header">
+          <span class="material-symbols-outlined">location_on</span>
+          <div>
+            <h2>Encuentra tu centro de atención</h2>
+            <p>Busca el centro de atención más cercano y reserva tu turno ahora</p>
+          </div>
+        </div>
+        
+        <form (ngSubmit)="buscarCAPS()" #capForm="ngForm" class="buscador-form">
+
 
           <div class="buscador-actions">
-            <button type="submit" class="btn btn-primary btn-large" [disabled]="!capForm.valid">
+            <button type="submit" class="btn btn-primary btn-glow">
               <span class="material-symbols-outlined">search</span>
               Buscar centros cercanos
             </button>
-            <button type="button" class="btn btn-secondary btn-large" routerLink="/paciente-agenda">
+            <button type="button" class="btn btn-ghost" routerLink="/paciente-agenda">
               <span class="material-symbols-outlined">calendar_today</span>
-              Ver todos los turnos
+              Ver turnos disponibles
             </button>
           </div>
         </form>
 
-        <div class="info-badge">
+        <div class="buscador-hint">
           <span class="material-symbols-outlined">info</span>
-          <span>Los centros se ordenarán por cercanía a tu ubicación actual</span>
+          <span>Los centros se ordenarán por cercanía usando tu ubicación</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="scroll-indicator animate-bounce">
+      <span class="material-symbols-outlined">expand_more</span>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 2: PROPUESTA DE VALOR - PARA PACIENTES -->
+  <section class="value-section patients-section">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll">
+        <span class="section-tag">Para Pacientes</span>
+        <h2>Tu salud en tus manos</h2>
+        <p class="section-subtitle">Gestioná tus turnos de forma simple, rápida y desde cualquier lugar</p>
+      </div>
+
+      <div class="value-grid">
+        <div class="value-card animate-on-scroll">
+          <div class="value-icon-wrapper">
+            <span class="material-symbols-outlined">calendar_add_on</span>
+          </div>
+          <h3>Reserva 100% online</h3>
+          <p>Olvidate de las llamadas telefónicas. Reservá tu turno en segundos, las 24 horas del día, los 7 días de la semana.</p>
+        </div>
+
+        <div class="value-card animate-on-scroll delay-1">
+          <div class="value-icon-wrapper">
+            <span class="material-symbols-outlined">notifications_active</span>
+          </div>
+          <h3>Recordatorios por email</h3>
+          <p>Recibí notificaciones automáticas para que nunca olvides tu turno. Confirmaciones y recordatorios directos a tu correo.</p>
+        </div>
+
+        <div class="value-card animate-on-scroll delay-2">
+          <div class="value-icon-wrapper">
+            <span class="material-symbols-outlined">history</span>
+          </div>
+          <h3>Historial médico digital</h3>
+          <p>Accedé a tu historial de consultas, turnos anteriores y próximos desde cualquier dispositivo, en cualquier momento.</p>
+        </div>
+
+        <div class="value-card animate-on-scroll delay-3">
+          <div class="value-icon-wrapper">
+            <span class="material-symbols-outlined">map</span>
+          </div>
+          <h3>Mapa de centros</h3>
+          <p>Encontrá el centro de atención más cercano con nuestro mapa interactivo y conocé su disponibilidad en tiempo real.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- SECCIÓN 2: HERO / PRESENTACIÓN -->
-  <section class="landing-section hero-section">
+  <!-- SECCIÓN 3: PROPUESTA DE VALOR - PARA CENTROS MÉDICOS -->
+  <section class="value-section centers-section">
     <div class="section-container">
-      <div class="hero-content-centered">
-        <span class="material-symbols-outlined brand-icon">calendar_month</span>
-        <h1 class="brand-title">CheTurno</h1>
-        <p class="hero-description">Sistema de gestión de turnos para centros de atención primaria de salud</p>
-        
-        <div class="hero-actions-group">
+      <div class="section-header animate-on-scroll">
+        <span class="section-tag accent">Para Centros Médicos</span>
+        <h2>Gestión inteligente de turnos</h2>
+        <p class="section-subtitle">Optimizá la administración de tu centro y mejorá la experiencia de tus pacientes</p>
+      </div>
+
+      <div class="value-grid reverse">
+        <div class="value-card dark animate-on-scroll">
+          <div class="value-icon-wrapper">
+            <span class="material-symbols-outlined">dashboard</span>
+          </div>
+          <h3>Gestión administrativa integral</h3>
+          <p>Panel centralizado para administrar turnos, profesionales, consultorios y especialidades de manera eficiente.</p>
+        </div>
+
+        <div class="value-card dark animate-on-scroll delay-1">
+          <div class="value-icon-wrapper">
+            <span class="material-symbols-outlined">trending_down</span>
+          </div>
+          <h3>Reducción del ausentismo</h3>
+          <p>Disminuí las ausencias hasta un 40% con recordatorios automáticos y confirmaciones previas a la cita.</p>
+        </div>
+
+        <div class="value-card dark animate-on-scroll delay-2">
+          <div class="value-icon-wrapper">
+            <span class="material-symbols-outlined">shield</span>
+          </div>
+          <h3>Auditoría transparente</h3>
+          <p>Registro completo de todas las operaciones para garantizar trazabilidad y cumplimiento normativo.</p>
+        </div>
+
+        <div class="value-card dark animate-on-scroll delay-3">
+          <div class="value-icon-wrapper">
+            <span class="material-symbols-outlined">groups</span>
+          </div>
+          <h3>Multi-tenant seguro</h3>
+          <p>Cada centro tiene su espacio aislado y seguro. Datos protegidos con los más altos estándares.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 4: POR QUÉ ELEGIRNOS -->
+  <section class="why-section">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll">
+        <span class="section-tag">Diferenciadores</span>
+        <h2>¿Por qué elegir CheTurno?</h2>
+        <p class="section-subtitle">Una plataforma diseñada para simplificar la atención médica</p>
+      </div>
+
+      <div class="why-grid">
+        <div class="why-card main animate-on-scroll">
+          <div class="why-icon">
+            <span class="material-symbols-outlined">cloud_done</span>
+          </div>
+          <div class="why-content">
+            <h3>Plataforma SaaS escalable</h3>
+            <p>Infraestructura en la nube que crece con vos. Sin instalaciones, sin mantenimiento, siempre actualizada con las últimas funcionalidades.</p>
+          </div>
+        </div>
+
+        <div class="why-card animate-on-scroll delay-1">
+          <div class="why-icon small">
+            <span class="material-symbols-outlined">lock</span>
+          </div>
+          <div class="why-content">
+            <h3>Seguridad de datos</h3>
+            <p>Encriptación de extremo a extremo y cumplimiento de estándares de seguridad médica.</p>
+          </div>
+        </div>
+
+        <div class="why-card animate-on-scroll delay-2">
+          <div class="why-icon small">
+            <span class="material-symbols-outlined">phone_disabled</span>
+          </div>
+          <div class="why-content">
+            <h3>Sin llamadas telefónicas</h3>
+            <p>Todo el proceso de reserva es digital. Ahorrá tiempo a pacientes y personal.</p>
+          </div>
+        </div>
+
+        <div class="why-card animate-on-scroll delay-3">
+          <div class="why-icon small">
+            <span class="material-symbols-outlined">devices</span>
+          </div>
+          <div class="why-content">
+            <h3>Multiplataforma</h3>
+            <p>Accedé desde PC, tablet o celular con la misma experiencia optimizada.</p>
+          </div>
+        </div>
+
+        <div class="why-card animate-on-scroll delay-4">
+          <div class="why-icon small">
+            <span class="material-symbols-outlined">support_agent</span>
+          </div>
+          <div class="why-content">
+            <h3>Soporte continuo</h3>
+            <p>Equipo de soporte dedicado para ayudarte en cada paso del camino.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 5: CTA FINAL -->
+  <section class="cta-section">
+    <div class="cta-container animate-on-scroll">
+      <div class="cta-content">
+        <span class="material-symbols-outlined cta-icon">rocket_launch</span>
+        <h2>Comenzá a usar CheTurno hoy</h2>
+        <p>Unite a los centros de atención que ya optimizaron su gestión de turnos</p>
+        <div class="cta-actions">
           <button class="btn btn-primary btn-large" (click)="scrollToSection('buscador')">
             <span class="material-symbols-outlined">search</span>
-            Buscar centro
+            Buscar un centro
           </button>
-          <button class="btn btn-secondary btn-large" routerLink="/ingresar">
+          <button *ngIf="!isAuthenticated" class="btn btn-outline btn-large" routerLink="/ingresar">
             <span class="material-symbols-outlined">login</span>
             Ingresar al sistema
           </button>
@@ -88,65 +251,43 @@
     </div>
   </section>
 
-  <!-- SECCIÓN 3: CARACTERÍSTICAS / BENEFICIOS -->
-  <section class="landing-section features-section">
-    <div class="section-container">
-      <div class="section-header-centered">
-        <h2>¿Cómo funciona?</h2>
-        <p class="section-subtitle">Gestión simple y eficiente de tus consultas médicas</p>
-      </div>
-
-      <div class="features-grid">
-        <div class="card feature-card">
-          <span class="material-symbols-outlined feature-icon">calendar_add_on</span>
-          <h3>Reserva de turnos</h3>
-          <p>Solicita turnos en cualquier momento sin necesidad de llamadas telefónicas</p>
-        </div>
-
-        <div class="card feature-card">
-          <span class="material-symbols-outlined feature-icon">map</span>
-          <h3>Búsqueda geográfica</h3>
-          <p>Encuentra el centro más cercano con mapa interactivo</p>
-        </div>
-
-        <div class="card feature-card">
-          <span class="material-symbols-outlined feature-icon">notifications_active</span>
-          <h3>Recordatorios</h3>
-          <p>Recibe notificaciones por email sobre tus turnos próximos</p>
-        </div>
-
-        <div class="card feature-card">
-          <span class="material-symbols-outlined feature-icon">history</span>
-          <h3>Historial médico</h3>
-          <p>Accede a tu historial de consultas en cualquier momento</p>
-        </div>
-
-        <div class="card feature-card">
-          <span class="material-symbols-outlined feature-icon">smartphone</span>
-          <h3>Acceso multiplataforma</h3>
-          <p>Disponible en computadoras, tablets y smartphones</p>
-        </div>
-
-        <div class="card feature-card">
-          <span class="material-symbols-outlined feature-icon">verified_user</span>
-          <h3>Seguridad garantizada</h3>
-          <p>Datos protegidos con estándares de seguridad médica</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
   <!-- FOOTER -->
   <footer class="landing-footer">
     <div class="footer-container">
-      <div class="footer-brand">
-        <span class="material-symbols-outlined">calendar_month</span>
-        <span class="footer-brand-text">CheTurno</span>
+      <div class="footer-main">
+        <div class="footer-brand">
+          <span class="material-symbols-outlined">calendar_month</span>
+          <span class="footer-brand-text">CheTurno</span>
+        </div>
+        <p class="footer-tagline">Tu salud, sin esperas</p>
       </div>
-      <p class="footer-description">Sistema de gestión de turnos médicos</p>
-      <p class="footer-institution">Universidad Nacional de la Patagonia San Juan Bosco</p>
-      <p class="footer-version">Versión 1.0.0 | 2025</p>
+      
+      <div class="footer-links">
+        <div class="footer-column">
+          <h4>Plataforma</h4>
+          <a *ngIf="!isAuthenticated" routerLink="/ingresar">Ingresar</a>
+          <a (click)="scrollToSection('buscador')">Buscar centro</a>
+        </div>
+        <div class="footer-column">
+          <h4>Información</h4>
+          <span>Sistema de gestión de turnos médicos</span>
+          <span>Versión 1.0.0</span>
+        </div>
+        <div class="footer-column">
+          <h4>Contacto Comercial</h4>
+          <span class="footer-contact-intro">¿Tu centro médico necesita optimizar la gestión de turnos?</span>
+          <a href="mailto:soporte.cheturno&#64;gmail.com" class="footer-contact-email">
+            <span class="material-symbols-outlined">mail</span>
+            soporte.cheturno&#64;gmail.com
+          </a>
+          <span class="footer-contact-note">Consultas sobre contratación y servicios</span>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p class="footer-institution">Universidad Nacional de la Patagonia San Juan Bosco</p>
+        <p class="footer-year">© 2025 CheTurno. Todos los derechos reservados.</p>
+      </div>
     </div>
   </footer>
 
@@ -156,7 +297,7 @@
     [centros]="centrosAtencionCompletos"
     [especialidades]="especialidadesCompletas"
     [slotsDisponibles]="slotsOriginales"
-    especialidadSeleccionadaInicial=""
+    [especialidadSeleccionadaInicial]="especialidadSeleccionadaInicial"
     (centroSeleccionado)="onCentroSeleccionadoDelMapa($event)"
     (modalCerrado)="cerrarMapaModal()"
   >
