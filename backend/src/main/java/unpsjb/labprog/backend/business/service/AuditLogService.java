@@ -26,6 +26,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import unpsjb.labprog.backend.business.repository.AuditLogRepository;
+import unpsjb.labprog.backend.business.repository.TurnoRepository;
+import unpsjb.labprog.backend.business.repository.ConsultorioRepository;
+import unpsjb.labprog.backend.business.repository.StaffMedicoRepository;
 import unpsjb.labprog.backend.model.AuditLog;
 import unpsjb.labprog.backend.model.EstadoTurno;
 import unpsjb.labprog.backend.model.Turno;
@@ -39,6 +42,15 @@ public class AuditLogService {
 
     @Autowired
     private AuditLogRepository auditLogRepository;
+
+    @Autowired
+    private TurnoRepository turnoRepository;
+
+    @Autowired
+    private ConsultorioRepository consultorioRepository;
+
+    @Autowired
+    private StaffMedicoRepository staffMedicoRepository;
 
     @Autowired
     private ObjectMapper objectMapper; // Usar el ObjectMapper configurado de Spring
@@ -223,6 +235,18 @@ public class AuditLogService {
     public List<AuditLog> getTurnoAuditHistory(Integer turnoId) {
         System.out.println("🔍 DEBUG: Obteniendo historial de auditoría para turno ID: " + turnoId);
         try {
+            // Si el contexto es tenant-restringido, verificar que el turno pertenezca al centro
+            if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
+                Integer centroId = unpsjb.labprog.backend.config.TenantContext.getCurrentCentroId();
+                if (centroId != null) {
+                    Optional<Turno> t = turnoRepository.findById(turnoId);
+                    if (t.isEmpty() || t.get().getConsultorio() == null || t.get().getConsultorio().getCentroAtencion() == null
+                            || !centroId.equals(t.get().getConsultorio().getCentroAtencion().getId())) {
+                        System.out.println("Acceso denegado: El turno " + turnoId + " no pertenece al centro en contexto");
+                        return new java.util.ArrayList<>();
+                    }
+                }
+            }
             // Primero contar cuántos registros hay
             Long count = auditLogRepository.countByTurnoId(turnoId);
             System.out.println("🔍 DEBUG: Contando registros de auditoría para turno " + turnoId + "...");
@@ -401,6 +425,22 @@ public class AuditLogService {
      */
     public List<Object[]> getActionStatistics() {
         System.out.println("🔍 DEBUG: Obteniendo estadísticas de acciones...");
+        // Si el contexto está restringido a un centro, computar solo con logs visibles
+        if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
+            List<AuditLog> all = auditLogRepository.findAll();
+            Map<String, Long> map = all.stream()
+                    .filter(this::isVisibleForCurrentCentro)
+                    .collect(Collectors.groupingBy(AuditLog::getAction, Collectors.counting()));
+
+            List<Object[]> results = map.entrySet().stream()
+                    .map(e -> new Object[] { e.getKey(), e.getValue() })
+                    .sorted((a, b) -> Long.compare((Long) b[1], (Long) a[1]))
+                    .collect(Collectors.toList());
+
+            System.out.println("✅ DEBUG: Estadísticas tenant-scoped obtenidas: " + results.size() + " resultados");
+            return results;
+        }
+
         List<Object[]> stats = auditLogRepository.findActionStatistics();
         System.out.println("✅ DEBUG: Estadísticas obtenidas: " + stats.size() + " resultados");
         stats.forEach(stat -> System.out.println("  - " + stat[0] + ": " + stat[1]));
@@ -603,18 +643,38 @@ public class AuditLogService {
 
         Map<String, Object> stats = new HashMap<>();
 
-        // Contar turnos por acción específica
-        Long confirmedCount = auditLogRepository.countByAction("CONFIRM");
-        Long canceledCount = auditLogRepository.countByAction("CANCEL");
-        Long rescheduledCount = auditLogRepository.countByAction("RESCHEDULE");
-        Long statusChangedCount = auditLogRepository.countByAction("UPDATE_STATUS");
-        Long createdCount = auditLogRepository.countByAction("CREATE");
+        // Contar turnos por acción específica (respetando el tenant actual si aplica)
+        long confirmedCount = 0L;
+        long canceledCount = 0L;
+        long rescheduledCount = 0L;
+        long statusChangedCount = 0L;
+        long createdCount = 0L;
 
-        stats.put("turnosConfirmados", confirmedCount != null ? confirmedCount : 0);
-        stats.put("turnosCancelados", canceledCount != null ? canceledCount : 0);
-        stats.put("turnosReagendados", rescheduledCount != null ? rescheduledCount : 0);
-        stats.put("turnosModificados", statusChangedCount != null ? statusChangedCount : 0);
-        stats.put("turnosCreados", createdCount != null ? createdCount : 0);
+        List<AuditLog> confirms = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "CONFIRM");
+        List<AuditLog> cancels = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "CANCEL");
+        List<AuditLog> reschedules = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "RESCHEDULE");
+        List<AuditLog> statusChanges = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "UPDATE_STATUS");
+        List<AuditLog> creates = auditLogRepository.findByEntityTypeAndActionOrderByPerformedAtDesc(AuditLog.EntityTypes.TURNO, "CREATE");
+
+        if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
+            confirmedCount = confirms.stream().filter(this::isVisibleForCurrentCentro).count();
+            canceledCount = cancels.stream().filter(this::isVisibleForCurrentCentro).count();
+            rescheduledCount = reschedules.stream().filter(this::isVisibleForCurrentCentro).count();
+            statusChangedCount = statusChanges.stream().filter(this::isVisibleForCurrentCentro).count();
+            createdCount = creates.stream().filter(this::isVisibleForCurrentCentro).count();
+        } else {
+            confirmedCount = confirms.size();
+            canceledCount = cancels.size();
+            rescheduledCount = reschedules.size();
+            statusChangedCount = statusChanges.size();
+            createdCount = creates.size();
+        }
+
+        stats.put("turnosConfirmados", confirmedCount);
+        stats.put("turnosCancelados", canceledCount);
+        stats.put("turnosReagendados", rescheduledCount);
+        stats.put("turnosModificados", statusChangedCount);
+        stats.put("turnosCreados", createdCount);
 
         // Total de acciones
         stats.put("totalAcciones",
@@ -633,6 +693,22 @@ public class AuditLogService {
      */
     public List<Object[]> getUserActivityStatistics() {
         System.out.println("🔍 DEBUG: Obteniendo estadísticas de actividad por usuario...");
+        if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
+            List<AuditLog> all = auditLogRepository.findAll();
+            Map<String, Long> map = all.stream()
+                    .filter(this::isVisibleForCurrentCentro)
+                    .collect(Collectors.groupingBy(AuditLog::getPerformedBy, Collectors.counting()));
+
+            List<Object[]> results = map.entrySet().stream()
+                    .map(e -> new Object[] { e.getKey(), e.getValue() })
+                    .sorted((a, b) -> Long.compare((Long) b[1], (Long) a[1]))
+                    .collect(Collectors.toList());
+
+            System.out.println("✅ DEBUG: Estadísticas de usuario tenant-scoped: " + results.size() + " resultados");
+            results.forEach(stat -> System.out.println("  - " + stat[0] + ": " + stat[1] + " acciones"));
+            return results;
+        }
+
         List<Object[]> userStats = auditLogRepository.findUserActivityStatistics();
         System.out.println("✅ DEBUG: Estadísticas de usuario obtenidas: " + userStats.size() + " resultados");
         userStats.forEach(stat -> System.out.println("  - " + stat[0] + ": " + stat[1] + " acciones"));
@@ -1474,15 +1550,92 @@ public class AuditLogService {
 
         // Crear paginación con ordenamiento
         Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Si estamos en modo tenant-restringido, traer todos los candidatos y paginar en memoria
+        if (unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
+            // Cap razonable para evitar OOM en caso de datos masivos
+            Pageable largePageable = PageRequest.of(0, 10000, sort);
+            Page<Object[]> resultPageAll = auditLogRepository.findByFilters(entidad, usuario, tipoAccion,
+                fechaDesdeFilter, fechaHastaFilter, largePageable);
+
+            List<AuditLog> allLogs = resultPageAll.getContent().stream()
+                .map(this::convertObjectArrayToAuditLog)
+                .filter(this::isVisibleForCurrentCentro)
+                .collect(Collectors.toList());
+
+            int fromIndex = Math.min(page * size, allLogs.size());
+            int toIndex = Math.min(fromIndex + size, allLogs.size());
+            List<AuditLog> pageContent = allLogs.subList(fromIndex, toIndex);
+
+            return new PageImpl<>(pageContent, pageable, allLogs.size());
+        }
+
         Page<Object[]> resultPage = auditLogRepository.findByFilters(entidad, usuario, tipoAccion,
-                fechaDesdeFilter, fechaHastaFilter, pageable);
+            fechaDesdeFilter, fechaHastaFilter, pageable);
 
         // Convertir Object[] a AuditLog
         List<AuditLog> auditLogs = resultPage.getContent().stream()
-                .map(this::convertObjectArrayToAuditLog)
-                .collect(Collectors.toList());
+            .map(this::convertObjectArrayToAuditLog)
+            .collect(Collectors.toList());
 
         return new PageImpl<>(auditLogs, pageable, resultPage.getTotalElements());
+    }
+
+    /**
+     * Determina si un registro de auditoría es visible para el centro actual
+     * en contexto (cuando la aplicación está en modo tenant restringido).
+     */
+    private boolean isVisibleForCurrentCentro(AuditLog auditLog) {
+        try {
+            if (!unpsjb.labprog.backend.config.TenantContext.isTenantRestricted()) {
+                return true;
+            }
+
+            Integer centroId = unpsjb.labprog.backend.config.TenantContext.getCurrentCentroId();
+            if (centroId == null) {
+                return true;
+            }
+
+            String type = auditLog.getEntityType();
+            Long entityId = auditLog.getEntityId();
+
+            if (type == null) return false;
+
+            switch (type) {
+                case AuditLog.EntityTypes.TURNO:
+                    if (entityId == null) return false;
+                    Optional<unpsjb.labprog.backend.model.Turno> turnoOpt = turnoRepository.findById(entityId.intValue());
+                    if (turnoOpt.isEmpty()) return false;
+                    var turno = turnoOpt.get();
+                    if (turno.getConsultorio() != null && turno.getConsultorio().getCentroAtencion() != null) {
+                        return centroId.equals(turno.getConsultorio().getCentroAtencion().getId());
+                    }
+                    return false;
+
+                case AuditLog.EntityTypes.CONSULTORIO:
+                    if (entityId == null) return false;
+                    return consultorioRepository.findById(entityId.intValue())
+                            .map(c -> c.getCentroAtencion() != null && centroId.equals(c.getCentroAtencion().getId()))
+                            .orElse(false);
+
+                case AuditLog.EntityTypes.CENTRO_ATENCION:
+                    return entityId != null && entityId.intValue() == centroId;
+
+                case AuditLog.EntityTypes.STAFF_MEDICO:
+                    if (entityId == null) return false;
+                    return staffMedicoRepository.findById(entityId.intValue())
+                            .map(sm -> sm.getCentroAtencion() != null && centroId.equals(sm.getCentroAtencion().getId()))
+                            .orElse(false);
+
+                default:
+                    // Para otros tipos (USUARIO, PACIENTE, MEDICO, etc.) ocultamos registros
+                    // que no estén explícitamente ligados al centro para evitar fuga de datos
+                    return false;
+            }
+        } catch (Exception e) {
+            System.err.println("❌ ERROR comprobando visibilidad por centro: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
