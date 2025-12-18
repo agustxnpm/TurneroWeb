@@ -13,6 +13,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data # Persistencia de datos
+    networks:
+      - app_network
 
   # 2. Backend (Java)
   backend:
@@ -20,8 +22,9 @@ services:
       context: ./backend
       dockerfile: Dockerfile  # Usamos el que ya tenías, funciona bien
     restart: always
-    ports:
-      - "8080:8080"
+    # ports:  # Removido: no exponer al host, solo accesible internamente
+    expose:
+      - "8080"
     environment:
       # Conectamos con el servicio 'db' definido arriba
       DB_URL: jdbc:postgresql://db:5432/turnerodb
@@ -31,11 +34,13 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
-      APP_URL: http://168.197.48.210
-      APP_ALLOWED_ORIGINS: ${APP_ALLOWED_ORIGINS}
+      APP_URL: https://cheturno.site
+      APP_ALLOWED_ORIGINS: https://cheturno.site
       SECURITY_DEV_MODE: ${SECURITY_DEV_MODE}
     depends_on:
       - db
+    networks:
+      - app_network
 
   # 3. Frontend (Angular + Nginx)
   frontend:
@@ -43,10 +48,33 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod # El archivo nuevo que creamos
     restart: always
-    ports:
-      - "80:80" # El puerto web estándar
+    # ports:  # Removido: no exponer al host, solo accesible internamente
+    expose:
+      - "80"
     depends_on:
       - backend
+    networks:
+      - app_network
+
+  # 4. Nginx Proxy Manager
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    restart: always
+    ports:
+      - "80:80"    # HTTP
+      - "443:443"  # HTTPS
+      - "81:81"    # Panel de administración
+    volumes:
+      - npm_data:/data
+      - npm_ssl:/etc/letsencrypt
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
 
 volumes:
   postgres_data:
+  npm_data:
+  npm_ssl:
