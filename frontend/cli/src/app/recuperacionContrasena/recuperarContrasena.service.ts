@@ -13,7 +13,7 @@ export interface DataPackage<T = any> {
 @Injectable({ providedIn: "root" })
 export class RecuperarContrasenaService {
   private base = environment.production 
-    ? `${environment.apiUrl}/api/auth`
+    ? `${environment.apiUrl}/auth`
     : "rest/api/auth";
   constructor(private http: HttpClient) {}
 
