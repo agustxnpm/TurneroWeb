@@ -104,5 +104,8 @@ Para ejecutar los tests:
 ./lpl test
 ```
 
+## 📚 Documentación
 
+- [Documento Final de Ingeniería de Software](DFIS%20CheTurno-2.pdf)
+- [Manual Técnico](MANUAL%20T%C3%89CNICO-1.pdf)
 
