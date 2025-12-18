@@ -26,7 +26,7 @@ import unpsjb.labprog.backend.dto.OperadorDTO;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("operadores")
+@RequestMapping("/api/operadores")
 public class OperadorPresenter {
 
     @Autowired

@@ -34,7 +34,7 @@ import unpsjb.labprog.backend.model.PreferenciaHoraria;
 import unpsjb.labprog.backend.model.User;
 
 @RestController
-@RequestMapping("pacientes")
+@RequestMapping("/api/pacientes")
 public class PacientePresenter {
 
     @Autowired

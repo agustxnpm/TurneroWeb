@@ -13,7 +13,7 @@ import unpsjb.labprog.backend.dto.DeepLinkValidationDTO;
  * Permite validar tokens de deep link y establecer sesiones automáticamente
  */
 @RestController
-@RequestMapping("/deep-links")
+@RequestMapping("/api/deep-links")
 @CrossOrigin(origins = "*")
 public class DeepLinkPresenter {
 

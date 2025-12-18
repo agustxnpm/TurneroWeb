@@ -29,7 +29,7 @@ import unpsjb.labprog.backend.dto.ConsultorioDTO;
 import unpsjb.labprog.backend.model.Consultorio;
 
 @RestController
-@RequestMapping("consultorios")
+@RequestMapping("/api/consultorios")
 public class ConsultorioPresenter {
 
     @Autowired

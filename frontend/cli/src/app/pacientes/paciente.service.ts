@@ -152,7 +152,7 @@ export class PacienteService {
   > {
     return this.http.get<
       DataPackage<{ id: number; nombre: string; codigo: string }[]>
-    >(`rest/obra-social`);
+    >(environment.production ? `${environment.apiUrl}/obra-social` : 'rest/obra-social');
   }
 
   /**

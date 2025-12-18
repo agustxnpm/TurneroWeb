@@ -23,7 +23,7 @@ import unpsjb.labprog.backend.config.TenantContext;
 import unpsjb.labprog.backend.dto.StaffMedicoDTO;
 
 @RestController
-@RequestMapping("staff-medico")
+@RequestMapping("/api/staff-medico")
 public class StaffMedicoPresenter {
 
     @Autowired

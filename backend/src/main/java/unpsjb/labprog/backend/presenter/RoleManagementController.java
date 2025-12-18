@@ -19,7 +19,7 @@ import unpsjb.labprog.backend.model.User;
  * Controlador para la gestión de roles con auditoría integrada
  */
 @RestController
-@RequestMapping("role-management")
+@RequestMapping("/api/role-management")
 public class RoleManagementController {
 
     @Autowired

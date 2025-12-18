@@ -21,7 +21,7 @@ import unpsjb.labprog.backend.dto.TurnoFilterDTO;
  * Controlador REST para exportaciones de turnos
  */
 @RestController
-@RequestMapping("export")
+@RequestMapping("/api/export")
 public class ExportPresenter {
 
     @Autowired

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("encuestas")
+@RequestMapping("/api/encuestas")
 public class EncuestaPacientePresenter {
 
     @Autowired

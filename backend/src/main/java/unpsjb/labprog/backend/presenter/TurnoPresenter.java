@@ -36,7 +36,7 @@ import unpsjb.labprog.backend.model.AuditLog;
 import unpsjb.labprog.backend.model.EstadoTurno;
 
 @RestController
-@RequestMapping("turno")
+@RequestMapping("/api/turno")
 public class TurnoPresenter {
 
     @Autowired

@@ -21,7 +21,7 @@ import unpsjb.labprog.backend.dto.EspecialidadDTO;
 import unpsjb.labprog.backend.config.AuditContext;
 
 @RestController
-@RequestMapping("especialidades")
+@RequestMapping("/api/especialidades")
 public class EspecialidadPresenter {
 
     @Autowired

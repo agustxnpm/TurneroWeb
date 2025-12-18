@@ -1,6 +1,5 @@
 package unpsjb.labprog.backend.presenter;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,7 +20,7 @@ import unpsjb.labprog.backend.business.service.EsquemaTurnoService;
 import unpsjb.labprog.backend.dto.EsquemaTurnoDTO;
 
 @RestController
-@RequestMapping("/esquema-turno")
+@RequestMapping("/api/esquema-turno")
 public class EsquemaTurnoPresenter {
 
     @Autowired

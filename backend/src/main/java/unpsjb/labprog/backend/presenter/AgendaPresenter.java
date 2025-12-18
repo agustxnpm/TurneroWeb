@@ -42,7 +42,7 @@ import unpsjb.labprog.backend.model.Role;
 import unpsjb.labprog.backend.model.User;
 
 @RestController
-@RequestMapping("/agenda")
+@RequestMapping("/api/agenda")
 public class AgendaPresenter {
 
     @Autowired

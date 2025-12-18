@@ -24,7 +24,7 @@ import unpsjb.labprog.backend.model.AuditLog;
  * Proporciona endpoints de solo lectura para consultar el historial de auditoría.
  */
 @RestController
-@RequestMapping("/audit")
+@RequestMapping("/api/audit")
 public class AuditLogPresenter {
 
     @Autowired

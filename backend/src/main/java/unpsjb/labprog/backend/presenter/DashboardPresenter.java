@@ -15,7 +15,7 @@ import unpsjb.labprog.backend.dto.FiltrosDashboardDTO;
 import unpsjb.labprog.backend.config.TenantContext;
 
 @RestController
-@RequestMapping("admin-dashboard")
+@RequestMapping("/api/admin-dashboard")
 public class DashboardPresenter {
 
     @Autowired

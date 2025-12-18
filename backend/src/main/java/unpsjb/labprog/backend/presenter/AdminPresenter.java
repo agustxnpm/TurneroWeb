@@ -18,7 +18,7 @@ import unpsjb.labprog.backend.config.AuditContext;
 import unpsjb.labprog.backend.config.TenantContext;
 
 @RestController
-@RequestMapping("admins")
+@RequestMapping("/api/admins")
 public class AdminPresenter {
 
     @Autowired

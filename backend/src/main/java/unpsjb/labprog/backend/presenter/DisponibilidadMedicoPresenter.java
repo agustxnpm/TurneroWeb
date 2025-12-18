@@ -22,7 +22,7 @@ import unpsjb.labprog.backend.business.service.DisponibilidadMedicoService;
 import unpsjb.labprog.backend.dto.DisponibilidadMedicoDTO;
 
 @RestController
-@RequestMapping("/disponibilidades-medico")
+@RequestMapping("/api/disponibilidades-medico")
 public class DisponibilidadMedicoPresenter {
 
     @Autowired

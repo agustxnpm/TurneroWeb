@@ -25,7 +25,7 @@ import unpsjb.labprog.backend.dto.CentroAtencionDTO;
 import unpsjb.labprog.backend.config.AuditContext;
 
 @RestController
-@RequestMapping("centrosAtencion")
+@RequestMapping("/api/centrosAtencion")
 public class CentroAtencionPresenter {
 
     @Autowired

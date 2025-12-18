@@ -12,7 +12,7 @@ import unpsjb.labprog.backend.business.service.ObraSocialService;
 import unpsjb.labprog.backend.dto.ObraSocialDTO;
 
 @RestController
-@RequestMapping("/obra-social")
+@RequestMapping("/api/obra-social")
 public class ObraSocialPresenter {
 
     @Autowired

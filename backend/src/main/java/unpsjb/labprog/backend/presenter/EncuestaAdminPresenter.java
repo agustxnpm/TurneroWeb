@@ -24,7 +24,7 @@ import unpsjb.labprog.backend.model.EncuestaPlantilla;
 import unpsjb.labprog.backend.model.Pregunta;
 
 @RestController
-@RequestMapping("admin/encuestas")
+@RequestMapping("/api/admin/encuestas")
 @PreAuthorize("hasRole('ADMINISTRADOR')")
 public class EncuestaAdminPresenter {
 

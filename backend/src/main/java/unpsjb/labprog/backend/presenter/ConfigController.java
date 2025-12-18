@@ -21,7 +21,7 @@ import unpsjb.labprog.backend.model.AuditLog;
 import unpsjb.labprog.backend.model.Configuracion;
 
 @RestController
-@RequestMapping("/config")
+@RequestMapping("/api/config")
 @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'OPERADOR')")
 public class ConfigController {
 

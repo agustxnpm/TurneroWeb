@@ -15,7 +15,7 @@ import unpsjb.labprog.backend.business.service.ListaEsperaService;
 import unpsjb.labprog.backend.dto.ListaEsperaDTO;
 
 @RestController
-@RequestMapping("/lista-espera")
+@RequestMapping("/api/lista-espera")
 public class ListaEsperaPresenter {
 
     @Autowired

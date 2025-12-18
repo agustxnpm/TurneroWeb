@@ -25,7 +25,7 @@ import unpsjb.labprog.backend.config.AuditContext;
 import unpsjb.labprog.backend.dto.MedicoDTO;
 
 @RestController
-@RequestMapping("medicos")
+@RequestMapping("/api/medicos")
 public class MedicoPresenter {
 
     @Autowired

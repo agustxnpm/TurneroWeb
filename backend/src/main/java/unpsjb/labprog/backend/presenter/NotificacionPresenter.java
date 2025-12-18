@@ -18,7 +18,7 @@ import unpsjb.labprog.backend.business.service.NotificacionService;
 import unpsjb.labprog.backend.dto.NotificacionDTO;
 
 @RestController
-@RequestMapping("notificaciones")
+@RequestMapping("/api/notificaciones")
 @CrossOrigin(origins = "*")
 public class NotificacionPresenter {
 
