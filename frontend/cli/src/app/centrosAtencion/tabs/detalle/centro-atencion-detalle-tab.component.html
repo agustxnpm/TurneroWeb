@@ -35,20 +35,6 @@
       <div class="row">
         <div class="col-12">
           <div class="info-item d-flex align-items-center">
-            <div class="info-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-              🆔
-            </div>
-            <div class="flex-grow-1">
-              <div class="info-label">Código del Centro</div>
-              <div class="info-value">
-                <span class="id-display">{{ centroAtencion.code || 'No asignado' }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-12">
-          <div class="info-item d-flex align-items-center">
             <div class="info-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
               📍
             </div>
@@ -141,24 +127,6 @@
             </div>
             <div class="form-help">
               Ingrese el nombre completo del centro de atención médica.
-            </div>
-          </div>
-        </div>
-
-        <div class="col-12">
-          <div class="form-group-modern">
-            <label class="form-label-modern">
-              <span class="form-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">🆔</span>
-              Código
-            </label>
-            <input
-              [(ngModel)]="centroAtencion.code"
-              name="code"
-              class="form-control form-control-modern"
-              placeholder="Código del centro (opcional)"
-            >
-            <div class="form-help">
-              El código se asigna automáticamente si no se especifica.
             </div>
           </div>
         </div>

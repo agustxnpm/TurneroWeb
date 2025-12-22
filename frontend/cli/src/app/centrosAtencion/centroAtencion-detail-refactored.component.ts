@@ -885,9 +885,8 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
 
   private newCentroAtencion(): CentroAtencion {
     return {
-      id: 0,
+      id: undefined,
       nombre: '',
-      code: '',
       direccion: '',
       localidad: '',
       provincia: '',
