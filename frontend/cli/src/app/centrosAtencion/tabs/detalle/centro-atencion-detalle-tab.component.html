@@ -22,7 +22,8 @@
         <small class="opacity-75">
           <ng-container *ngIf="!modoEdicion">Información del Centro de Atención</ng-container>
           <ng-container *ngIf="modoEdicion && centroAtencion.id">Editando Centro de Atención</ng-container>
-          <ng-container *ngIf="modoEdicion && (!centroAtencion.id || centroAtencion.id === 0)">Creando Nuevo Centro de Atención</ng-container>
+          <ng-container *ngIf="modoEdicion && (!centroAtencion.id || centroAtencion.id === 0)">Creando Nuevo Centro de
+            Atención</ng-container>
         </small>
       </div>
     </div>
@@ -114,14 +115,8 @@
               <span class="form-icon" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">🏥</span>
               Nombre del Centro
             </label>
-            <input
-              [(ngModel)]="centroAtencion.nombre"
-              name="nombre"
-              class="form-control form-control-modern"
-              placeholder="Nombre del centro de atención"
-              required
-              #nombre="ngModel"
-            >
+            <input [(ngModel)]="centroAtencion.nombre" name="nombre" class="form-control form-control-modern"
+              placeholder="Nombre del centro de atención" required #nombre="ngModel">
             <div *ngIf="nombre.invalid && (nombre.dirty || nombre.touched)" class="form-help text-danger">
               El nombre del centro es requerido.
             </div>
@@ -137,14 +132,8 @@
               <span class="form-icon" style="background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);">📍</span>
               Dirección
             </label>
-            <input
-              [(ngModel)]="centroAtencion.direccion"
-              name="direccion"
-              class="form-control form-control-modern"
-              placeholder="Dirección completa del centro"
-              required
-              #direccion="ngModel"
-            >
+            <input [(ngModel)]="centroAtencion.direccion" name="direccion" class="form-control form-control-modern"
+              placeholder="Dirección completa del centro" required #direccion="ngModel">
             <div *ngIf="direccion.invalid && (direccion.dirty || direccion.touched)" class="form-help text-danger">
               La dirección es requerida.
             </div>
@@ -160,14 +149,8 @@
               <span class="form-icon" style="background: linear-gradient(135deg, #fd7e14 0%, #e8630a 100%);">🏙️</span>
               Localidad
             </label>
-            <input
-              [(ngModel)]="centroAtencion.localidad"
-              name="localidad"
-              class="form-control form-control-modern"
-              placeholder="Localidad donde se encuentra"
-              required
-              #localidad="ngModel"
-            >
+            <input [(ngModel)]="centroAtencion.localidad" name="localidad" class="form-control form-control-modern"
+              placeholder="Localidad donde se encuentra" required #localidad="ngModel">
             <div *ngIf="localidad.invalid && (localidad.dirty || localidad.touched)" class="form-help text-danger">
               La localidad es requerida.
             </div>
@@ -183,14 +166,8 @@
               <span class="form-icon" style="background: linear-gradient(135deg, #e83e8c 0%, #d91a72 100%);">🗺️</span>
               Provincia
             </label>
-            <input
-              [(ngModel)]="centroAtencion.provincia"
-              name="provincia"
-              class="form-control form-control-modern"
-              placeholder="Provincia"
-              required
-              #provincia="ngModel"
-            >
+            <input [(ngModel)]="centroAtencion.provincia" name="provincia" class="form-control form-control-modern"
+              placeholder="Provincia" required #provincia="ngModel">
             <div *ngIf="provincia.invalid && (provincia.dirty || provincia.touched)" class="form-help text-danger">
               La provincia es requerida.
             </div>
@@ -206,15 +183,8 @@
               <span class="form-icon" style="background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);">📞</span>
               Teléfono
             </label>
-            <input
-              [(ngModel)]="centroAtencion.telefono"
-              name="telefono"
-              class="form-control form-control-modern"
-              placeholder="Número de teléfono"
-              pattern="^[0-9]*$"
-              required
-              #telefono="ngModel"
-            >
+            <input [(ngModel)]="centroAtencion.telefono" name="telefono" class="form-control form-control-modern"
+              placeholder="Número de teléfono" pattern="^[0-9]*$" required #telefono="ngModel">
             <div *ngIf="telefono.invalid && (telefono.dirty || telefono.touched)" class="form-help text-danger">
               <div *ngIf="telefono.errors?.['pattern']">Solo se permiten números.</div>
               <div *ngIf="telefono.errors?.['required']">El teléfono es requerido.</div>
@@ -231,12 +201,8 @@
               <span class="form-icon" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">🌍</span>
               Coordenadas GPS
             </label>
-            <input
-              [(ngModel)]="coordenadas"
-              name="coordenadas"
-              class="form-control form-control-modern"
-              placeholder="latitud,longitud (ej: -34.6037,-58.3816)"
-            >
+            <input [(ngModel)]="coordenadas" (ngModelChange)="onCoordinatesChanged()" name="coordenadas"
+              class="form-control form-control-modern" placeholder="latitud,longitud (ej: -34.6037,-58.3816)">
             <div class="form-help">
               Formato: latitud,longitud o use el botón para marcar en el mapa.
             </div>
@@ -253,8 +219,8 @@
           <div id="map" style="height: 400px; width: 100%;"></div>
         </div>
         <div class="mt-3">
-          <input [(ngModel)]="searchQuery" name="searchQuery" placeholder="Buscar ubicación..." 
-                 class="form-control form-control-modern me-2" style="display: inline-block; width: auto;">
+          <input [(ngModel)]="searchQuery" name="searchQuery" placeholder="Buscar ubicación..."
+            class="form-control form-control-modern me-2" style="display: inline-block; width: auto;">
           <button type="button" class="btn btn-modern btn-success" (click)="onSearchLocation()">
             <i class="fa fa-search me-2"></i> Buscar
           </button>
@@ -272,32 +238,18 @@
           ← Volver
         </button>
         <!-- Solo SUPERADMIN puede editar/eliminar -->
-        <button 
-          type="button" 
-          class="btn btn-modern btn-edit" 
-          (click)="onActivarEdicion()"
-          *ngIf="canEdit"
-        >
+        <button type="button" class="btn btn-modern btn-edit" (click)="onActivarEdicion()" *ngIf="canEdit">
           ✏️ Editar
         </button>
-        <button 
-          type="button" 
-          class="btn btn-modern btn-delete ms-auto" 
-          (click)="onConfirmDelete(centroAtencion)"
-          *ngIf="centroAtencion.id && canEdit"
-        >
+        <button type="button" class="btn btn-modern btn-delete ms-auto" (click)="onConfirmDelete(centroAtencion)"
+          *ngIf="centroAtencion.id && canEdit">
           🗑️ Eliminar
         </button>
       </ng-container>
 
       <!-- Botones en modo edición -->
       <ng-container *ngIf="modoEdicion">
-        <button 
-          type="submit" 
-          class="btn btn-modern btn-save" 
-          [disabled]="onAllFieldsEmpty()"
-          (click)="onSave()"
-        >
+        <button type="submit" class="btn btn-modern btn-save" [disabled]="onAllFieldsEmpty()" (click)="onSave()">
           💾 Guardar
         </button>
         <button type="button" class="btn btn-modern btn-cancel" (click)="onCancelar()">
@@ -309,6 +261,5 @@
 </div>
 
 <!-- Map Modal Component -->
-<app-map-modal *ngIf="showMap" 
-               (locationSelected)="onLocationSelected($event)">
+<app-map-modal *ngIf="showMap" (locationSelected)="onLocationSelected($event)">
 </app-map-modal>

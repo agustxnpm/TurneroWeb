@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CentroAtencion } from '../../centroAtencion';
@@ -11,7 +11,7 @@ import { MapModalComponent } from '../../../modal/map-modal.component';
   templateUrl: './centro-atencion-detalle-tab.component.html',
   styleUrls: ['./centro-atencion-detalle-tab.component.css']
 })
-export class CentroAtencionDetalleTabComponent implements OnInit {
+export class CentroAtencionDetalleTabComponent implements OnInit, OnChanges {
   @Input() centroAtencion!: CentroAtencion;
   @Input() modoEdicion: boolean = false;
   @Input() canEdit: boolean = true; // Control de permisos (SUPERADMIN puede editar, ADMIN solo ver)
@@ -31,6 +31,13 @@ export class CentroAtencionDetalleTabComponent implements OnInit {
 
   ngOnInit(): void {
     // Inicialización si es necesaria
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Si las coordenadas cambian desde el componente padre, emitir el cambio
+    if (changes['coordenadas'] && !changes['coordenadas'].firstChange) {
+      // Este método se ejecuta cuando el parent actualiza el input
+    }
   }
 
   onSave(): void {
@@ -65,11 +72,17 @@ export class CentroAtencionDetalleTabComponent implements OnInit {
     this.locationSelected.emit(location);
   }
 
+  // ========== SINCRONIZACIÓN DE COORDENADAS ==========
+  // Cuando el usuario edita las coordenadas en el input, emitir el cambio al padre
+  onCoordinatesChanged(): void {
+    this.coordenadasChange.emit(this.coordenadas);
+  }
+
   onAllFieldsEmpty(): boolean {
     return !this.centroAtencion?.nombre?.trim() &&
-           !this.centroAtencion?.direccion?.trim() &&
-           !this.centroAtencion?.localidad?.trim() &&
-           !this.centroAtencion?.provincia?.trim() &&
-           !this.centroAtencion?.telefono?.trim();
+      !this.centroAtencion?.direccion?.trim() &&
+      !this.centroAtencion?.localidad?.trim() &&
+      !this.centroAtencion?.provincia?.trim() &&
+      !this.centroAtencion?.telefono?.trim();
   }
 }

@@ -36,9 +36,9 @@ import { CentroAtencionOrganigramaTabComponent } from './tabs/organigrama/centro
   selector: 'app-centro-atencion-detail-refactored',
   standalone: true,
   imports: [
-    FormsModule, 
-    CommonModule, 
-    NgbTypeaheadModule, 
+    FormsModule,
+    CommonModule,
+    NgbTypeaheadModule,
     RouterModule,
     CentroAtencionDetalleTabComponent,
     CentroAtencionConsultoriosTabComponent,
@@ -58,7 +58,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   form: any = { invalid: false, valid: true };
   activeTab: string = 'detalle';
   modoEdicion = false;
-  
+
   // Multi-tenant: Control de permisos
   isSuperAdmin: boolean = false;
   isAdmin: boolean = false;
@@ -130,27 +130,27 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
     // Verificar permisos del usuario (multi-tenant)
     this.isSuperAdmin = this.userContextService.isSuperAdmin;
     this.isAdmin = this.userContextService.isAdmin;
-    
+
     // SUPERADMIN puede editar cualquier centro
     // ADMIN solo puede VER (no editar) su centro
     this.canEdit = this.isSuperAdmin;
-    
+
     this.get();
     this.cargarEsquemasParaSemana();
-    
+
     // Manejar activación de tab desde query params (para navegación de retorno)
     this.route.queryParams.subscribe(params => {
       const activeTabParam = params['activeTab'];
       if (activeTabParam && ['detalle', 'consultorios', 'especialidades', 'staff'].includes(activeTabParam)) {
         this.activeTab = activeTabParam;
       }
-      
+
       // Manejar preselección de especialidad recién creada
       const especialidadIdParam = params['especialidadId'];
       if (especialidadIdParam && activeTabParam === 'especialidades') {
         this.handleEspecialidadCreada(+especialidadIdParam);
       }
-      
+
       // Manejar preselección de médico recién creado
       const medicoIdParam = params['medicoId'];
       if (medicoIdParam && activeTabParam === 'staff') {
@@ -172,7 +172,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
     this.centroAtencionService.get(+id).subscribe({
       next: (dataPackage: DataPackage<CentroAtencion>) => {
         this.centroAtencion = dataPackage.data;
-        this.coordenadas = this.centroAtencion.latitud && this.centroAtencion.longitud ? 
+        this.coordenadas = this.centroAtencion.latitud && this.centroAtencion.longitud ?
           `${this.centroAtencion.latitud}, ${this.centroAtencion.longitud}` : '';
         this.loadAllData();
       },
@@ -186,11 +186,14 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   save(): void {
     if (!this.validateForm()) return;
 
-    this.processCoordinates();
+    if (!this.processCoordinates()) return; // Si processCoordinates falla, no guardar
 
     this.centroAtencionService.save(this.centroAtencion).subscribe({
       next: (dataPackage: DataPackage<CentroAtencion>) => {
         this.centroAtencion = dataPackage.data;
+        // Sincronizar coordenadas después de guardar
+        this.coordenadas = this.centroAtencion.latitud && this.centroAtencion.longitud ?
+          `${this.centroAtencion.latitud}, ${this.centroAtencion.longitud}` : '';
         this.modoEdicion = false;
         this.showMessage(
           this.centroAtencion.id ? 'Centro actualizado correctamente' : 'Centro creado correctamente',
@@ -247,10 +250,10 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
 
   allFieldsEmpty(): boolean {
     return !this.centroAtencion?.nombre?.trim() &&
-           !this.centroAtencion?.direccion?.trim() &&
-           !this.centroAtencion?.localidad?.trim() &&
-           !this.centroAtencion?.provincia?.trim() &&
-           !this.centroAtencion?.telefono?.trim();
+      !this.centroAtencion?.direccion?.trim() &&
+      !this.centroAtencion?.localidad?.trim() &&
+      !this.centroAtencion?.provincia?.trim() &&
+      !this.centroAtencion?.telefono?.trim();
   }
 
   // ==================== MÉTODOS DE MAPA ====================
@@ -345,7 +348,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   guardarEdicionConsultorio(index: number): void {
     const consultorio = this.consultorios[index];
     if (!consultorio.id) return;
-    
+
     this.consultorioService.update(consultorio.id, consultorio).subscribe({
       next: (dataPackage: DataPackage<Consultorio>) => {
         this.consultorios[index] = dataPackage.data;
@@ -383,8 +386,8 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
 
   crearNuevoEsquema(consultorio: Consultorio): void {
     this.router.navigate(['/esquemas-turno/new'], {
-      queryParams: { 
-        consultorioId: consultorio.id, 
+      queryParams: {
+        consultorioId: consultorio.id,
         centroId: this.centroAtencion.id,
         returnUrl: '/centros-atencion/' + this.centroAtencion.id + '?activeTab=consultorios'
       }
@@ -398,11 +401,11 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
    */
   crearNuevaEspecialidad(): void {
     if (!this.centroAtencion.id) return;
-    
+
     this.router.navigate(['/especialidades/new'], {
-      queryParams: { 
-        centroId: this.centroAtencion.id, 
-        returnUrl: '/centrosAtencion/' + this.centroAtencion.id 
+      queryParams: {
+        centroId: this.centroAtencion.id,
+        returnUrl: '/centrosAtencion/' + this.centroAtencion.id
       }
     });
   }
@@ -416,10 +419,10 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
       // Recargar especialidades disponibles para incluir la nueva
       this.especialidadService.all().subscribe({
         next: (dataPackage: DataPackage<Especialidad[]>) => {
-          this.especialidadesDisponibles = dataPackage.data.filter((esp: Especialidad) => 
+          this.especialidadesDisponibles = dataPackage.data.filter((esp: Especialidad) =>
             !this.especialidadesAsociadas.some(asoc => asoc.id === esp.id)
           );
-          
+
           // Buscar y preseleccionar la especialidad recién creada
           const nuevaEspecialidad = this.especialidadesDisponibles.find(esp => esp.id === especialidadId);
           if (nuevaEspecialidad) {
@@ -431,7 +434,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
             }
             this.showMessage(`Especialidad "${nuevaEspecialidad.nombre}" creada. Puede asociarla al centro ahora.`, 'success');
           }
-          
+
           // Limpiar query params
           this.router.navigate([], {
             relativeTo: this.route,
@@ -508,11 +511,11 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
    */
   crearNuevoMedico(): void {
     if (!this.centroAtencion.id) return;
-    
+
     this.router.navigate(['/medicos/new'], {
-      queryParams: { 
-        centroId: this.centroAtencion.id, 
-        returnUrl: '/centrosAtencion/' + this.centroAtencion.id 
+      queryParams: {
+        centroId: this.centroAtencion.id,
+        returnUrl: '/centrosAtencion/' + this.centroAtencion.id
       }
     });
   }
@@ -530,9 +533,9 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
             console.error('Error al cargar médicos:', dataPackage.status_text);
             return;
           }
-          
+
           this.medicosDisponibles = dataPackage.data || [];
-          
+
           // Filtrar médicos disponibles para asociar
           this.medicosDisponiblesParaAsociar = this.medicosDisponibles.filter((medico: MedicoBasicInfo) => {
             if (!medico.especialidades || medico.especialidades.length === 0) {
@@ -543,7 +546,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
               .map(staff => staff.especialidad?.id);
             return medico.especialidades.some(esp => !especialidadesAsignadas.includes(esp.id));
           });
-          
+
           // Buscar y preseleccionar el médico recién creado
           const nuevoMedico = this.medicosDisponiblesParaAsociar.find(m => m.id === medicoId);
           if (nuevoMedico) {
@@ -551,13 +554,13 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
             // Cargar las especialidades del médico para el select (convertir a Especialidad[])
             this.especialidadesMedico = (nuevoMedico.especialidades || [])
               .map(esp => ({ id: esp.id, nombre: esp.nombre } as Especialidad));
-            
+
             // Forzar detección de cambios para actualizar la UI
             this.cdr.detectChanges();
-            
+
             this.showStaffMessage(`Dr. ${nuevoMedico.nombre} ${nuevoMedico.apellido} creado. Seleccione una especialidad para asociarlo al centro.`, 'success');
           }
-          
+
           // Limpiar query params
           this.router.navigate([], {
             relativeTo: this.route,
@@ -572,16 +575,16 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   onMedicoSeleccionado(): void {
     // Limpiar el estado de especialidad faltante cuando se cambia de médico
     this.especialidadFaltanteParaAsociar = null;
-    
+
     if (this.medicoSeleccionado) {
       // Obtener todas las especialidades del médico (MedicoBasicInfo solo tiene especialidades array)
       const todasLasEspecialidades = this.medicoSeleccionado.especialidades || [];
-      
+
       // Filtrar especialidades que ya están asignadas al centro para este médico
       const especialidadesAsignadas = this.staffMedicoCentro
         .filter(staff => staff.medico?.id === this.medicoSeleccionado!.id)
         .map(staff => staff.especialidad?.id);
-      
+
       // Solo mostrar especialidades que NO están asignadas
       // Convertir a Especialidad[] para compatibilidad con el select
       this.especialidadesMedico = todasLasEspecialidades
@@ -754,8 +757,8 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
     });
   }
 
-  desasociarEspecialidadDeMedico(data: {medico: any, especialidad: Especialidad}): void {
-    const {medico, especialidad} = data;
+  desasociarEspecialidadDeMedico(data: { medico: any, especialidad: Especialidad }): void {
+    const { medico, especialidad } = data;
 
     // Encontrar el staff médico específico para esta especialidad
     const staffEspecifico = this.staffMedicoCentro.find(staff =>
@@ -821,7 +824,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   toggleStaffMedicoExpansion(staff: StaffMedico): void {
     const id = staff.id || 0;
     this.staffMedicoExpandido[id] = !this.staffMedicoExpandido[id];
-    
+
     if (this.staffMedicoExpandido[id]) {
       this.cargarDisponibilidadesStaff(staff);
     }
@@ -829,7 +832,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
 
   agregarDisponibilidad(staff: StaffMedico): void {
     this.router.navigate(['/disponibilidad-medicos/new'], {
-      queryParams: { 
+      queryParams: {
         staffMedicoId: staff.id,
         returnUrl: '/centros-atencion/' + this.centroAtencion.id + '?activeTab=staff'
       }
@@ -838,7 +841,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
 
   gestionarDisponibilidadAvanzada(staff: StaffMedico): void {
     this.router.navigate(['/disponibilidad-medicos'], {
-      queryParams: { 
+      queryParams: {
         staffMedicoId: staff.id,
         returnUrl: '/centros-atencion/' + this.centroAtencion.id + '?activeTab=staff'
       }
@@ -853,11 +856,11 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
     // Actualizar las disponibilidades del staff médico específico
     if (disponibilidad.staffMedicoId) {
       this.cargarDisponibilidadesStaff(this.staffMedicoCentro.find(s => s.id === disponibilidad.staffMedicoId)!);
-      
+
       // Mostrar mensaje de éxito
       this.mensajeStaff = 'Disponibilidad creada exitosamente';
       this.tipoMensajeStaff = 'success';
-      
+
       // Limpiar mensaje después de 3 segundos
       setTimeout(() => {
         this.mensajeStaff = '';
@@ -869,11 +872,11 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   onEsquemaCreado(esquema: EsquemaTurno): void {
     // Recargar esquemas del centro
     this.cargarEsquemasParaSemana();
-    
+
     // Mostrar mensaje de éxito
     this.mensajeConsultorio = 'Esquema de turno creado exitosamente';
     this.tipoMensajeConsultorio = 'success';
-    
+
     // Limpiar mensaje después de 3 segundos
     setTimeout(() => {
       this.mensajeConsultorio = '';
@@ -917,17 +920,53 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
       this.showMessage('El teléfono es requerido', 'danger');
       return false;
     }
+    if (!this.coordenadas?.trim()) {
+      this.showMessage('Las coordenadas son requeridas (latitud, longitud)', 'danger');
+      return false;
+    }
     return true;
   }
 
-  private processCoordinates(): void {
-    if (this.coordenadas.trim()) {
-      const parts = this.coordenadas.split(',').map(p => parseFloat(p.trim()));
-      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-        this.centroAtencion.latitud = parts[0];
-        this.centroAtencion.longitud = parts[1];
-      }
+  private processCoordinates(): boolean {
+    if (!this.coordenadas || !this.coordenadas.trim()) {
+      this.showMessage('Las coordenadas son requeridas (latitud, longitud)', 'danger');
+      return false;
     }
+
+    const parts = this.coordenadas.split(',').map(p => {
+      const trimmed = p.trim();
+      return trimmed === '' ? NaN : parseFloat(trimmed);
+    });
+
+    // Validar formato y cantidad de partes
+    if (parts.length !== 2) {
+      this.showMessage('Formato incorrecto. Use: latitud,longitud (ej: -34.6037,-58.3816)', 'danger');
+      return false;
+    }
+
+    const [latitud, longitud] = parts;
+
+    // Validar que sean números válidos
+    if (isNaN(latitud) || isNaN(longitud)) {
+      this.showMessage('Las coordenadas deben ser números válidos', 'danger');
+      return false;
+    }
+
+    // Validar rangos
+    if (latitud < -90 || latitud > 90) {
+      this.showMessage('La latitud debe estar entre -90 y 90', 'danger');
+      return false;
+    }
+
+    if (longitud < -180 || longitud > 180) {
+      this.showMessage('La longitud debe estar entre -180 y 180', 'danger');
+      return false;
+    }
+
+    // Si las validaciones pasaron, asignar los valores
+    this.centroAtencion.latitud = latitud;
+    this.centroAtencion.longitud = longitud;
+    return true;
   }
 
   private loadAllData(): void {
@@ -977,7 +1016,7 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
   private cargarEspecialidadesDisponibles(): void {
     this.especialidadService.all().subscribe({
       next: (dataPackage: DataPackage<Especialidad[]>) => {
-        this.especialidadesDisponibles = dataPackage.data.filter((esp: Especialidad) => 
+        this.especialidadesDisponibles = dataPackage.data.filter((esp: Especialidad) =>
           !this.especialidadesAsociadas.some(asoc => asoc.id === esp.id)
         );
       },
@@ -1020,26 +1059,26 @@ export class CentroAtencionDetailRefactoredComponent implements AfterViewInit, O
           console.error('Error al cargar médicos disponibles:', dataPackage.status_text);
           return;
         }
-        
+
         this.medicosDisponibles = dataPackage.data || [];
-        
+
         // Filtrar médicos que tienen especialidades no asignadas al centro
         this.medicosDisponiblesParaAsociar = this.medicosDisponibles.filter((medico: MedicoBasicInfo) => {
           // Si el médico no tiene especialidades, no puede ser asignado
           if (!medico.especialidades || medico.especialidades.length === 0) {
             return false;
           }
-          
+
           // Obtener especialidades ya asignadas de este médico en este centro
           const especialidadesAsignadas = this.staffMedicoCentro
             .filter(staff => staff.medico?.id === medico.id)
             .map(staff => staff.especialidad?.id);
-          
+
           // Verificar si el médico tiene especialidades que aún no están asignadas
-          const tieneEspecialidadesDisponibles = medico.especialidades.some(esp => 
+          const tieneEspecialidadesDisponibles = medico.especialidades.some(esp =>
             !especialidadesAsignadas.includes(esp.id)
           );
-          
+
           return tieneEspecialidadesDisponibles;
         });
       },
