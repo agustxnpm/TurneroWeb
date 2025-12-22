@@ -126,7 +126,7 @@ export const ROLE_HIERARCHY: Record<Role, Role[]> = {
   providedIn: "root",
 })
 export class AuthService {
-  private readonly API_BASE_URL = environment.production ? `${environment.apiUrl}/auth` : "rest/api/auth";
+  private readonly API_BASE_URL = environment.production ? `${environment.apiUrl}/auth` : "rest/auth";
   private readonly ACCESS_TOKEN_KEY = "access_token";
   private readonly REFRESH_TOKEN_KEY = "refresh_token";
   private readonly USER_DATA_KEY = "user_data";
